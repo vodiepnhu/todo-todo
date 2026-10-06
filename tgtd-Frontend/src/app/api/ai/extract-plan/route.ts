@@ -20,6 +20,7 @@ export async function POST(request: Request) {
       .select("id")
       .eq("workspace_id", body.workspaceId)
       .eq("profile_id", user.id)
+      .is("archived_at", null)
       .maybeSingle();
     if (!membership) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

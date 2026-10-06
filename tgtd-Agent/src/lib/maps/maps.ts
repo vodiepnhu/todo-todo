@@ -1,10 +1,24 @@
-const TRUSTED_MAP_HOSTS = [
-  "maps.app.goo.gl",
-  "goo.gl",
-  "www.google.com",
-  "google.com",
-  "maps.google.com",
-];
+export function googleMapsPlaceUrl(input: {
+  name: string;
+  formattedAddress?: string | null;
+  googlePlaceId?: string | null;
+}): string {
+  const query = encodeURIComponent(input.name || input.formattedAddress || "");
+  const placeId = input.googlePlaceId
+    ? `&query_place_id=${encodeURIComponent(input.googlePlaceId)}`
+    : "";
+  return `https://www.google.com/maps/search/?api=1&query=${query}${placeId}`;
+}
+
+function isTrustedMapsUrl(u: URL) {
+  if (u.protocol !== "https:" || u.username || u.password) return false;
+  if (u.hostname === "maps.app.goo.gl") return true;
+  if (u.hostname === "goo.gl") return u.pathname.startsWith("/maps");
+  return (
+    (u.hostname === "google.com" || u.hostname === "www.google.com") &&
+    u.pathname.startsWith("/maps")
+  ) || u.hostname === "maps.google.com";
+}
 
 export function extractGoogleMapsUrl(text: string): string | null {
   const urlMatch = text.match(
@@ -14,14 +28,7 @@ export function extractGoogleMapsUrl(text: string): string | null {
   for (const raw of urlMatch) {
     try {
       const u = new URL(raw.replace(/[),.;]+$/, ""));
-      if (
-        TRUSTED_MAP_HOSTS.some(
-          (h) => u.hostname === h || u.hostname.endsWith(".google.com"),
-        ) &&
-        (u.hostname.includes("maps") ||
-          u.pathname.includes("/maps") ||
-          u.hostname.includes("goo.gl"))
-      ) {
+      if (isTrustedMapsUrl(u)) {
         return u.toString();
       }
     } catch {
@@ -34,10 +41,7 @@ export function extractGoogleMapsUrl(text: string): string | null {
 export function safeMapsRedirect(url: string): string | null {
   try {
     const u = new URL(url);
-    const ok = TRUSTED_MAP_HOSTS.some(
-      (h) => u.hostname === h || u.hostname.endsWith(".google.com"),
-    );
-    return ok ? u.toString() : null;
+    return isTrustedMapsUrl(u) ? u.toString() : null;
   } catch {
     return null;
   }
@@ -48,11 +52,24 @@ export async function searchPlace(query: string) {
   if (!key) {
     return { degraded: true as const, results: [] as never[] };
   }
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`,
-  );
-  if (!res.ok) return { degraded: true as const, results: [] as never[] };
-  const json = await res.json();
+  let json: { status?: string; results?: Array<{
+    place_id: string;
+    name: string;
+    formatted_address: string;
+    geometry?: { location?: { lat: number; lng: number } };
+  }> };
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`,
+    );
+    if (!res.ok) return { degraded: true as const, results: [] as never[] };
+    json = await res.json();
+  } catch {
+    return { degraded: true as const, results: [] as never[] };
+  }
+  if (json.status && json.status !== "OK" && json.status !== "ZERO_RESULTS") {
+    return { degraded: true as const, results: [] as never[] };
+  }
   return {
     degraded: false as const,
     results: (json.results ?? []).slice(0, 5).map(

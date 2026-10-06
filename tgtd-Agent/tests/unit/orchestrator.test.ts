@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { runPlannerOrchestrator } from "@/agents/orchestrator";
 import type { PlannerRequest } from "@/schemas/planner";
 import type { Item } from "@/types/database";
+import { safeMapsRedirect } from "@/lib/maps/maps";
 
 function baseItem(overrides: Partial<Item> = {}): Item {
   return {
@@ -124,6 +125,79 @@ describe("runPlannerOrchestrator", () => {
 
     expect(result.pendingId).toBeNull();
     expect(result.aiContent).toBe("Say @Planner to add items.");
+  });
+
+  it("stores place plans through canonical PlanSchema payload", async () => {
+    const createPending = vi.fn().mockResolvedValue({ id: "plan-1" });
+    const result = await runPlannerOrchestrator({
+      workspaceId: "w",
+      message: "visit Bondi Beach this Saturday",
+      userId: "u",
+      deps: {
+        ingest: async () => ({
+          request: ingestOf({
+            intent: "CREATE_ITEM",
+            reply: "Draft ready.",
+            items: [{
+              title: "Bondi Beach",
+              placeQuery: "Bondi Beach",
+              itemType: "ACTIVITY",
+            }],
+          }),
+          model: "mock",
+          mocked: true,
+          latencyMs: 1,
+        }),
+        extractPlan: async () => ({
+          draft: {
+            placeName: "Bondi Beach",
+            categories: ["beach"],
+            tags: ["nature"],
+            location: null,
+            googleMapsUrl: null,
+            googlePlaceId: null,
+            latitude: null,
+            longitude: null,
+            status: "PLANNING",
+            travel: null,
+            experience: null,
+            activities: ["Coastal walk"],
+            foodToTry: [],
+            preparations: ["Bring sunscreen"],
+            todos: [],
+            costs: [],
+            notes: [],
+            plannedStartAt: null,
+            sourceText: null,
+          },
+        }),
+        listItems: async () => [],
+        createPending,
+        extractMapsUrl: () => undefined,
+        searchPlace: async () => ({
+          degraded: false,
+          results: [{
+            googlePlaceId: "bondi-id",
+            name: "Bondi Beach",
+            formattedAddress: "Bondi Beach NSW",
+            latitude: -33.8915,
+            longitude: 151.2767,
+          }],
+        }),
+        safeMapsUrl: safeMapsRedirect,
+      },
+    });
+    expect(result.pendingId).toBe("plan-1");
+    expect(createPending.mock.calls[0][0].payload).toMatchObject({
+      schema: "plan",
+      plan: {
+        placeName: "Bondi Beach",
+        location: "Bondi Beach NSW",
+        googleMapsUrl: expect.stringContaining("query_place_id=bondi-id"),
+        activities: ["Coastal walk"],
+      },
+    });
+    expect(result.aiContent).toContain("Type CONFIRM");
   });
 
   it("maps UPDATE_ITEM / DELETE_ITEM / LOG_EVENT action types", async () => {

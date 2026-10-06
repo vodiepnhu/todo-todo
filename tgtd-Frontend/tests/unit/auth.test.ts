@@ -13,6 +13,11 @@ describe("auth domain", () => {
     expect(resolveLoginEmail("demo@local.test", false)).toBe("demo@local.test");
   });
 
+  it("matches seeded local demo account", () => {
+    expect(LOCAL_DEMO_EMAIL).toBe("demo@local.test");
+    expect(resolveLoginEmail("demo", true)).toBe("demo@local.test");
+  });
+
   it("keeps next redirects on the local application", () => {
     expect(safeNextPath("/app")).toBe("/app");
     expect(safeNextPath("https://example.com")).toBe("/app");

@@ -19,7 +19,7 @@ export function isSupabaseConfigured() {
 export function createClient() {
   const url = getSupabaseBrowserUrl();
   const key = getSupabaseAnonKey();
-  if (!url || !key) {
+  if (!isSupabaseConfigured()) {
     throw new Error(
       "Missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local — copy from .env.example and run `npx supabase start`",
     );

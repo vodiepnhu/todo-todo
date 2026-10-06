@@ -29,6 +29,12 @@ export type OrchestratorDeps = {
   }) => Promise<IngestResult>;
   listItems: (workspaceId: string) => Promise<Item[]>;
   createPending: (input: CreatePendingInput) => Promise<{ id: string }>;
+  extractPlan?: (input: {
+    userId: string;
+    text: string;
+    timezone: string;
+    lookupMaps: boolean;
+  }) => Promise<{ draft: import("../lib/plans/plan-schema").PlanDraft }>;
   extractMapsUrl: (text: string) => string | undefined;
   /** Optional vector retrieve; omit → heuristic-only recommend */
   retrieve?: (workspaceIds: string[], query: string) => Promise<RagHit[]>;

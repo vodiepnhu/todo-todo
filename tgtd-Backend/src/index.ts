@@ -65,8 +65,16 @@ export {
   sumAgentUsage,
 } from "./services/agentops-service";
 export { listRecentChatContext } from "./services/chat-context-service";
-export { advanceConfirmation, createPendingAction } from "./services/confirmation-service";
-export { clearHomeMessages, insertHomeMessage } from "./services/home-chat-service";
+export {
+  advanceConfirmation,
+  createPendingAction,
+  isConfirmationKeyword,
+} from "./services/confirmation-service";
+export {
+  clearHomeMessages,
+  insertHomeMessage,
+  listHomeMessages,
+} from "./services/home-chat-service";
 export { fetchAgentOpsStats } from "./services/langsmith-stats-service";
 export {
   clearLlmApiKey,

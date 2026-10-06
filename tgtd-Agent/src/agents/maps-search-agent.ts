@@ -1,4 +1,4 @@
-import { searchPlace } from "../lib/maps/maps";
+import { googleMapsPlaceUrl, searchPlace } from "../lib/maps/maps";
 
 export type MapsSearchHit = {
   googlePlaceId: string;
@@ -16,14 +16,7 @@ function mapsUrlFromHit(p: {
   longitude: number | null;
   googlePlaceId: string;
 }): string {
-  if (p.latitude != null && p.longitude != null) {
-    return `https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}`;
-  }
-  if (p.googlePlaceId) {
-    return `https://www.google.com/maps/search/?api=1&query=place_id:${p.googlePlaceId}`;
-  }
-  const q = encodeURIComponent(p.formattedAddress || p.name);
-  return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  return googleMapsPlaceUrl(p);
 }
 
 /**

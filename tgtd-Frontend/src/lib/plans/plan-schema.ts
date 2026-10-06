@@ -106,6 +106,9 @@ const planFields = {
   tags: z.array(z.string()).default([]),
   location: nullableString,
   googleMapsUrl: nullableString,
+  googlePlaceId: nullableString,
+  latitude: z.number().nullable().optional().transform((v) => v ?? null),
+  longitude: z.number().nullable().optional().transform((v) => v ?? null),
   status: PlanStatusSchema.default("PLANNING"),
   travel: PlanTravelSchema.nullable()
     .optional()
@@ -143,6 +146,9 @@ export function emptyPlan(): PlanDraft {
     tags: [],
     location: null,
     googleMapsUrl: null,
+    googlePlaceId: null,
+    latitude: null,
+    longitude: null,
     status: "PLANNING",
     travel: null,
     experience: null,

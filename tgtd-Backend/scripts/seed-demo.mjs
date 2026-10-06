@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
   DEMO_DISPLAY_NAME,
@@ -19,9 +20,15 @@ function loadEnvFile(filePath) {
 }
 
 const workspaceRoot = process.cwd();
-loadEnvFile(path.resolve(workspaceRoot, ".env.local"));
-loadEnvFile(path.resolve(workspaceRoot, "../tgtd-Frontend/.env.local"));
-loadEnvFile(path.resolve(workspaceRoot, "../.env.local"));
+const backendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+for (const envPath of [
+  path.resolve(workspaceRoot, ".env.local"),
+  path.resolve(backendRoot, ".env.local"),
+  path.resolve(backendRoot, "../tgtd-Frontend/.env.local"),
+  path.resolve(workspaceRoot, "../.env.local"),
+]) {
+  loadEnvFile(envPath);
+}
 assertDemoSeedAllowed();
 
 const url = process.env.SUPABASE_INTERNAL_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;

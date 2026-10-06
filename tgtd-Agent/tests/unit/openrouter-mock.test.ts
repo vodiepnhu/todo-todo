@@ -27,4 +27,26 @@ describe("mock planner", () => {
     });
     expect(request.intent).toBe("LOG_EVENT");
   });
+
+  it("extracts natural-language destinations and reuses recent chat", async () => {
+    const first = await parsePlannerMessage({
+      message: "I want to visit Bondi Beach this Saturday afternoon and do the coastal walk",
+      currentDate: "2026-09-23",
+      currentDatetime: "2026-09-23 17:00",
+      workspaceTimezone: "Australia/Sydney",
+      userId: uid,
+    });
+    expect(first.request.items[0]?.placeQuery).toMatch(/Bondi Beach/i);
+
+    const second = await parsePlannerMessage({
+      message: "Add coastal walk and remind me to bring sunscreen",
+      currentDate: "2026-09-23",
+      currentDatetime: "2026-09-23 17:00",
+      workspaceTimezone: "Australia/Sydney",
+      userId: uid,
+      recentChat: "USER: I want to go to Bondi Beach on Saturday.",
+    });
+    expect(second.request.intent).toBe("CREATE_ITEM");
+    expect(second.request.items[0]?.placeQuery).toMatch(/Bondi Beach/i);
+  });
 });

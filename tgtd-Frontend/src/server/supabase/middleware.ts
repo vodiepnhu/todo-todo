@@ -4,13 +4,14 @@ import {
   getSupabaseAnonKey,
   getSupabaseCookieName,
   getSupabaseServerUrl,
+  isSupabaseConfigured,
 } from "@/server/supabase/config";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const url = getSupabaseServerUrl();
   const key = getSupabaseAnonKey();
-  if (!url || !key) return response;
+  if (!isSupabaseConfigured()) return response;
 
   const supabase = createServerClient(url, key, {
     cookieOptions: { name: getSupabaseCookieName() },

@@ -1,4 +1,4 @@
-import { searchPlace } from "../lib/maps/maps";
+import { googleMapsPlaceUrl, searchPlace } from "../lib/maps/maps";
 
 export type PlaceCandidate = {
   googlePlaceId: string;
@@ -32,11 +32,7 @@ export type ResolvePlaceInput = {
 };
 
 function mapsUrlFromPlace(p: PlaceCandidate): string {
-  if (p.latitude != null && p.longitude != null) {
-    return `https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}`;
-  }
-  const q = encodeURIComponent(p.formattedAddress || p.name);
-  return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  return googleMapsPlaceUrl(p);
 }
 
 /**
@@ -71,11 +67,18 @@ export async function resolvePlace(
   const search = input.searchPlace ?? defaultSearch;
   const found = await search(query);
   const top = found.results[0];
-  if (found.degraded || !top) {
+  if (found.degraded) {
     return {
       placeQuery: query,
       degraded: true,
       note: "Maps lookup unavailable — kept place query only",
+    };
+  }
+  if (!top) {
+    return {
+      placeQuery: query,
+      degraded: false,
+      note: "No matching place found — kept place query only",
     };
   }
 

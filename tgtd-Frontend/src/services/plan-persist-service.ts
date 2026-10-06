@@ -149,6 +149,9 @@ export async function persistPlan(
       formatted_address: plan.location,
       original_maps_url: plan.googleMapsUrl,
       google_maps_url: plan.googleMapsUrl,
+      google_place_id: plan.googlePlaceId,
+      latitude: plan.latitude,
+      longitude: plan.longitude,
       categories: plan.categories,
       tags: plan.tags?.length ? plan.tags : plan.categories,
     })
@@ -196,6 +199,9 @@ export async function loadPlanDraft(
     formatted_address: string | null;
     google_maps_url: string | null;
     original_maps_url: string | null;
+    google_place_id: string | null;
+    latitude: number | null;
+    longitude: number | null;
     categories: string[] | null;
     tags: string[] | null;
   } | null = null;
@@ -203,7 +209,7 @@ export async function loadPlanDraft(
     const { data } = await supabase
       .from("places")
       .select(
-        "name, formatted_address, google_maps_url, original_maps_url, categories, tags",
+        "name, formatted_address, google_maps_url, original_maps_url, google_place_id, latitude, longitude, categories, tags",
       )
       .eq("id", link.place_id)
       .maybeSingle();
@@ -259,6 +265,9 @@ export async function loadPlanDraft(
     location: place?.formatted_address ?? null,
     googleMapsUrl:
       place?.google_maps_url ?? place?.original_maps_url ?? null,
+    googlePlaceId: place?.google_place_id ?? null,
+    latitude: place?.latitude ?? null,
+    longitude: place?.longitude ?? null,
     categories: place?.categories ?? [],
     tags: place?.tags ?? [],
     status: normalizePlanStatus(item.plan_status as string | null),
@@ -382,6 +391,9 @@ export async function updatePlan(
     formatted_address: plan.location,
     original_maps_url: plan.googleMapsUrl,
     google_maps_url: plan.googleMapsUrl,
+    google_place_id: plan.googlePlaceId,
+    latitude: plan.latitude,
+    longitude: plan.longitude,
     categories: plan.categories,
     tags: plan.tags?.length ? plan.tags : plan.categories,
   };

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runIngestAgent, runPlannerOrchestrator } from "@togo-todo/agent";
-import { createPendingAction } from "@togo-todo/backend";
+import {
+  advanceConfirmation,
+  createPendingAction,
+  isConfirmationKeyword,
+} from "@togo-todo/backend";
 import { listItems, listWorkspaces } from "@togo-todo/backend";
 import { hybridRetrieveItemHits } from "@togo-todo/ai-rag";
 import { listRecentChatContext } from "@togo-todo/backend";
@@ -54,6 +58,7 @@ export async function POST(request: Request) {
       .select("id")
       .eq("workspace_id", workspaceId)
       .eq("profile_id", user.id)
+      .is("archived_at", null)
       .maybeSingle();
     if (memErr) {
       return NextResponse.json({ error: memErr.message }, { status: 500 });
@@ -82,6 +87,51 @@ export async function POST(request: Request) {
         { error: `Could not save message: ${userInsertErr.message}` },
         { status: 500 },
       );
+    }
+
+    const isConfirmation = isConfirmationKeyword(
+      message.replace(/^@planner\s*/i, ""),
+    );
+    if (isConfirmation) {
+      const { data: pending, error: pendingError } = await supabase
+        .from("pending_actions")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .eq("initiated_by", user.id)
+        .eq("state", "AWAITING_CONFIRM_2")
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (pendingError) throw pendingError;
+      if (!pending) {
+        return NextResponse.json(
+          { error: "No active pending action to confirm." },
+          { status: 409 },
+        );
+      }
+
+      const confirmed = await advanceConfirmation(supabase, pending.id, user.id);
+      const { data: aiMessage, error: confirmMessageError } = await supabase
+        .from("workspace_messages")
+        .insert({
+          workspace_id: workspaceId,
+          sender_profile_id: null,
+          message_type: "AI",
+          content: "Saved. Your pending plan was confirmed.",
+        })
+        .select("*")
+        .single();
+      if (confirmMessageError) throw confirmMessageError;
+      return NextResponse.json({
+        ok: true,
+        ai: true,
+        confirmed: true,
+        pendingId: pending.id,
+        pending: confirmed.pending,
+        message: userMsg,
+        aiMessage,
+      });
     }
 
     if (!isPlanner) {

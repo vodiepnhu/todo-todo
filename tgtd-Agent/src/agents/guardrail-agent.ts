@@ -88,6 +88,19 @@ export function validateMutationDraft(
     }
   }
 
+  const nestedPlan = payload.plan;
+  if (nestedPlan && typeof nestedPlan === "object") {
+    const plan = nestedPlan as { googleMapsUrl?: unknown };
+    if (typeof plan.googleMapsUrl === "string" && plan.googleMapsUrl) {
+      const trusted = safeMaps(plan.googleMapsUrl);
+      if (!trusted) {
+        reasons.push("plan contains an untrusted Google Maps URL");
+      } else {
+        (plan as { googleMapsUrl: string }).googleMapsUrl = trusted;
+      }
+    }
+  }
+
   if (reasons.length) return { ok: false, reasons };
 
   return {

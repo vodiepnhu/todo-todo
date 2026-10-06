@@ -18,6 +18,12 @@ export function getSupabaseAnonKey() {
   );
 }
 
+export function isSupabaseConfigured() {
+  const url = getSupabaseServerUrl();
+  const key = getSupabaseAnonKey();
+  return Boolean(url && key && !url.includes("your-") && !key.includes("your-"));
+}
+
 export function getSupabaseCookieName() {
   const browserUrl = getSupabaseBrowserUrl() || "http://localhost:8000";
   try {

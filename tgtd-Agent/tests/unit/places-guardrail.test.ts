@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { resolvePlace } from "@/agents/places-agent";
 import {
+  extractGoogleMapsUrl,
+  safeMapsRedirect,
+  searchPlace,
+} from "@/lib/maps/maps";
+import {
   shouldClarify,
   validateMutationDraft,
   validatePendingPayload,
@@ -58,6 +63,62 @@ describe("places-agent", () => {
     expect(r.placeQuery).toBe("Manly Beach");
     expect(r.googleMapsUrl).toBeUndefined();
   });
+
+  it("uses place id and preserves resolved place metadata", async () => {
+    const r = await resolvePlace({
+      message: "IKEA Tempe",
+      placeQuery: "IKEA Tempe",
+      extractMapsUrl: () => undefined,
+      safeMapsUrl: safeMapsRedirect,
+      searchPlace: async () => ({
+        degraded: false,
+        results: [{
+          googlePlaceId: "pid1",
+          name: "IKEA Tempe",
+          formattedAddress: "1 O'Riordan St, Tempe NSW",
+          latitude: -33.925,
+          longitude: 151.168,
+        }],
+      }),
+    });
+    expect(r.googleMapsUrl).toContain("query_place_id=pid1");
+    expect(r.formattedAddress).toBe("1 O'Riordan St, Tempe NSW");
+    expect(r.latitude).toBe(-33.925);
+  });
+
+  it("rejects unsafe or non-Maps Google URLs", () => {
+    expect(safeMapsRedirect("https://evil.example/maps/bondi")).toBeNull();
+    expect(safeMapsRedirect("https://www.google.com/search?q=evil")).toBeNull();
+    expect(extractGoogleMapsUrl("https://evil.example/maps/bondi")).toBeNull();
+  });
+
+  it("keeps ambiguous zero-result queries without fabricating a URL", async () => {
+    const r = await resolvePlace({
+      message: "somewhere",
+      placeQuery: "somewhere",
+      extractMapsUrl: () => undefined,
+      safeMapsUrl: safeMapsRedirect,
+      searchPlace: async () => ({ degraded: false, results: [] }),
+    });
+    expect(r.degraded).toBe(false);
+    expect(r.googleMapsUrl).toBeUndefined();
+    expect(r.note).toMatch(/No matching place/);
+  });
+
+  it("reports missing Maps configuration and provider failures as degraded", async () => {
+    vi.stubEnv("GOOGLE_MAPS_SERVER_API_KEY", "");
+    await expect(searchPlace("Bondi Beach")).resolves.toMatchObject({
+      degraded: true,
+      results: [],
+    });
+
+    vi.stubEnv("GOOGLE_MAPS_SERVER_API_KEY", "test-key");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
+    await expect(searchPlace("Bondi Beach")).resolves.toMatchObject({
+      degraded: true,
+      results: [],
+    });
+  });
 });
 
 describe("guardrail-agent", () => {
@@ -107,6 +168,22 @@ describe("guardrail-agent", () => {
       googleMapsUrl: "Bondi Beach",
     });
     expect(withJunk.ok).toBe(true);
+  });
+
+  it("rejects untrusted Maps URLs inside canonical plan payloads", () => {
+    const result = validateMutationDraft(
+      {
+        actionType: "CREATE",
+        payload: {
+          title: "Bondi Beach",
+          schema: "plan",
+          plan: { placeName: "Bondi Beach", googleMapsUrl: "https://evil.example/maps" },
+        },
+        draftTitle: "Bondi Beach",
+      },
+      { safeMapsUrl: safeMapsRedirect },
+    );
+    expect(result.ok).toBe(false);
   });
 
   it("shouldClarify on low confidence or ambiguities", () => {

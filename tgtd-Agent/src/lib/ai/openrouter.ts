@@ -19,8 +19,13 @@ Never invent Google Place IDs. Prefer DATE_ONLY when user only mentions a day na
 Use the provided currentDate/currentDatetime/timezone — do not invent today's date.
 If recentChat is provided, use it only for disambiguation (names, places, prior intent). Ignore soft-deleted history (it will not appear). Prefer the current message over older chat when they conflict.`;
 
-function mockParse(message: string, currentDate: string): PlannerRequest {
+function mockParse(
+  message: string,
+  currentDate: string,
+  recentChat?: string,
+): PlannerRequest {
   const lower = message.toLowerCase();
+  const context = [recentChat, message].filter(Boolean).join("\n");
   if (lower.includes("what should") || lower.includes("recommend")) {
     return PlannerRequestSchema.parse({
       intent: "RECOMMEND_TASK",
@@ -74,7 +79,11 @@ function mockParse(message: string, currentDate: string): PlannerRequest {
     });
   }
   const place =
-    message.match(/add\s+(.+?)(?:\s+for\s+|\s*$)/i)?.[1] || "New item";
+    context.match(
+      /(?:visit|go to|at|add)\s+(.+?)(?=\s+(?:this|next|on|for|and|to|maybe|do|take|remind)\b|[,.!?\n]|$)/i,
+    )?.[1]?.trim() ||
+    context.match(/\b(Bondi(?:\s+Beach)?|IKEA\s+Tempe|Manly Beach|Coogee Beach)\b/i)?.[1] ||
+    "New item";
   const isPlace = /beach|ikea|cafe|restaurant|park|mall|gym/i.test(place);
   return PlannerRequestSchema.parse({
     intent: "CREATE_ITEM",
@@ -91,7 +100,7 @@ function mockParse(message: string, currentDate: string): PlannerRequest {
             ? "DATE_ONLY"
             : "UNKNOWN",
         plannedStartAt: null,
-        placeQuery: isPlace ? place.trim() : undefined,
+      placeQuery: isPlace || place !== "New item" ? place.trim() : undefined,
       },
     ],
     reply: `I've prepared an activity draft. Nothing has been saved yet.`,
@@ -117,7 +126,7 @@ export async function parsePlannerMessage(input: {
   const config = await resolveLlmCallConfig(input.userId);
 
   if (!config) {
-    const request = mockParse(input.message, input.currentDate);
+    const request = mockParse(input.message, input.currentDate, input.recentChat);
     return {
       request,
       model: "mock",
@@ -173,7 +182,7 @@ export async function parsePlannerMessage(input: {
         /* fall through */
       }
     }
-    const request = mockParse(input.message, input.currentDate);
+    const request = mockParse(input.message, input.currentDate, input.recentChat);
     return {
       request,
       model: "mock-fallback",

@@ -37,7 +37,7 @@ export function formatMutationReply(input: {
   pendingId: string;
 }): string {
   const base = input.baseReply || "Here's what I understood.";
-  return `${base}\n\nDraft: ${input.draftTitle || input.actionType}\n[Confirm] pending:${input.pendingId}`;
+  return `${base}\n\nDraft: ${input.draftTitle || input.actionType}\nType CONFIRM to save this plan.\n[Confirm] pending:${input.pendingId}`;
 }
 
 export function formatRecommendReply(input: {

@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runIngestAgent, runPlannerOrchestrator } from "@togo-todo/agent";
-import { createPendingAction } from "@togo-todo/backend";
-import { listItems, listWorkspaces } from "@togo-todo/backend";
+import {
+  advanceConfirmation,
+  createPendingAction,
+  isConfirmationKeyword,
+  listItems,
+  listWorkspaces,
+} from "@togo-todo/backend";
 import { hybridRetrieveItemHits } from "@togo-todo/ai-rag";
-import { insertHomeMessage } from "@togo-todo/backend";
+import { insertHomeMessage, listHomeMessages } from "@togo-todo/backend";
 import {
   extractGoogleMapsUrl,
   safeMapsRedirect,
@@ -57,6 +62,41 @@ export async function POST(req: Request) {
       messageType: "USER",
     });
 
+    if (isConfirmationKeyword(message.replace(/^@planner\s*/i, ""))) {
+      const memberships = await listWorkspaces(supabase, user.id);
+      const workspaceIds = memberships.map((m) => m.workspace.id);
+      const { data: pending, error: pendingError } = await supabase
+        .from("pending_actions")
+        .select("id")
+        .eq("initiated_by", user.id)
+        .in("workspace_id", workspaceIds)
+        .eq("state", "AWAITING_CONFIRM_2")
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (pendingError) throw pendingError;
+      if (!pending) {
+        return NextResponse.json(
+          { error: "No active pending action to confirm." },
+          { status: 409 },
+        );
+      }
+      const confirmed = await advanceConfirmation(supabase, pending.id, user.id);
+      await insertHomeMessage(supabase, {
+        profileId: user.id,
+        content: "Saved. Your pending plan was confirmed.",
+        messageType: "AI",
+      });
+      return NextResponse.json({
+        ok: true,
+        ai: true,
+        confirmed: true,
+        pendingId: pending.id,
+        pending: confirmed.pending,
+      });
+    }
+
     const isPlanner =
       body.askPlanner !== false ||
       /@planner\b/i.test(message) ||
@@ -93,6 +133,9 @@ export async function POST(req: Request) {
       costUsd: null,
       costSource: "unknown",
     };
+    const recentHomeChat = (await listHomeMessages(supabase, user.id, 20))
+      .map((m) => `${m.message_type}: ${m.content}`)
+      .join("\n");
     try {
       const wrapped = await runWithLlmUsage(() =>
         runPlannerOrchestrator({
@@ -116,6 +159,7 @@ export async function POST(req: Request) {
             searchPlace,
             safeMapsUrl: safeMapsRedirect,
           },
+          recentChat: recentHomeChat,
         }),
       );
       result = wrapped.result;

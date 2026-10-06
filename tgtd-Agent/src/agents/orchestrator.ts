@@ -22,6 +22,8 @@ import type {
   SpanSummary,
 } from "../lib/agentops/trace";
 import { safeMapsRedirect } from "../lib/maps/maps";
+import { extractPlanFromChat } from "../lib/ai/extract-plan";
+import { PlanSchema } from "../lib/plans/plan-schema";
 import type {
   OrchestratorDeps,
   OrchestratorResult,
@@ -416,6 +418,33 @@ export async function runPlannerOrchestrator(input: {
         targetReference: planner.targetReference,
         extractMapsUrl: input.deps.extractMapsUrl,
       });
+
+      if (item0.placeQuery || place.placeQuery || place.name) {
+        const extracted = await (input.deps.extractPlan ?? extractPlanFromChat)({
+          userId: input.userId,
+          text: [input.recentChat, cleanedMessage].filter(Boolean).join("\n"),
+          timezone: tz,
+          lookupMaps: false,
+        });
+        const plan = PlanSchema.parse({
+          ...extracted.draft,
+          placeName: place.name || extracted.draft.placeName || item0.placeQuery || item0.title,
+          location: place.formattedAddress ?? extracted.draft.location,
+          googleMapsUrl: place.googleMapsUrl ?? extracted.draft.googleMapsUrl,
+          googlePlaceId: place.googlePlaceId ?? extracted.draft.googlePlaceId,
+          latitude: place.latitude ?? extracted.draft.latitude,
+          longitude: place.longitude ?? extracted.draft.longitude,
+          sourceText: cleanedMessage,
+        });
+        draft.payload = {
+          ...draft.payload,
+          schema: "plan",
+          title: plan.placeName,
+          placeQuery: plan.placeName,
+          googleMapsUrl: plan.googleMapsUrl ?? undefined,
+          plan,
+        };
+      }
 
       if (place.googlePlaceId) {
         draft.payload.googlePlaceId = place.googlePlaceId;

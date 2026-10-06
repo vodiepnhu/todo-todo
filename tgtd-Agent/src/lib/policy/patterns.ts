@@ -8,6 +8,10 @@ const UNSAFE: RegExp[] = [
   /\b(child\s+porn|csam|underage\s+sex)\b/i,
   /\b(bio[-\s]?weapon|weaponize\s+(a\s+)?(virus|pathogen))\b/i,
   /\b(tu\s+tu[aâ]t|tự\s+tử)\b/i,
+  /\b(ignore\s+(all\s+)?previous\s+instructions|system\s+override|ignore\s+policy[-\s]?agent)\b/i,
+  /\b(reveal|show|print)\s+(your\s+)?system\s+prompt\b/i,
+  /\b(act\s+as\s+admin|access\s+another\s+(user|workspace|project))\b/i,
+  /\b(save|execute|run)\b.*\b(without|bypass|skip)\b.*\b(confirm|approval|safety)\b/i,
 ];
 
 const OFF_DOMAIN: RegExp[] = [

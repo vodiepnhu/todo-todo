@@ -4,13 +4,14 @@ import {
   getSupabaseAnonKey,
   getSupabaseCookieName,
   getSupabaseServerUrl,
+  isSupabaseConfigured,
 } from "@/server/supabase/config";
 
 export async function createClient() {
   const cookieStore = await cookies();
   const url = getSupabaseServerUrl();
   const key = getSupabaseAnonKey();
-  if (!url || !key) {
+  if (!isSupabaseConfigured()) {
     throw new Error(
       "Missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local",
     );

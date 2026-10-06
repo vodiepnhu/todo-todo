@@ -267,8 +267,14 @@ export async function extractPlanFromChat(input: {
     const lookup = await runMapsSearchAgent({ query: draft.placeName });
     if (lookup.topMapsUrl) {
       draft.googleMapsUrl = lookup.topMapsUrl;
-      if (!draft.location && lookup.hits[0]?.formattedAddress) {
-        draft.location = lookup.hits[0].formattedAddress;
+      const hit = lookup.hits[0];
+      if (hit) {
+        draft.googlePlaceId = hit.googlePlaceId;
+        draft.latitude = hit.latitude;
+        draft.longitude = hit.longitude;
+        if (!draft.location && hit.formattedAddress) {
+          draft.location = hit.formattedAddress;
+        }
       }
     }
   }

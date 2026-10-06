@@ -32,7 +32,12 @@ export function LoginForm() {
       router.replace(next);
       router.refresh();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to sign in");
+      const message = cause instanceof Error ? cause.message : "";
+      setError(
+        /Missing|configuration|configured/i.test(message)
+          ? message
+          : "Unable to sign in. Check your credentials.",
+      );
     } finally {
       setLoading(false);
     }

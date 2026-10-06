@@ -11,6 +11,11 @@ import { recordAgentEvent } from "../lib/agentops/agentops";
 import { createProject } from "./workspace-service";
 import { PlanSchema } from "../lib/plans/plan-schema";
 import { persistPlan } from "./plan-persist-service";
+import { safeMapsRedirect } from "@togo-todo/agent";
+
+export function isConfirmationKeyword(value: string) {
+  return /^\s*confirm\s*$/i.test(value);
+}
 
 export async function createPendingAction(
   supabase: SupabaseClient,
@@ -55,15 +60,20 @@ export async function advanceConfirmation(
     .from("pending_actions")
     .select("*")
     .eq("id", pendingId)
-    .single();
+    .eq("initiated_by", userId)
+    .maybeSingle();
   if (error || !pending) throw error || new Error("Pending not found");
 
-  if (new Date(pending.expires_at) < new Date()) {
-    await supabase
-      .from("pending_actions")
-      .update({ state: "EXPIRED" })
-      .eq("id", pendingId);
-    throw new Error("Confirmation expired");
+  if (pending.workspace_id) {
+    const { data: membership, error: membershipError } = await supabase
+      .from("workspace_members")
+      .select("id")
+      .eq("workspace_id", pending.workspace_id)
+      .eq("profile_id", userId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (membershipError) throw membershipError;
+    if (!membership) throw new Error("Forbidden");
   }
 
   if (
@@ -71,6 +81,15 @@ export async function advanceConfirmation(
     pending.state !== "AWAITING_CONFIRM_2"
   ) {
     throw new Error(`Invalid pending state: ${pending.state}`);
+  }
+
+  if (new Date(pending.expires_at) < new Date()) {
+    await supabase
+      .from("pending_actions")
+      .update({ state: "EXPIRED" })
+      .eq("id", pendingId)
+      .eq("initiated_by", userId);
+    throw new Error("Confirmation expired");
   }
 
   const guard = validatePendingPayload(
@@ -113,9 +132,12 @@ export async function advanceConfirmation(
     .from("pending_actions")
     .update({ state: "EXECUTED", executed_at: new Date().toISOString() })
     .eq("id", pendingId)
+    .eq("initiated_by", userId)
+    .eq("state", pending.state)
     .select("*")
-    .single();
+    .maybeSingle();
   if (doneErr) throw doneErr;
+  if (!done) throw new Error("Pending action was already confirmed");
 
   return { pending: done as PendingAction, executed };
 }
@@ -162,6 +184,9 @@ async function executePending(
   if (pending.action_type === "CREATE") {
     if (payload.schema === "plan" && payload.plan) {
       const plan = PlanSchema.parse(payload.plan);
+      if (plan.googleMapsUrl && !safeMapsRedirect(plan.googleMapsUrl)) {
+        throw new Error("Untrusted Google Maps URL");
+      }
       item = await persistPlan(supabase, workspaceId, userId, plan);
       summary = `Added plan ${item.title}`;
       const { data: wsMeta } = await supabase
@@ -241,8 +266,12 @@ async function executePending(
           .insert({
             workspace_id: workspaceId,
             name: (payload.placeQuery as string) || item.title,
+            formatted_address: payload.formattedAddress ?? null,
             original_maps_url: payload.googleMapsUrl ?? null,
             google_maps_url: payload.googleMapsUrl ?? null,
+            google_place_id: payload.googlePlaceId ?? null,
+            latitude: payload.latitude ?? null,
+            longitude: payload.longitude ?? null,
           })
           .select("*")
           .single();

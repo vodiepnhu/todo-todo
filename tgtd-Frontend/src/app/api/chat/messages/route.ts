@@ -25,7 +25,8 @@ async function requireMember(
     .from("workspace_members")
     .select("id")
     .eq("workspace_id", workspaceId)
-    .eq("profile_id", user.id)
+      .eq("profile_id", user.id)
+      .is("archived_at", null)
     .maybeSingle();
   if (!membership) {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };

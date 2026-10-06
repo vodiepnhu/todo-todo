@@ -26,6 +26,7 @@ async function requireWorkspaceAdmin(
     .select("role")
     .eq("workspace_id", workspaceId)
     .eq("profile_id", userId)
+    .is("archived_at", null)
     .maybeSingle();
   return data?.role === "OWNER" || data?.role === "ADMIN";
 }
