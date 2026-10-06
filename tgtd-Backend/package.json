@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "typecheck": "tsc --noEmit --incremental false"
+    "typecheck": "tsc --noEmit --incremental false",
+    "seed:demo": "node scripts/seed-demo.mjs",
+    "test": "node scripts/seed-demo.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0"

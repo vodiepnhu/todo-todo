@@ -16,6 +16,7 @@
     "test": "npm --workspace tgtd-Frontend run test --",
     "test:watch": "npm --workspace tgtd-Frontend run test:watch --",
     "test:e2e": "npm --workspace tgtd-Frontend run test:e2e --",
+    "seed:demo": "npm --workspace tgtd-Backend run seed:demo --",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build:webpack"
   }
 }

@@ -17,7 +17,12 @@ Target paths identify owning workspaces. Phase 1.5 moves only the verified found
 | `src/shared/navigation/paths.ts` | Canonical route builders | Landing and future routes | MOVE | `tgtd-Frontend/src/shared/navigation/paths.ts` | 1.5 | Frontend navigation ownership. |
 | `tests/unit/foundation.test.ts` | Foundation adapter checks | Supabase config exports | MOVE | `tgtd-Frontend/tests/unit/foundation.test.ts` | 1.5 | Test follows frontend ownership. |
 | `src/components/ui/{button,card,input}.tsx` | Shared visual primitives | Tailwind/CVA; many UI features | MOVE | `tgtd-Frontend/src/shared/ui/*` | 2 | Do not migrate yet. |
-| `src/app/(auth)/*` | Login/signup routes and forms | Browser Supabase, auth UI | MOVE | `tgtd-Frontend/src/app/(auth)/*` plus `tgtd-Frontend/src/features/auth/*` | 2 | Auth behavior high risk. |
+| `src/lib/utils.ts` | Class composition helper | clsx, tailwind-merge; shared UI | MOVE | `tgtd-Frontend/src/shared/ui/cn.ts` | 2 | Keep utility named and owned. |
+| `src/components/auth/password-requirements.tsx` | Password feedback UI | Password policy, class helper | MOVE | `tgtd-Frontend/src/features/auth/components/password-requirements.tsx` | 2 | Auth-specific UI. |
+| `src/lib/auth/password-policy.ts` | Signup password validation | Standard regex/set logic | MOVE | `tgtd-Frontend/src/features/auth/domain/password-policy.ts` | 2 | Pure domain logic. |
+| `src/app/(auth)/*` | Login/signup routes and forms | Browser Supabase, auth UI | MOVE | `tgtd-Frontend/src/app/(auth)/*` plus `tgtd-Frontend/src/features/auth/*` | 2 | Real email/password auth. |
+| `src/app/auth/callback/route.ts` | OAuth/email code exchange | Next server client | MOVE | `tgtd-Frontend/src/app/auth/callback/route.ts` | 2 | Local-path redirect guard. |
+| `scripts/seed-demo.sh` | Legacy demo account bootstrap | Docker/CLI/admin API; old credentials | REFACTOR | `tgtd-Backend/scripts/seed-demo.mjs` | 2 | Replaced Docker paths and old credentials; guarded local account. |
 | `src/services/workspace-service.ts` | Membership, project CRUD, invites | Supabase; routes, Home, planner | EXTRACT | `tgtd-Backend/src/modules/workspaces/workspace.service.ts` | 3 | Backend package boundary; preserve authorization. |
 | `src/services/folder-service.ts` | Home folder tree | Workspace service; Home | MOVE | `tgtd-Backend/src/modules/workspaces/folder.service.ts` | 3 | Keep partition behavior tested. |
 | `src/types/database.ts` | Database rows and enums | Most server modules | REFACTOR | `tgtd-Backend/src/contracts/database.ts` | 3 | Keep one source of truth during move. |
@@ -31,7 +36,7 @@ Target paths identify owning workspaces. Phase 1.5 moves only the verified found
 | `src/services/embedding-service.ts` | Remote/mock embeddings | Fetch, env; RAG and confirmation | MOVE | `tgtd-AI-RAG/src/embeddings/embedding-service.ts` | 6 | Keep deterministic degraded path. |
 | `src/services/recommendation-service.ts` | Candidate ranking | Database types; RAG agent | MOVE | `tgtd-AI-RAG/src/retrieval/recommendation.ts` | 6 | Pure logic, test before move. |
 | `src/lib/ai/*` | AI providers and parsing | Zod, settings, planner | EXTRACT | `tgtd-Agent/src/providers/ai/*` | 5 | Keep agent behavior separate from reusable retrieval. |
-| `src/lib/auth/*` | Password/account policy | Supabase, Zod; auth/account | MOVE | `tgtd-Backend/src/modules/auth/*` | 3 | Backend owns policy; frontend owns forms. |
+| `src/lib/auth/account.ts` | Account identity helpers | Auth identities; account UI | MOVE | `tgtd-Backend/src/modules/auth/account.ts` | 3 | Deferred; not required by Phase 2 shell. |
 | `src/components/home/home-shell.tsx` | Home projects, folders, sharing, chat | Many services/components | REFACTOR | `tgtd-Frontend/src/features/home/components/HomeScreen.tsx` | 7 | Large UI; no move in 1.5. |
 | `src/components/chat/*` | Project and Home chat UI | Supabase, chat APIs | MOVE | `tgtd-Frontend/src/features/chat/components/*` | 8 | `Chatbot-Frontend` remains merge candidate. |
 | `src/components/items/*` | Activity list and edit UI | Confirmation, plan persistence | REFACTOR | `tgtd-Frontend/src/features/activities/components/*` | 7 | Preserve realtime and pending flows. |

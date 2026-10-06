@@ -27,7 +27,8 @@ Next.js App Router with server components for route-level auth/data loading and 
 - Frontend root route: `tgtd-Frontend/src/app/page.tsx`
 - Frontend root layout: `tgtd-Frontend/src/app/layout.tsx`
 - Frontend middleware: `tgtd-Frontend/src/middleware.ts`
-- Target Phase 1.5 shell currently exposes `/` only; feature routes remain unmigrated.
+- Auth routes: `tgtd-Frontend/src/app/(auth)/login`, `tgtd-Frontend/src/app/(auth)/signup`, and `tgtd-Frontend/src/app/auth/callback`
+- Authenticated Phase 2 shell: `tgtd-Frontend/src/app/app/page.tsx`
 - Future canonical signed-in entry: `tgtd-Frontend/src/app/projects/page.tsx`
 - Future project shell: `tgtd-Frontend/src/app/projects/[projectId]/layout.tsx`
 
@@ -46,7 +47,7 @@ Next.js App Router with server components for route-level auth/data loading and 
 
 ## PRIMARY USER FLOWS
 
-1. Visit landing page, sign in or sign up, then enter `/projects`.
+1. Visit landing page, sign in or sign up, then enter `/app` during Phase 2.
 2. Create a first project through onboarding or create additional projects from Home.
 3. Open a project dashboard, add activities directly or through Quick Add.
 4. Open project Lists, Chat, History, or Settings.
@@ -75,7 +76,7 @@ Browser clients call Next API routes for chat, planner, confirmation, enrichment
 
 ## AUTHENTICATION
 
-Supabase Auth uses SSR cookies. `tgtd-Frontend/src/server/supabase/middleware.ts` refreshes sessions and redirects unauthenticated users from protected paths. Future frontend server pages call `getUser()`. RLS policies enforce project membership and owner/admin access. `tgtd-Backend/src/platform/supabase/admin.ts` is server-only and bypasses RLS for explicit administrative needs.
+Supabase Auth uses email/password SSR cookies. `tgtd-Frontend/src/server/supabase/middleware.ts` refreshes sessions and redirects unauthenticated users from protected paths. `/app` calls `getUser()` server-side. RLS policies enforce project membership and owner/admin access. `tgtd-Backend/src/platform/supabase/admin.ts` is server-only and bypasses RLS for explicit administrative needs. Local demo seeding uses `tgtd-Backend/scripts/seed-demo.mjs`.
 
 ## IMPORTANT DEPENDENCIES
 
@@ -97,7 +98,7 @@ npm test
 npm run build:webpack
 ```
 
-Phase 1.5 verified root install, workspace resolution, delegated lint/typecheck/unit tests, Webpack build, and workspace dev smoke. `npm run build` remains the default Turbopack path and is environment-limited in the Codex sandbox; use `npm run build:webpack` for reproducible verification. Environment names live in `tgtd-Frontend/.env.example`; no root env template is needed. Docker is deferred.
+Phase 2 verified root install, workspace resolution, delegated lint/typecheck/unit tests, backend seed-guard tests, Webpack build, and login/signup/protected-shell HTTP smoke. Run `npm run seed:demo` only with local Supabase and `ENABLE_LOCAL_DEMO_ACCOUNT=true`. `npm run build` remains the default Turbopack path and is environment-limited in the Codex sandbox; use `npm run build:webpack` for reproducible verification. Frontend environment names live in `tgtd-Frontend/.env.example`; backend admin/seed names live in `tgtd-Backend/.env.example`. Docker is deferred.
 
 ## IMPORTANT ARCHITECTURAL CONSTRAINTS
 
@@ -110,13 +111,15 @@ Phase 1.5 verified root install, workspace resolution, delegated lint/typecheck/
 - Keep compatibility with legacy TODO/TOGO values until database migration proves safe removal.
 - No generic root application `src/` or `tests/`; every runtime module has a workspace owner.
 - Never import another workspace's internal source path; use public exports or HTTP/API contracts.
+- Demo auth is real Supabase auth. `demo` aliasing and seed execution are development-only; there is no credential bypass.
 
 ## KNOWN PROBLEM AREAS
 
 - Large UI modules and planner/persistence modules mix presentation, domain decisions, and data access.
 - Direct Supabase queries appear in client components.
 - Planned agent/RAG workspaces have no active implementation yet.
-- Lint fails on current React effect patterns and smaller hygiene issues.
+- Live demo account verification requires local Supabase services and remains pending when unavailable.
+- Legacy lint still fails on current React effect patterns and smaller hygiene issues; Phase 2 target lint passes.
 - Naming mixes project/workspace and activity/TODO/TOGO concepts.
 - Legacy and experimental Python/RAG surfaces are not clearly owned by the Next app.
 

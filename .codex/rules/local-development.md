@@ -10,12 +10,13 @@ Next 16 generated repository-level `AGENTS.md`/`CLAUDE.md` during the temporary 
 
 | Operation | Command | Status in audit |
 | --- | --- | --- |
-| Install | `npm install --ignore-scripts` | PASS; root workspace resolution completed. |
-| Dev | `npm run dev -- --hostname 127.0.0.1` | PASS; root delegated to `tgtd-Frontend`, `/` returned HTTP 200. |
+| Install | `npm install` | PASS; root workspace resolution completed. |
+| Dev | `NEXT_PUBLIC_ENABLE_LOCAL_DEMO_ACCOUNT=true npm run dev -- --hostname 127.0.0.1` | PASS; `/login` and `/signup` returned HTTP 200, `/app` redirected to `/login?error=configuration` without Supabase credentials; server stopped. |
 | Build | `npm run build:webpack` | PASS; root delegated Webpack production build. |
 | Typecheck | `npm run typecheck` | PASS; frontend and backend workspace checks. |
 | Lint | `npm run lint` | PASS; frontend workspace. |
-| Unit test | `npm test -- --reporter=dot` | PASS; frontend 1 file and 2 tests. |
+| Unit test | `npm test -- --reporter=dot` plus `npm --workspace tgtd-Backend run test` | PASS; frontend 2 files/5 tests and backend demo-seed guard checks. |
+| Demo seed guard | `NODE_ENV=production ENABLE_LOCAL_DEMO_ACCOUNT=true npm run seed:demo` | PASS; refuses with `Demo seed is disabled in production`. |
 | E2E | `npm run test:e2e` | Not run; no feature flows exist yet. |
 | Start | `npm start` | Not run; Webpack production build passed. |
 
@@ -38,6 +39,6 @@ Use `.env.example` as a variable-name template. Never copy secret values into `.
 
 ## Target verification gate
 
-Phase 1.5 target passes root install, workspace resolution, delegated lint, typecheck, unit tests, Webpack build, and a dev landing-page smoke check. Each later phase reruns focused workspace tests plus the full suite before handoff.
+Phase 2 target passes root install, workspace resolution, delegated lint, typecheck, frontend tests, backend seed-policy tests, Webpack build, login/signup HTTP smoke, and protected-shell redirect smoke. Live demo account creation/login/logout requires local Supabase services and remains unverified when unavailable. Each later phase reruns focused workspace tests plus the full suite before handoff.
 
-Root `package.json` is coordination-only. Frontend configs live under `tgtd-Frontend`; backend currently exposes only a typecheck script for its admin adapter. Do not add empty workspace scripts.
+Root `package.json` is coordination-only. Frontend configs live under `tgtd-Frontend`; backend owns the server-only Supabase dependency, demo seed command, and seed-policy test. Do not add empty workspace scripts.

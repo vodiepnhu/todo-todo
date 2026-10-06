@@ -37,6 +37,19 @@ tgtd-Backend/src/platform/supabase/admin.ts
   -> Supabase service-role client
 ```
 
+## Phase 2 auth flow
+
+```text
+tgtd-Frontend/src/app/(auth)/login
+  -> features/auth/components/login-form.tsx
+  -> browser Supabase client
+  -> email/password session
+  -> tgtd-Frontend/src/app/app/page.tsx
+  -> LogoutButton -> signOut -> /login
+```
+
+`tgtd-Backend/scripts/seed-demo.mjs` uses the admin client to create or update `demo@local.test`, upsert its profile display name, and refuses production execution. It is not imported by frontend code.
+
 ## Future dependency graph
 
 ```text

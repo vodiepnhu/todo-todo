@@ -14,6 +14,26 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - VERIFICATION: root install, workspace resolution, lint, typecheck, tests, Webpack build, dev smoke.
 - STATUS: DONE.
 
+### P2-001 - Establish frontend shared UI and auth slice
+
+- TASK: Move required UI primitives, implement real Supabase login/signup/callback/logout, and add protected `/app` shell.
+- REASON: Establish the smallest complete user-entry flow before backend/domain migration.
+- DEPENDENCIES: W-001, R-005.
+- FILES: `tgtd-Frontend/src/shared/ui/*`, `tgtd-Frontend/src/features/auth/*`, `tgtd-Frontend/src/app/(auth)/*`, `tgtd-Frontend/src/app/auth/callback/route.ts`, `tgtd-Frontend/src/app/app/page.tsx`.
+- RISK: High; session cookies and redirect behavior.
+- VERIFICATION: frontend tests, lint/typecheck, Webpack build, HTTP route smoke; live auth pending local Supabase.
+- STATUS: DONE.
+
+### P2-002 - Add guarded idempotent local demo seed
+
+- TASK: Create `demo@local.test` / `123456` through Supabase Admin API with profile metadata and no production execution path.
+- REASON: Provide repeatable local auth testing without a frontend bypass.
+- DEPENDENCIES: `tgtd-Backend` admin adapter and local Supabase schema.
+- FILES: `tgtd-Backend/scripts/seed-demo.mjs`, `tgtd-Backend/scripts/seed-demo-policy.mjs`, `tgtd-Backend/.env.example`.
+- RISK: Critical; service-role secret and accidental production use.
+- VERIFICATION: production guard test; live idempotency pending local Supabase.
+- STATUS: DONE.
+
 ## READY
 
 ### R-001 - Create target runtime foundation
@@ -34,7 +54,7 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - FILES: `src/components/ui/*` -> `tgtd-Frontend/src/shared/ui/*`.
 - RISK: Low.
 - VERIFICATION: component tests and target build.
-- STATUS: TODO.
+- STATUS: DONE.
 
 ### R-003 - Establish auth feature boundary
 
@@ -44,7 +64,7 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - FILES: legacy auth routes/components -> `tgtd-Frontend`; lib auth modules -> `tgtd-Backend/src/modules/auth/*`.
 - RISK: High.
 - VERIFICATION: password/account tests and local auth smoke.
-- STATUS: TODO.
+- STATUS: DONE.
 
 ## TODO
 

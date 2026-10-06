@@ -1,5 +1,4 @@
 import { createServerClient } from "@supabase/ssr";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getSupabaseAnonKey,
@@ -43,20 +42,9 @@ export async function updateSession(request: NextRequest) {
 
   if (user && (path === "/login" || path === "/signup")) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/projects";
+    redirectUrl.pathname = "/app";
     return NextResponse.redirect(redirectUrl);
   }
 
   return response;
-}
-
-export function createServiceClient() {
-  const url = getSupabaseServerUrl();
-  const key = process.env.SUPABASE_SECRET_KEY;
-  if (!url || !key) {
-    throw new Error("Service role env vars are not configured");
-  }
-  return createSupabaseClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
 }

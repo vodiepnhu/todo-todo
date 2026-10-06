@@ -5,7 +5,7 @@
 | `next@16.3.6` | App Router, route handlers, middleware, redirects | Yes | High | Copy current config selectively; do not upgrade during structure migration. |
 | `react@19.2.8`, `react-dom@19.2.8` | Client/server components and hooks | Yes | High | Preserve client boundaries and current behavior before lint cleanup. |
 | `@supabase/ssr` | Browser/server cookie-aware clients | Yes | Critical | Keep one explicit server/client adapter boundary. |
-| `@supabase/supabase-js` | Auth, table queries, RPC, realtime | Yes | Critical | Preserve RLS, RPC signatures, and membership checks. |
+| `@supabase/supabase-js` | Backend admin client and future server-side table/RPC access | Yes | Critical | Keep service-role access in `tgtd-Backend`; frontend uses `@supabase/ssr` only. Preserve RLS, RPC signatures, and membership checks. |
 | `zod@4.6.5` | Planner schemas, API validation, env validation | Yes | Medium | Keep schemas as feature contracts; avoid duplicate validators. |
 | `lucide-react` | UI icons | Yes | Low | Move with shared UI. |
 | `date-fns` | Relative/date formatting | Yes | Low | Keep only where behavior needs it. |
@@ -30,4 +30,4 @@ No dependency upgrade is justified by this audit. The duplicate Vite/React type 
 - Root `package.json` owns npm workspace coordination and delegation scripts only.
 - `tgtd-Agent`, `tgtd-AI-RAG`, and `tgtd-MCP` receive dependencies only when their implementations become active.
 
-No dependency version upgrade was introduced by Phase 1.5. Existing npm audit findings remain technical debt.
+No dependency version upgrade was introduced by Phase 2. Existing npm audit findings remain technical debt. Live demo seed/login/logout verification remains pending local Supabase availability.

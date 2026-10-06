@@ -35,19 +35,23 @@ Legacy remains read-only. Each phase leaves active workspaces locally runnable. 
 - Verification: root install, workspace resolution, delegated lint/typecheck/tests, Webpack build, and workspace dev smoke.
 - Recovery: revert the Phase 1.5 commit; retain Phase 1 baseline commit.
 
-## Phase 2: Frontend shared and auth foundation
+## Phase 2: Frontend shared, auth, and local demo account — DONE
 
-- Objective: migrate low-risk frontend primitives and auth route behavior.
+- Objective: migrate low-risk frontend primitives, real Supabase auth routes, protected shell, logout, and guarded local demo seeding.
 - Legacy -> target:
-  - `src/components/ui/*` -> `tgtd-Frontend/src/shared/ui/*`
-  - `src/components/auth/*` -> `tgtd-Frontend/src/features/auth/components/*`
-  - `src/app/(auth)/*` -> `tgtd-Frontend/src/app/(auth)/*` plus feature components
-  - `src/app/auth/callback/route.ts` -> `tgtd-Frontend/src/app/auth/callback/route.ts` plus auth adapter
-  - `src/lib/auth/*` -> `tgtd-Backend/src/modules/auth/*`
+  - `src/components/ui/{button,input,card}.tsx` -> `tgtd-Frontend/src/shared/ui/*`
+  - `src/lib/utils.ts` -> `tgtd-Frontend/src/shared/ui/cn.ts`
+  - `src/components/auth/password-requirements.tsx` -> `tgtd-Frontend/src/features/auth/components/password-requirements.tsx`
+  - `src/lib/auth/password-policy.ts` -> `tgtd-Frontend/src/features/auth/domain/password-policy.ts`
+  - `src/app/(auth)/login/*` -> `tgtd-Frontend/src/app/(auth)/login/*` plus `features/auth/components/login-form.tsx`
+  - `src/app/(auth)/signup/*` -> `tgtd-Frontend/src/app/(auth)/signup/*` plus `features/auth/components/signup-form.tsx`
+  - `src/app/auth/callback/route.ts` -> `tgtd-Frontend/src/app/auth/callback/route.ts`
+  - `scripts/seed-demo.sh` -> `tgtd-Backend/scripts/seed-demo.mjs` with Docker paths removed and production guard added
 - Dependencies: Phase 1.5 frontend adapters; explicit backend auth contract.
 - Risk: high; redirects, cookies, password policy, and OAuth callback.
-- Verify: focused auth tests, frontend lint/typecheck/test/build, backend typecheck, manual auth smoke when Supabase exists.
+- Verify: auth domain tests, seed guard test, root lint/typecheck/tests, frontend Webpack build, login/signup HTTP smoke, protected redirect smoke, and live auth when Supabase exists.
 - Rollback: keep route adapters and old-compatible contracts until checks pass.
+- Result: code checks and route smoke pass. Live demo seed/login/logout remain unverified because local Supabase services are unavailable.
 
 ## Phase 3: Backend domain and persistence boundary
 

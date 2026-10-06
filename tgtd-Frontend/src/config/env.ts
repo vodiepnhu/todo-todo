@@ -6,7 +6,6 @@ const envSchema = z.object({
   SUPABASE_INTERNAL_URL: z.string().optional(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
-  SUPABASE_SECRET_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_MODEL: z.string().default("google/gemma-4-31b-it:free"),
   OPENROUTER_FALLBACK_MODEL: z
@@ -15,8 +14,7 @@ const envSchema = z.object({
   GOOGLE_MAPS_SERVER_API_KEY: z.string().optional(),
   NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY: z.string().optional(),
   NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: z.coerce.boolean().default(false),
-  NEXT_PUBLIC_DEMO_EMAIL: z.string().optional(),
-  NEXT_PUBLIC_DEMO_PASSWORD: z.string().optional(),
+  NEXT_PUBLIC_ENABLE_LOCAL_DEMO_ACCOUNT: z.coerce.boolean().default(false),
   DEFAULT_TIMEZONE: z.string().default("Australia/Sydney"),
   CONFIRMATION_TTL_MINUTES: z.coerce.number().default(30),
   EMBEDDING_API_KEY: z.string().optional(),
