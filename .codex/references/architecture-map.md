@@ -1,104 +1,83 @@
 # Architecture Map
 
-## Current dependency map
+## Repository boundary
 
 ```text
-Browser
-  -> App Router page/layout
-      -> client component
-          -> direct Supabase browser query (several modules)
-          -> Next API route
-
-API route
-  -> Supabase SSR auth and membership check
-  -> service / agent / lib
-      -> Supabase table or RPC
-      -> OpenRouter / mock AI
-      -> Google Maps / degraded lookup
-      -> pgvector / keyword retrieval
+Repository root
+  -> npm workspace coordination, Git, .codex, shared agent guidance
+  -> tgtd-Frontend (active Next APP)
+  -> tgtd-Backend (active server-only PACKAGE, currently admin adapter)
+  -> tgtd-Agent (planned PACKAGE)
+  -> tgtd-AI-RAG (planned PACKAGE)
+  -> tgtd-MCP (planned integration PACKAGE/SERVICE)
+  -> Chatbot-Frontend (MERGE_CANDIDATE)
+  -> tgtd-Desktop / tgtd-Mobile (planned APPs)
+  -> tgtd-Infra (deferred infrastructure)
 ```
 
-## Current planner request
+Root has no application `src/` or `tests/`. Every runtime file belongs to a workspace.
+
+## Current Phase 1.5 flow
 
 ```text
-Project chat or Home chat
-  -> /api/ai/planner or /api/ai/home
-      -> auth + membership
-      -> save user message
-      -> recent chat context + member projects
-      -> ingest agent
-      -> policy agent
-          -> refuse -> communication reply
-          -> allow
-      -> RAG route for list/recommend/help intents
-      -> mutation route
-          -> project scope resolution
-          -> places agent
-          -> guardrail validation
-          -> pending_actions insert
-      -> communication reply
-      -> agent trace + usage + AI message insert
+tgtd-Frontend/src/app/page.tsx
+  -> tgtd-Frontend/src/shared/navigation/paths.ts
+
+tgtd-Frontend/src/middleware.ts
+  -> tgtd-Frontend/src/server/supabase/middleware.ts
+      -> tgtd-Frontend/src/server/supabase/config.ts
+      -> Supabase SSR and Next request/cookie runtime
+
+tgtd-Frontend/src/server/supabase/{client,server}.ts
+  -> tgtd-Frontend/src/server/supabase/config.ts
+  -> Supabase SSR
+
+tgtd-Backend/src/platform/supabase/admin.ts
+  -> tgtd-Backend/src/platform/supabase/config.ts
+  -> Supabase service-role client
 ```
 
-## Current confirmation request
+## Future dependency graph
 
 ```text
-ConfirmProvider / client
-  -> /api/confirm
-      -> confirmation-service
-          -> pending action state/TTL/version checks
-          -> workspace or project creation
-          -> item / event / plan child writes
-          -> place association
-          -> embedding update/delete
-          -> audit log and workspace message
-          -> pending action terminal state
+tgtd-Frontend APP
+  -> public HTTP/API contracts
+  -> tgtd-Backend package or backend API boundary
+
+tgtd-Backend package
+  -> explicit domain/contracts
+  -> tgtd-Agent package when planner use cases require it
+  -> tgtd-AI-RAG package when retrieval/embedding contracts require it
+
+tgtd-Agent package
+  -> explicit agent contracts
+  -> tgtd-AI-RAG public retrieval/embedding contracts
+
+tgtd-AI-RAG package
+  -> provider clients and standard libraries
+
+No workspace may import another workspace's internal `src` path.
 ```
 
-## Proposed dependency map
+## Feature ownership after foundation
 
-```text
-src/app route adapter
-  -> feature page composition
-      -> feature component
-          -> feature hook / query client
-              -> feature server use case
-                  -> feature repository / external adapter
-                      -> Supabase, AI provider, Maps, LangSmith
+- `tgtd-Frontend`: route adapters, pages, React components, feature hooks, browser state, navigation, Next adapters.
+- `tgtd-Backend`: authorization, repositories, persistence, domain use cases, server contracts, service-role access.
+- `tgtd-Agent`: ingest, policy, mutation, guardrail, communication, places, orchestration.
+- `tgtd-AI-RAG`: retrieval, embeddings, ranking, ingestion, provider abstractions.
+- `tgtd-MCP`: actual MCP servers and tools only.
 
-src/shared/ui and src/shared/navigation
-  -> imported by features only
+## Coupling to remove gradually
 
-src/server/supabase and src/config
-  -> server use cases and route adapters
-  -> never imported by browser-only modules when server-only
-```
+1. Legacy confirmation execution crosses workspace, plan, embedding, guardrail, audit, and chat writes.
+2. Legacy orchestration mixes agent routing, persistence, provider calls, and response formatting.
+3. Legacy `lib/ai` and RAG code cross agent and service boundaries.
+4. Legacy UI combines rendering, direct Supabase reads, realtime, mutations, and refresh events.
 
-## Proposed feature ownership
+## Boundary rules
 
-- `auth`: login, signup, callback, password policy, account identity.
-- `home`: project tree, folders, project cards, Home-specific creation and sharing presentation.
-- `workspaces`: membership gates, project settings, invites, shell navigation, project metadata.
-- `activities`: activity rows, plan details, list filters, events/history, confirmation UI and action execution.
-- `chat`: project/Home message transport, history, recent context, realtime message behavior.
-- `planner`: structured ingest, policy, mutation draft, places, RAG/recommendation, AI providers, orchestration, usage.
-- `account`: account shell, LLM settings, AgentOps views; data access delegates to feature server modules.
-- `agentops`: trace persistence, stats, formatting, privacy flags.
-
-## Unusual coupling to remove gradually
-
-1. `confirmation-service.ts` imports guardrail code from `agents`, plan persistence, workspace creation, RAG embedding, and Supabase writes.
-2. `orchestrator.ts` imports recommendation logic from `services` and runtime environment directly.
-3. `lib/ai/*` imports `services/llm-settings-service` and planner agents, so `lib` is not pure infrastructure.
-4. `rag-service.ts` imports the `RagHit` type from `agents/rag-agent`, creating a service-to-agent type dependency.
-5. UI clients combine rendering, browser queries, mutation calls, realtime subscriptions, and cache refresh events.
-6. The same planner setup is assembled in project and Home API routes.
-
-## Boundary rules for migration
-
-- Route files authenticate and translate HTTP only.
-- Feature server use cases own authorization-sensitive workflows.
-- Repositories/adapters own Supabase and external API calls.
-- Domain functions remain pure and do not import React, Next, or Supabase.
-- Browser components use feature hooks or route APIs; no direct table names in UI.
-- Shared code must have two real consumers and no feature-specific assumptions.
+- Framework adapters stay with `tgtd-Frontend` when they depend on Next runtime APIs.
+- Pure server/database adapters stay with `tgtd-Backend`.
+- Agent behavior stays with `tgtd-Agent`; reusable retrieval stays with `tgtd-AI-RAG`.
+- Shared contracts are created only after at least two real workspace consumers exist.
+- Future extraction uses strangler migration: contract, implementation, caller update, verification, compatibility removal.

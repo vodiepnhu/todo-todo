@@ -16,3 +16,8 @@
 - Use absolute `@/` imports. Use feature paths instead of long relative traversals.
 - One module has one clear responsibility. Split large files by behavior after tests pin current behavior.
 - Preserve current URLs, response shapes, auth checks, RLS assumptions, mock fallbacks, and confirmation semantics during migration.
+- Root is repository coordination only. Do not create a generic root application `src/`, `tests/`, `components/`, `services/`, `agents/`, or `lib/`.
+- Every runtime module must have an owning workspace. Before creating one, identify whether it is framework, domain, agent, AI/RAG, MCP, desktop, mobile, or infrastructure code.
+- Framework code that depends on Next runtime APIs stays in `tgtd-Frontend`; pure persistence and administrative database code belongs in `tgtd-Backend`.
+- `tgtd-Agent` owns orchestration; `tgtd-AI-RAG` owns reusable retrieval and embeddings. Do not force network boundaries without runtime evidence.
+- Never import another workspace's internal source path. Use public package exports, explicit contracts, or HTTP/API boundaries.

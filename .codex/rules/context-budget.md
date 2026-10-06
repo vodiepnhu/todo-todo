@@ -23,3 +23,12 @@ Ignore generated/dependency directories by default: `node_modules`, `.next`, `di
 Persist stable conclusions, API contracts, mappings, verified commands, and migration decisions in `.codex/references`. Never persist private chain-of-thought or raw repository dumps.
 
 Large files require focused slices. Start with exports/imports and tests, then read the smallest implementation region that answers the question.
+
+For workspace work, resolve ownership before expanding context:
+
+1. Read root coordination and `.codex` memory.
+2. Read the owning workspace manifest, public exports, configs, and direct consumers.
+3. Read another workspace only when an explicit contract or dependency requires it.
+4. Expand into legacy source only for the mapped module and its direct dependency graph.
+
+Never scan every workspace because the repository is a monorepo. Empty or planned workspaces stay out of context until activated.

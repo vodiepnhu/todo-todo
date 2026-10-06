@@ -7,7 +7,7 @@ Audit date: 2026-10-06
 - TARGET_PROJECT_ROOT: `/Users/nhuvo/togo-todo`
 - LEGACY_PROJECT_ROOT: `/Users/nhuvo/Library/CloudStorage/OneDrive-UTS(2)/My_PhD/001_Coding/08_Personal/togo_todo_yn`
 - Legacy was inspected read-only. No legacy files were edited, formatted, deleted, or installed into.
-- Target contains the Phase 1 runtime foundation and `.codex` project memory. It is not a Git repository.
+- Target contains the Phase 1.5 workspace foundation, `.codex` project memory, and Git history. Root is coordination-only; `tgtd-Frontend` owns the Next app.
 - Docker and deployment work are deferred.
 
 ## Product understanding
@@ -62,7 +62,7 @@ Legacy status remained clean after checks. Later migration reports must separate
 ### CRITICAL
 
 - Phase 1 target runtime now exists; feature migration remains intentionally incomplete.
-- Root TypeScript scope includes the separate `rag-demo`, so one command does not represent the main application type boundary.
+- Planned agent/RAG workspaces are not active yet; root TypeScript does not include legacy demos or sidecars.
 - Pending action execution crosses confirmation, workspace, plan persistence, embeddings, places, audit logs, and chat writes in one `confirmation-service.ts` module. This is the highest data-loss and authorization risk during migration.
 
 ### HIGH
@@ -115,7 +115,7 @@ The estimate favors preserving working behavior. `REWRITE` is intentionally zero
 
 ## Open questions
 
-- Should the target root become the Next application, or should `tgtd-Frontend` become the runtime package while the root remains a multi-workstream workspace? Current plan assumes target root will eventually host the application because the request defines `$PWD` as the target root; existing child directories remain untouched.
+- `tgtd-Frontend` is the active Next application workspace. Root remains npm/Git/Codex coordination.
 - Should the separate `rag-demo` and Python sidecars become supported products, archived references, or independent repositories? This affects only later scope, not the first app migration.
 - Which Supabase migration history is authoritative for a fresh target environment? Preserve the current schema contract first; decide migration packaging before foundation implementation.
 
@@ -138,3 +138,12 @@ Create a minimal local Next foundation in the target and copy only the required 
 - Target Webpack build: `npm run build:webpack` passed; default `npm run build` uses Turbopack and is environment-limited by worker `Operation not permitted` in the Codex sandbox.
 - Target dev smoke: `npm run dev -- --hostname 127.0.0.1` served `/` with HTTP 200 and expected landing content.
 - Known warning: Next 16 reports the deprecated `middleware` convention; migration to `proxy` is deferred with auth behavior unchanged.
+
+## Phase 1.5 completion
+
+- Status: DONE.
+- Root package is a private npm workspace coordinator for `tgtd-Frontend` and minimal `tgtd-Backend`.
+- Root `src/` and `tests/` were removed after verified moves.
+- Frontend foundation moved under `tgtd-Frontend`; service-role Supabase adapter moved under `tgtd-Backend`.
+- Root install, workspace resolution, delegated lint/typecheck/unit tests, Webpack build, and workspace dev smoke passed.
+- Architecture commit: this Phase 1.5 close-out commit; Phase 1 baseline remains rollback point `8e6153a`.

@@ -2,20 +2,20 @@
 
 ## Current source of truth
 
-Target and legacy package manager: `npm` (`package-lock.json`). Target Phase 1 foundation is locally runnable.
+Target and legacy package manager: `npm` (`package-lock.json`). Root coordinates active workspaces `tgtd-Frontend` and `tgtd-Backend`.
 
-Next 16 generated `AGENTS.md` and `CLAUDE.md` during `next dev`. `AGENTS.md` contains Next-specific guidance and `CLAUDE.md` references it. Retain both because Next regenerates them; `.codex/rules/`, `.codex/plans/`, and `.codex/references/` remain the primary project migration knowledge and do not conflict with these files.
+Next 16 generated repository-level `AGENTS.md`/`CLAUDE.md` during the temporary root app and workspace-level `tgtd-Frontend/AGENTS.md`/`tgtd-Frontend/CLAUDE.md` after relocation. They contain Next-specific guidance and regenerate during `next dev`; retain both levels. `.codex/rules/`, `.codex/plans/`, and `.codex/references/` remain the primary project migration knowledge and do not conflict with them.
 
 ## Verified target scripts
 
 | Operation | Command | Status in audit |
 | --- | --- | --- |
-| Install | `npm install --ignore-scripts` | PASS; target dependencies installed. |
-| Dev | `npm run dev -- --hostname 127.0.0.1` | PASS; `/` returned HTTP 200. |
-| Build | `npm run build:webpack` | PASS; verified Webpack production build. |
-| Typecheck | `npm run typecheck` | PASS; target-only project scope. |
-| Lint | `npm run lint` | PASS. |
-| Unit test | `npm test -- --reporter=dot` | PASS; 1 file and 2 tests. |
+| Install | `npm install --ignore-scripts` | PASS; root workspace resolution completed. |
+| Dev | `npm run dev -- --hostname 127.0.0.1` | PASS; root delegated to `tgtd-Frontend`, `/` returned HTTP 200. |
+| Build | `npm run build:webpack` | PASS; root delegated Webpack production build. |
+| Typecheck | `npm run typecheck` | PASS; frontend and backend workspace checks. |
+| Lint | `npm run lint` | PASS; frontend workspace. |
+| Unit test | `npm test -- --reporter=dot` | PASS; frontend 1 file and 2 tests. |
 | E2E | `npm run test:e2e` | Not run; no feature flows exist yet. |
 | Start | `npm start` | Not run; Webpack production build passed. |
 
@@ -38,4 +38,6 @@ Use `.env.example` as a variable-name template. Never copy secret values into `.
 
 ## Target verification gate
 
-Phase 1 target passes install, lint, typecheck, Webpack build, and a dev landing-page smoke check. Each later phase reruns focused tests plus the full suite before handoff.
+Phase 1.5 target passes root install, workspace resolution, delegated lint, typecheck, unit tests, Webpack build, and a dev landing-page smoke check. Each later phase reruns focused workspace tests plus the full suite before handoff.
+
+Root `package.json` is coordination-only. Frontend configs live under `tgtd-Frontend`; backend currently exposes only a typecheck script for its admin adapter. Do not add empty workspace scripts.

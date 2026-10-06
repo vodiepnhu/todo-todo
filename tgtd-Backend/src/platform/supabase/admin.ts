@@ -1,5 +1,5 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { getSupabaseServerUrl } from "@/server/supabase/config";
+import { getSupabaseServerUrl } from "./config";
 
 /** Server-only service-role client. Never import from browser modules. */
 export function createAdminClient() {

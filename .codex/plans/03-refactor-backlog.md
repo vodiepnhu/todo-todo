@@ -2,6 +2,18 @@
 
 Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 
+## DONE
+
+### W-001 - Correct workspace ownership after foundation
+
+- TASK: Move verified Next foundation into `tgtd-Frontend`, move pure admin Supabase access into `tgtd-Backend`, and convert root package to npm workspace coordination.
+- REASON: Root is repository coordination; runtime ownership must be explicit before feature migration.
+- DEPENDENCIES: Phase 1 foundation baseline `8e6153a`.
+- FILES: Root foundation configs/source/tests, `tgtd-Frontend/*`, `tgtd-Backend/*`, root `package.json`, `package-lock.json`.
+- RISK: Medium; path resolution and workspace delegation.
+- VERIFICATION: root install, workspace resolution, lint, typecheck, tests, Webpack build, dev smoke.
+- STATUS: DONE.
+
 ## READY
 
 ### R-001 - Create target runtime foundation
@@ -9,7 +21,7 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - TASK: Copy selective npm/Next configuration and create minimal target app shell.
 - REASON: Target needed a runnable application foundation.
 - DEPENDENCIES: Audit and architecture approval.
-- FILES: `package.json`, `package-lock.json`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `postcss.config.mjs`, `src/app/*`, `src/config/*`, `src/server/supabase/*`.
+- FILES: `tgtd-Frontend/package.json`, `tgtd-Frontend/tsconfig.json`, `tgtd-Frontend/next.config.ts`, `tgtd-Frontend/src/app/*`, `tgtd-Frontend/src/config/*`, `tgtd-Frontend/src/server/supabase/*`, `tgtd-Backend/src/platform/supabase/*`.
 - RISK: High; config and auth cookie boundaries.
 - VERIFICATION: target install, lint, typecheck, build, dev smoke.
 - STATUS: DONE.
@@ -19,7 +31,7 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - TASK: Move Button/Card/Input/planner wait primitives under `src/shared/ui`.
 - REASON: Low-risk reuse and stable import boundary.
 - DEPENDENCIES: R-001.
-- FILES: `src/components/ui/*` -> `src/shared/ui/*`.
+- FILES: `src/components/ui/*` -> `tgtd-Frontend/src/shared/ui/*`.
 - RISK: Low.
 - VERIFICATION: component tests and target build.
 - STATUS: TODO.
@@ -29,7 +41,7 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - TASK: Move login/signup/callback behavior behind `features/auth`.
 - REASON: Auth is a clear boundary and protects later feature work.
 - DEPENDENCIES: R-001, R-002.
-- FILES: legacy auth routes/components/lib auth modules.
+- FILES: legacy auth routes/components -> `tgtd-Frontend`; lib auth modules -> `tgtd-Backend/src/modules/auth/*`.
 - RISK: High.
 - VERIFICATION: password/account tests and local auth smoke.
 - STATUS: TODO.
@@ -41,7 +53,7 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - TASK: Ensure target typecheck includes app source and intended tests only; keep `rag-demo` outside the target app boundary.
 - REASON: Legacy root typecheck fails on unrelated nested Vite dependencies.
 - DEPENDENCIES: R-001.
-- FILES: `tsconfig.json`, optional separate demo config later.
+- FILES: `tgtd-Frontend/tsconfig.json`, optional separate demo config later.
 - RISK: Medium; avoid hiding application files.
 - VERIFICATION: target typecheck and explicit file inventory.
 - STATUS: DONE.
@@ -51,7 +63,7 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - TASK: Move browser/server/admin clients and env config into explicit server/config ownership.
 - REASON: Prevent server-only imports and scattered env logic.
 - DEPENDENCIES: R-001, R-003.
-- FILES: `src/lib/supabase/*`, `src/lib/env.ts`.
+- FILES: framework adapters in `tgtd-Frontend/src/server/supabase/*`; pure admin adapter in `tgtd-Backend/src/platform/supabase/*`.
 - RISK: Critical.
 - VERIFICATION: auth, middleware, route, and build checks.
 - STATUS: DONE.

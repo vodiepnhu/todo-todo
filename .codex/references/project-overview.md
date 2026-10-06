@@ -16,7 +16,7 @@ Shared Planner helps couples and families plan activities across private or shar
 
 ## PACKAGE MANAGER
 
-`npm`, evidenced by `package-lock.json` and legacy scripts. Do not switch package managers during migration.
+`npm`, with root workspaces `tgtd-Frontend` and `tgtd-Backend`. Do not switch package managers during migration.
 
 ## FRAMEWORK
 
@@ -24,12 +24,12 @@ Next.js App Router with server components for route-level auth/data loading and 
 
 ## APPLICATION ENTRY POINT
 
-- Root route: `src/app/page.tsx`
-- Root layout: `src/app/layout.tsx`
-- Middleware: `src/middleware.ts`
-- Target Phase 1 shell currently exposes `/` only; feature routes remain unmigrated.
-- Canonical signed-in entry: `src/app/projects/page.tsx`
-- Project shell: `src/app/projects/[projectId]/layout.tsx`
+- Frontend root route: `tgtd-Frontend/src/app/page.tsx`
+- Frontend root layout: `tgtd-Frontend/src/app/layout.tsx`
+- Frontend middleware: `tgtd-Frontend/src/middleware.ts`
+- Target Phase 1.5 shell currently exposes `/` only; feature routes remain unmigrated.
+- Future canonical signed-in entry: `tgtd-Frontend/src/app/projects/page.tsx`
+- Future project shell: `tgtd-Frontend/src/app/projects/[projectId]/layout.tsx`
 
 ## PRIMARY FEATURES
 
@@ -75,7 +75,7 @@ Browser clients call Next API routes for chat, planner, confirmation, enrichment
 
 ## AUTHENTICATION
 
-Supabase Auth with SSR cookies. `src/lib/supabase/middleware.ts` refreshes sessions and redirects unauthenticated users from protected paths. Server pages call `getUser()`. RLS policies enforce project membership and owner/admin access. `src/lib/supabase/admin.ts` is server-only and bypasses RLS for explicit administrative needs.
+Supabase Auth uses SSR cookies. `tgtd-Frontend/src/server/supabase/middleware.ts` refreshes sessions and redirects unauthenticated users from protected paths. Future frontend server pages call `getUser()`. RLS policies enforce project membership and owner/admin access. `tgtd-Backend/src/platform/supabase/admin.ts` is server-only and bypasses RLS for explicit administrative needs.
 
 ## IMPORTANT DEPENDENCIES
 
@@ -84,7 +84,7 @@ Retain current versions during migration unless a failing verification requires 
 
 ## LOCAL DEVELOPMENT MODEL
 
-Local first. Target uses npm:
+Local first. Root coordinates active npm workspaces:
 
 ```bash
 npx supabase start
@@ -97,7 +97,7 @@ npm test
 npm run build:webpack
 ```
 
-Target Phase 1 verified install, lint, typecheck, unit tests, Webpack build, and dev smoke. `npm run build` remains the default Turbopack path and is environment-limited in the Codex sandbox; use `npm run build:webpack` for reproducible verification. Legacy documentation also expects Supabase CLI plus `npx supabase start` and `npx supabase migration up`; those commands remain unverified in the target. Docker is deferred.
+Phase 1.5 verified root install, workspace resolution, delegated lint/typecheck/unit tests, Webpack build, and workspace dev smoke. `npm run build` remains the default Turbopack path and is environment-limited in the Codex sandbox; use `npm run build:webpack` for reproducible verification. Environment names live in `tgtd-Frontend/.env.example`; no root env template is needed. Docker is deferred.
 
 ## IMPORTANT ARCHITECTURAL CONSTRAINTS
 
@@ -108,12 +108,14 @@ Target Phase 1 verified install, lint, typecheck, unit tests, Webpack build, and
 - Keep route handlers thin and move feature use cases behind feature ownership.
 - Do not expose secrets in source, docs, or `.codex`.
 - Keep compatibility with legacy TODO/TOGO values until database migration proves safe removal.
+- No generic root application `src/` or `tests/`; every runtime module has a workspace owner.
+- Never import another workspace's internal source path; use public exports or HTTP/API contracts.
 
 ## KNOWN PROBLEM AREAS
 
 - Large UI modules and planner/persistence modules mix presentation, domain decisions, and data access.
 - Direct Supabase queries appear in client components.
-- Root TypeScript scope includes an unrelated RAG demo with conflicting dependencies.
+- Planned agent/RAG workspaces have no active implementation yet.
 - Lint fails on current React effect patterns and smaller hygiene issues.
 - Naming mixes project/workspace and activity/TODO/TOGO concepts.
 - Legacy and experimental Python/RAG surfaces are not clearly owned by the Next app.

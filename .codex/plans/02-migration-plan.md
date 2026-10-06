@@ -1,154 +1,139 @@
-# Incremental Migration Plan
+# Workspace-Aware Migration Plan
 
-Migration keeps the legacy project read-only and keeps each target phase locally runnable after its foundation exists. No Docker work occurs before Phase 9.
+Legacy remains read-only. Each phase leaves active workspaces locally runnable. Docker and deployment remain last.
 
-## Phase 0: Understand and baseline
+## Phase 0: Understand and baseline — DONE
 
-- Objective: record behavior, source map, dependency map, and pre-existing failures.
-- Legacy files: `package.json`, `tsconfig.json`, `src/app/**`, `src/components/**`, `src/services/**`, `src/agents/**`, `src/lib/**`, `src/types/database.ts`, `tests/**`.
-- Target files: `.codex/references/*`, `.codex/plans/00-project-audit.md`, `.codex/plans/01-target-architecture.md`.
-- Dependencies: existing legacy `node_modules`; no install or write in legacy.
-- Risk: incomplete understanding or misclassified experimental code.
-- Expected behavior: no product behavior changes; audit captures routes, flows, contracts, and baseline.
-- Verification: `npm test -- --reporter=dot`, `npm run lint`, safe TypeScript check; compare legacy Git status before/after.
-- Rollback/recovery: delete or revise target docs only; legacy remains untouched.
+- Objective: record behavior, baseline failures, dependencies, and ownership evidence.
+- Verification: legacy unit tests passed; legacy lint/typecheck failures recorded as pre-existing; no legacy build/install/write performed.
+- Recovery: target documentation only; legacy unchanged.
 
-## Phase 1: Target foundation
+## Phase 1: Temporary foundation — DONE
 
-- Objective: create a minimal target Next app with current package manager, root layout, theme, config, Supabase adapters, and one landing route.
-- Legacy -> target mappings:
-  - `package.json` -> `package.json`
-  - `package-lock.json` -> `package-lock.json`
-  - `tsconfig.json` -> `tsconfig.json` with target-only includes
-  - `next.config.ts` -> `next.config.ts`
-  - `eslint.config.mjs` -> `eslint.config.mjs`
-  - `postcss.config.mjs` -> `postcss.config.mjs`
-  - `src/app/layout.tsx` -> `src/app/layout.tsx`
-  - `src/app/globals.css` -> `src/app/globals.css`
-  - `src/app/page.tsx` -> `src/app/page.tsx`
-  - `src/lib/env.ts` -> `src/config/env.ts`
-  - `src/lib/supabase/{config,client,server,admin,middleware}.ts` -> `src/server/supabase/*`
-- Dependencies: npm and current dependency versions; no Docker files.
-- Risk: Next 16 config, auth cookie names, and environment boundaries.
-- Expected behavior: target landing page runs; configured Supabase client adapters fail clearly when env is absent.
-- Verification: target `npm install --ignore-scripts`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and local `npm run dev` landing smoke check.
-- Rollback/recovery: remove only newly created target runtime files; keep `.codex` audit and empty workstream placeholders.
-- Status: DONE. `npm run build:webpack` is the verified production path; default `npm run build` remains Turbopack and is environment-limited by worker creation returning `Operation not permitted` in the Codex sandbox.
+- Objective: create and verify a minimal Next foundation.
+- Temporary location: root application, later corrected by Phase 1.5.
+- Verification: install, lint, target typecheck, unit tests, Webpack build, and dev HTTP smoke passed.
+- Known environment limit: default Turbopack build cannot create/bind its worker in Codex sandbox; `build:webpack` passes.
 
-## Phase 2: Shared primitives and auth
+## Phase 1.5: Workspace architecture correction — DONE
 
-- Objective: move low-risk UI and auth without changing routes or behavior.
-- Legacy -> target mappings:
-  - `src/components/ui/{button,card,input,planner-wait-panel}.tsx` -> `src/shared/ui/*`
-  - `src/components/auth/password-requirements.tsx` -> `src/features/auth/components/PasswordRequirements.tsx`
-  - `src/app/(auth)/login/*` -> same route adapters plus `src/features/auth/components/*`
-  - `src/app/(auth)/signup/page.tsx` -> same route adapter plus auth feature component
-  - `src/app/auth/callback/route.ts` -> same route plus `src/features/auth/server/callback.ts`
-  - `src/lib/auth/{account,password-policy}.ts` -> `src/features/auth/{server,domain}/*`
-- Dependencies: Phase 1 runtime and Supabase adapters.
-- Risk: session redirects, form validation, and password behavior.
-- Expected behavior: login/signup/callback work with same redirect and validation semantics.
-- Verification: auth unit tests, target lint/typecheck/build, manual local auth smoke test when Supabase is available.
-- Rollback/recovery: revert target auth route/component changes; legacy remains reference.
+- Objective: move verified foundation into owning workspaces and convert root to npm coordination.
+- Legacy files: none modified; this phase moves only target foundation files.
+- Target moves:
+  - `src/app/*` -> `tgtd-Frontend/src/app/*`
+  - `src/config/*` -> `tgtd-Frontend/src/config/*`
+  - `src/shared/navigation/*` -> `tgtd-Frontend/src/shared/navigation/*`
+  - `src/middleware.ts` -> `tgtd-Frontend/src/middleware.ts`
+  - `src/server/supabase/{client,config,middleware,server}.ts` -> `tgtd-Frontend/src/server/supabase/*`
+  - `src/server/supabase/admin.ts` -> `tgtd-Backend/src/platform/supabase/admin.ts`
+  - `tests/*` -> `tgtd-Frontend/tests/*`
+  - Next/frontend configs -> `tgtd-Frontend/*`
+  - `.env.example` -> `tgtd-Frontend/.env.example`
+- Root result: private npm coordinator with workspace scripts; no root runtime source or tests.
+- Active workspaces: `tgtd-Frontend`, `tgtd-Backend`.
+- Planned workspaces: `tgtd-Agent`, `tgtd-AI-RAG`, `tgtd-MCP`.
+- Verification: root install, workspace resolution, delegated lint/typecheck/tests, Webpack build, and workspace dev smoke.
+- Recovery: revert the Phase 1.5 commit; retain Phase 1 baseline commit.
 
-## Phase 3: Services, config, and database contracts
+## Phase 2: Frontend shared and auth foundation
 
-- Objective: establish feature-owned server boundaries before moving large UI.
-- Legacy -> target mappings:
-  - `src/types/database.ts` -> `src/server/db/types.ts` plus feature contracts
-  - `src/services/workspace-service.ts` -> `src/features/workspaces/server/{repository,use-cases}.ts`
-  - `src/services/folder-service.ts` -> `src/features/home/server/folder-repository.ts`
-  - `src/services/home-chat-service.ts` -> `src/features/chat/server/home-messages.ts`
-  - `src/services/chat-context-service.ts` -> `src/features/chat/server/recent-context.ts`
-  - `src/lib/paths.ts` -> `src/shared/navigation/paths.ts`
-  - `src/lib/{utils,when-local}.ts` -> named shared/config modules only where consumers justify them
-- Dependencies: target auth and Supabase adapters.
-- Risk: accidental change to RLS query shape, membership checks, or table contracts.
-- Expected behavior: route handlers can call feature repositories while responses and database writes remain unchanged.
-- Verification: move pure tests first; run all 164 legacy behavior tests adapted to target; add repository contract checks for membership and error propagation.
-- Rollback/recovery: keep old target adapters temporarily behind feature exports; remove only after consumers migrate.
+- Objective: migrate low-risk frontend primitives and auth route behavior.
+- Legacy -> target:
+  - `src/components/ui/*` -> `tgtd-Frontend/src/shared/ui/*`
+  - `src/components/auth/*` -> `tgtd-Frontend/src/features/auth/components/*`
+  - `src/app/(auth)/*` -> `tgtd-Frontend/src/app/(auth)/*` plus feature components
+  - `src/app/auth/callback/route.ts` -> `tgtd-Frontend/src/app/auth/callback/route.ts` plus auth adapter
+  - `src/lib/auth/*` -> `tgtd-Backend/src/modules/auth/*`
+- Dependencies: Phase 1.5 frontend adapters; explicit backend auth contract.
+- Risk: high; redirects, cookies, password policy, and OAuth callback.
+- Verify: focused auth tests, frontend lint/typecheck/test/build, backend typecheck, manual auth smoke when Supabase exists.
+- Rollback: keep route adapters and old-compatible contracts until checks pass.
 
-## Phase 4: Planner and mutation pipeline
+## Phase 3: Backend domain and persistence boundary
 
-- Objective: move the highest-risk business logic with stable interfaces and preserved golden tests.
-- Legacy -> target mappings:
-  - `src/agents/{types,ingest-agent,policy-agent,mutation-agent,places-agent,guardrail-agent,rag-agent,communication-agent}.ts` -> `src/features/planner/{domain,server}/*`
-  - `src/agents/orchestrator.ts` -> `src/features/planner/server/orchestrate.ts`
-  - `src/services/recommendation-service.ts` -> `src/features/planner/domain/recommendation.ts`
-  - `src/services/rag-service.ts` -> `src/features/planner/server/retrieval-service.ts`
-  - `src/services/embedding-service.ts` -> `src/features/planner/server/embedding.ts`
-  - `src/lib/ai/*` -> `src/features/planner/server/ai/*`
-  - `src/lib/maps/maps.ts` -> `src/features/planner/server/maps.ts`
-  - `src/schemas/planner.ts` -> `src/features/planner/domain/planner-schema.ts`
-- Dependencies: Phase 3 database contracts; existing provider env names; planner/unit/golden tests.
-- Risk: wrong scope, wrong pending payload, unsafe URL handling, changed mock/degraded behavior.
-- Expected behavior: project and Home planner APIs produce identical intent, reply, pending, and mock metadata for existing tests.
-- Verification: run planner, policy, guardrail, RAG, enrichment, provider, and AgentOps tests; compare representative responses before/after.
-- Rollback/recovery: preserve old orchestrator behind a temporary target adapter until golden tests and API smoke checks pass.
+- Objective: move domain use cases and repositories into `tgtd-Backend`.
+- Legacy -> target:
+  - `src/types/database.ts` -> `tgtd-Backend/src/contracts/database.ts`
+  - `src/services/workspace-service.ts` -> `tgtd-Backend/src/modules/workspaces/workspace.service.ts`
+  - `src/services/folder-service.ts` -> `tgtd-Backend/src/modules/workspaces/folder.service.ts`
+  - `src/services/home-chat-service.ts` -> `tgtd-Backend/src/modules/chat/home-messages.ts`
+  - `src/services/chat-context-service.ts` -> `tgtd-Backend/src/modules/chat/recent-context.ts`
+  - `src/lib/supabase/*` server/database pieces -> explicit backend/platform exports where framework-free
+- Dependencies: auth contract, Supabase schema, caller contracts.
+- Risk: critical; RLS, membership, and database response shape.
+- Verify: repository contract tests, backend typecheck, frontend API smoke, no internal-source imports.
+- Rollback: retain compatibility adapters behind public package exports.
 
-## Phase 5: Activities and confirmation
+## Phase 4: Explicit shared contracts, only if proven necessary
 
-- Objective: migrate activity UI and durable mutation execution around the planner contract.
-- Legacy -> target mappings:
-  - `src/services/plan-persist-service.ts` -> `src/features/activities/server/plan-repository.ts`
-  - `src/services/confirmation-service.ts` -> `src/features/activities/server/confirm-action.ts` plus action executors
-  - `src/components/confirmations/confirm-provider.tsx` -> `src/features/activities/components/ConfirmationProvider.tsx`
-  - `src/components/items/{item-list-client,quick-add-modal,edit-item-modal,activity-plan-panel}.tsx` -> `src/features/activities/components/*`
-  - `src/components/plans/add-to-plan-form.tsx` -> `src/features/activities/components/PlanEditor.tsx` and owned subcomponents
-  - `src/lib/plans/*`, `src/lib/items/*` -> `src/features/activities/domain/*`
-  - `src/app/api/confirm/route.ts` -> thin adapter calling activities confirmation use case
-- Dependencies: planner contracts, Supabase repositories, database migrations, shared UI.
-- Risk: data loss, duplicate execution, optimistic UI mismatch, child-plan writes, embedding side effects.
-- Expected behavior: CREATE, UPDATE, DELETE, LOG_EVENT, and CREATE_PROJECT retain TTL, authorization, version, audit, and refresh behavior.
-- Verification: confirmation service tests, plan persistence tests, item/list UI tests, end-to-end create/confirm smoke flow.
-- Rollback/recovery: keep action executors behind old API response contract; stop migration before deleting old target modules if any action diverges.
+- Objective: create `packages/contracts` or an equivalent explicit package only after two real consumers require it.
+- Candidate contracts: IDs, API DTOs, planner input/output, pending actions.
+- Risk: premature coupling and duplicated types.
+- Verify: consumer import graph, package typechecks, contract tests.
+- Rollback: keep contracts workspace-local until a second consumer is real.
 
-## Phase 6: Home, workspaces, chat, dashboard, history, account
+## Phase 5: Agent extraction
 
-- Objective: migrate feature screens and remove direct table access from UI incrementally.
-- Legacy -> target mappings:
-  - `src/components/home/*` -> `src/features/home/components/*`
-  - `src/components/workspace/{app-shell,workspace-layout-client,settings-client,onboarding-client,join-client,project-appearance-picker}.tsx` -> `src/features/workspaces/components/*`
-  - `src/components/chat/*` -> `src/features/chat/components/*`
-  - `src/components/dashboard/*`, `src/components/history/history-client.tsx` -> `src/features/activities/components/{dashboard,ActivityHistory}/*`
-  - `src/components/account/*`, `src/components/workspace/{agentops-card,llm-settings-card}.tsx` -> `src/features/account/components/*` and `src/features/agentops/components/*`
-  - matching `src/app/projects/*`, `src/app/account/*`, and API routes remain stable route adapters
-- Dependencies: phases 2-5; feature repositories and API contracts.
-- Risk: broad UI files hide behavior coupling; realtime and refresh behavior may regress.
-- Expected behavior: same URLs, project selection, chat scope, live updates, charts, settings, and account visibility.
-- Verification: focused component tests per feature, full unit suite, target lint/typecheck/build, Playwright smoke tests.
-- Rollback/recovery: migrate one route at a time; keep route pointing to legacy-shaped target component until its replacement is verified.
+- Objective: establish `tgtd-Agent` package boundary and migrate planner behavior incrementally.
+- Legacy -> target:
+  - `src/agents/orchestrator.ts` -> `tgtd-Agent/src/orchestrator/orchestrator.ts`
+  - `src/agents/{ingest,policy,mutation,places,guardrail,communication}-agent.ts` -> `tgtd-Agent/src/agents/*/*-agent.ts`
+  - `src/lib/ai/*` -> `tgtd-Agent/src/providers/ai/*`
+- Dependencies: backend contracts and planner API contract.
+- Risk: critical; policy, guardrails, pending payloads, mock behavior.
+- Verify: planner golden tests, refusal/clarification tests, API response comparison.
+- Rollback: route through compatibility orchestrator until replacement is proven.
 
-## Phase 7: Shell integration and compatibility cleanup
+## Phase 6: AI/RAG extraction
 
-- Objective: connect all migrated features through one shell and remove only proven obsolete adapters.
-- Legacy -> target mappings:
-  - `src/app/projects/[projectId]/layout.tsx` -> target workspace layout using feature membership gate and shell
-  - `src/app/app/*` -> retained redirects until compatibility evidence allows removal
-  - deprecated workspace/item aliases -> remove only after `rg` and tests show no consumer
-- Dependencies: all feature phases.
-- Risk: navigation regressions, deep links, stale compatibility consumers.
-- Expected behavior: canonical `/projects/*` paths work and legacy `/app/*` redirects remain until explicitly retired.
-- Verification: route matrix, Playwright navigation smoke, `rg` consumer scan, full test/lint/typecheck/build.
-- Rollback/recovery: retain redirects and aliases; restore route adapter imports without changing domain behavior.
+- Objective: establish reusable `tgtd-AI-RAG` package boundary.
+- Legacy -> target:
+  - `src/services/rag-service.ts` -> `tgtd-AI-RAG/src/retrieval/rag-service.ts`
+  - `src/services/embedding-service.ts` -> `tgtd-AI-RAG/src/embeddings/embedding-service.ts`
+  - `src/services/recommendation-service.ts` -> `tgtd-AI-RAG/src/retrieval/recommendation.ts`
+  - selected `src/lib/rag/*` -> `tgtd-AI-RAG/src/*`
+- Dependencies: agent retrieval contract and backend persistence contract.
+- Risk: high; vector scope, RPC fallback, embedding side effects.
+- Verify: retrieval fixtures, embedding mock/degraded paths, planner comparison.
+- Rollback: retain legacy-shaped retrieval adapter.
 
-## Phase 8: Stabilize and validate
+## Phase 7: Domain feature migration
 
-- Objective: distinguish migration regressions from the recorded legacy baseline and close high-risk gaps.
-- Legacy -> target mappings: test files under `tests/unit/**` -> target feature tests; `tests/e2e/smoke.spec.ts` -> target E2E suite.
-- Dependencies: complete target feature migration.
-- Risk: false confidence from unit-only coverage, missing Supabase runtime coverage, unresolved lint/type boundary issues.
-- Expected behavior: target tests cover preserved contracts and all intentional differences are documented.
-- Verification: target install, lint, typecheck, build, unit, E2E, auth/member checks, planner confirmation flow, and clean target status.
-- Rollback/recovery: retain a known-good target commit per phase; do not delete legacy reference.
+- Objective: move activities, confirmation, workspaces, and Home behavior by owned boundary.
+- Legacy -> target:
+  - `src/services/confirmation-service.ts` -> `tgtd-Backend/src/modules/confirmations/*`
+  - `src/services/plan-persist-service.ts` -> `tgtd-Backend/src/modules/activities/*`
+  - `src/components/items/*` -> `tgtd-Frontend/src/features/activities/components/*`
+  - `src/components/confirmations/*` -> `tgtd-Frontend/src/features/activities/components/*`
+  - `src/components/home/*` -> `tgtd-Frontend/src/features/home/components/*`
+  - `src/components/workspace/*` -> `tgtd-Frontend/src/features/workspaces/components/*`
+- Dependencies: backend and agent contracts.
+- Risk: critical data integrity and broad UI coupling.
+- Verify: confirmation action matrix, RLS/membership tests, focused UI tests, route smoke.
+- Rollback: preserve old API adapters and pending action response shape.
 
-## Phase 9: Docker and deployment (DEFERRED)
+## Phase 8: Chat and integration
 
-- Objective: none in current work.
-- Legacy files: `Dockerfile`, `docker-compose.yml`, `.env.docker`, `docker-up.sh`, `vercel.json`.
-- Target files: none now.
-- Dependencies: stable local target, confirmed environment contract, deployment decision.
-- Risk: high; container networking and secret handling can hide local regressions.
-- Expected behavior: no Docker files or workflows are introduced during current migration.
-- Verification: deferred until Phase 8 passes.
-- Rollback/recovery: no action required; infrastructure remains in legacy reference.
+- Objective: migrate project/Home chat and integrate feature shell.
+- Legacy -> target:
+  - `src/components/chat/*` -> `tgtd-Frontend/src/features/chat/components/*`
+  - `src/services/home-chat-service.ts` -> `tgtd-Backend/src/modules/chat/*`
+  - chat API routes -> `tgtd-Frontend/src/app/api/*` adapters calling public backend contracts
+- Risk: realtime, scope, persistence, and planner coupling.
+- Verify: project/Home chat scope, history, clear, realtime, planner handoff.
+
+## Phase 9: MCP — PLANNED
+
+Migrate only actual MCP servers/tools into `tgtd-MCP`. No generic utilities.
+
+## Phase 10: Desktop and mobile — PLANNED
+
+Create app-specific runtimes only after public contracts exist.
+
+## Phase 11: Infrastructure and Docker — DEFERRED
+
+Move Docker/deployment files to `tgtd-Infra` only after local workspaces and behavior are stable.
+
+## Strangler rule
+
+For every extraction: identify behavior, define public contract, migrate implementation, update caller, run focused checks, compare behavior, then remove compatibility code. Never import another workspace's internal source tree.

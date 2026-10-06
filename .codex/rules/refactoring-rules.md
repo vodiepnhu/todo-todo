@@ -17,3 +17,7 @@
 - Record baseline failures separately from migration regressions.
 - Do not copy `.env.local`, `.env.docker`, credentials, `node_modules`, build output, or generated artifacts.
 - Docker and deployment remain deferred until local behavior is stable.
+- Correct ownership before feature migration. Move framework adapters with their runtime and move pure domain/database code to its owning workspace.
+- Use strangler migration for workspace extraction: identify behavior, define public contract, migrate implementation, update caller, test, verify, then remove compatibility code.
+- Do not import `../../<workspace>/src/*` or create a shared package before two real consumers exist.
+- Keep root package scripts as workspace delegation; keep workspace dependencies and configs beside their owners.
