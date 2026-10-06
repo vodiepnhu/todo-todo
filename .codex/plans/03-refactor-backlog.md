@@ -68,6 +68,18 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 
 ## TODO
 
+### Phase 3 - Backend foundation plan approved
+
+- P3-001: Extract minimal profile/workspace/member contracts from src/types/database.ts.
+- P3-002: Add framework-free authenticated-user lookup and authorization decisions.
+- P3-003: Add RLS-scoped profile repository/use cases without changing signup trigger behavior.
+- P3-004: Add read-only workspace membership repository and active role authorization.
+- P3-005: Extract Home workspace partitioning under modules/workspaces; do not create modules/projects or generic folders.
+- P3-006: Add explicit @togo-todo/backend root exports; keep platform/admin internals private.
+- P3-007: Run full acceptance gate and update verified memory.
+- PLAN: .codex/plans/05-backend-foundation.md.
+- STATUS: DONE.
+
 ### R-004 - Narrow TypeScript project scope
 
 - TASK: Ensure target typecheck includes app source and intended tests only; keep `rag-demo` outside the target app boundary.
@@ -96,7 +108,7 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - FILES: `src/services/workspace-service.ts`, `src/services/folder-service.ts`, `src/components/home/home-shell.tsx`.
 - RISK: High.
 - VERIFICATION: project creation, membership, folder tree, sharing tests.
-- STATUS: TODO.
+- STATUS: DONE; Phase 3 read-only workspace/Home foundation delivered. Full workspace mutations and sharing remain deferred.
 
 ### R-007 - Consolidate planner route setup
 
@@ -169,6 +181,13 @@ Statuses: TODO, READY, IN_PROGRESS, BLOCKED, DONE, DEFERRED.
 - RISK: Medium.
 - VERIFICATION: import/deployment inventory after decision.
 - STATUS: UNCERTAIN.
+
+## Fast migration status
+
+- Runtime move takes priority over granular cleanup.
+- R-007 through R-012 remain post-migration refactor work, not prerequisites for product development.
+- `tgtd-Agent` and `tgtd-AI-RAG` now own copied active runtime; preserve compatibility exports until consumers and behavior are fully consolidated.
+- Legacy Python sidecars, Docker files, and RAG demo remain historical/deferred unless later runtime evidence proves active use.
 
 ## DEFERRED INFRASTRUCTURE
 

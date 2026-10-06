@@ -55,18 +55,19 @@ Legacy remains read-only. Each phase leaves active workspaces locally runnable. 
 
 ## Phase 3: Backend domain and persistence boundary
 
-- Objective: move domain use cases and repositories into `tgtd-Backend`.
-- Legacy -> target:
-  - `src/types/database.ts` -> `tgtd-Backend/src/contracts/database.ts`
-  - `src/services/workspace-service.ts` -> `tgtd-Backend/src/modules/workspaces/workspace.service.ts`
-  - `src/services/folder-service.ts` -> `tgtd-Backend/src/modules/workspaces/folder.service.ts`
-  - `src/services/home-chat-service.ts` -> `tgtd-Backend/src/modules/chat/home-messages.ts`
-  - `src/services/chat-context-service.ts` -> `tgtd-Backend/src/modules/chat/recent-context.ts`
-  - `src/lib/supabase/*` server/database pieces -> explicit backend/platform exports where framework-free
-- Dependencies: auth contract, Supabase schema, caller contracts.
-- Risk: critical; RLS, membership, and database response shape.
-- Verify: repository contract tests, backend typecheck, frontend API smoke, no internal-source imports.
-- Rollback: retain compatibility adapters behind public package exports.
+- Status: DONE; pure/unit verification passed. Live Supabase integration remains unverified.
+- Objective: establish minimal tgtd-Backend package boundary for framework-free auth lookup, profile access, workspace membership/authorization, and Home partitioning.
+- Canonical backend domain: workspaces; legacy UI/routes use project terminology, but schema and membership ownership are workspaces and workspace_members. No projects module unless later evidence proves a distinct domain.
+- Legacy evidence: src/types/database.ts, src/services/workspace-service.ts:listWorkspaces, src/services/folder-service.ts:partitionHomeTree/listHomeTree, supabase/migrations/20260923000000_init.sql, and supabase/migrations/20260923190000_project_sharing.sql.
+- Target modules: contracts/database.ts, modules/auth/{authorization,authenticated-user}.ts, modules/profiles/{profile,profile.repository}.ts, modules/workspaces/{authorization,workspace,workspace.repository,home}.ts, and explicit src/index.ts exports.
+- Persistence rule: repositories use caller-provided authenticated/RLS-scoped Supabase clients; existing service-role admin adapter remains internal to admin/seed paths.
+- Authorization rule: pure application decisions require authenticated user, active membership, and role; Supabase RLS remains database enforcement.
+- No schema, trigger, RLS, UI, HTTP service, Agent, RAG, planner, activity, confirmation, chat, dashboard, MCP, desktop, mobile, or Docker work.
+- Detailed implementation plan: .codex/plans/05-backend-foundation.md.
+- Dependencies: Phase 2 auth foundation and current Supabase schema evidence.
+- Risk: high; RLS, active membership filtering, role semantics, nested Supabase response mapping, and package export resolution.
+- Verified: backend 30 unit tests plus seed-policy checks, backend typecheck, root install, root lint, root typecheck, frontend 5 tests, Webpack build, import safety, diff/secrets/generated-file checks.
+- Rollback: remove new backend modules/package export changes and retain legacy source/database behavior; do not rewrite commits 8e6153a, 235c1e2, or 4e05743.
 
 ## Phase 4: Explicit shared contracts, only if proven necessary
 
@@ -76,7 +77,20 @@ Legacy remains read-only. Each phase leaves active workspaces locally runnable. 
 - Verify: consumer import graph, package typechecks, contract tests.
 - Rollback: keep contracts workspace-local until a second consumer is real.
 
-## Phase 5: Agent extraction
+## Fast migration pass — ACTIVE
+
+- Strategy changed from granular extraction to move-first compatibility migration.
+- `tgtd-Frontend` now contains active Next routes, React components, browser features, and legacy-shaped browser service adapters required by current UI.
+- `tgtd-Backend` now contains copied server/domain services plus Phase 3 auth, profile, workspace, and Home foundation. Server routes use `@togo-todo/backend`.
+- `tgtd-Agent` now contains active planner/orchestration, guardrails, policy, maps, AI provider, AgentOps, and compatibility exports.
+- `tgtd-AI-RAG` now contains active embedding, retrieval, hybrid ranking, and recommendation runtime.
+- Frontend browser compatibility copies remain for `workspace-service`, `folder-service`, `home-chat-service`, and `plan-persist-service` because current client components call Supabase directly. Refactor later; behavior preserved.
+- No `packages/contracts` workspace created: current package boundaries compile with local legacy-shaped types; introduce shared contracts only when a stable cross-workspace contract cannot remain structural.
+- No projects backend module created. UI “project” terminology maps to canonical `workspaces` ownership.
+- Docker, Desktop, Mobile, Infra, MCP, live Supabase integration, schema changes, RLS changes, and auth-trigger changes remain deferred.
+- Acceptance target: target-only normal development, with remaining meaningful active-code gap scan at zero blocking files.
+
+## Phase 5: Agent extraction — SUPERSEDED BY FAST MIGRATION PASS
 
 - Objective: establish `tgtd-Agent` package boundary and migrate planner behavior incrementally.
 - Legacy -> target:
@@ -88,7 +102,7 @@ Legacy remains read-only. Each phase leaves active workspaces locally runnable. 
 - Verify: planner golden tests, refusal/clarification tests, API response comparison.
 - Rollback: route through compatibility orchestrator until replacement is proven.
 
-## Phase 6: AI/RAG extraction
+## Phase 6: AI/RAG extraction — SUPERSEDED BY FAST MIGRATION PASS
 
 - Objective: establish reusable `tgtd-AI-RAG` package boundary.
 - Legacy -> target:
@@ -101,7 +115,7 @@ Legacy remains read-only. Each phase leaves active workspaces locally runnable. 
 - Verify: retrieval fixtures, embedding mock/degraded paths, planner comparison.
 - Rollback: retain legacy-shaped retrieval adapter.
 
-## Phase 7: Domain feature migration
+## Phase 7: Domain feature migration — FAST PASS COMPLETE; REFACTOR LATER
 
 - Objective: move activities, confirmation, workspaces, and Home behavior by owned boundary.
 - Legacy -> target:
@@ -116,7 +130,7 @@ Legacy remains read-only. Each phase leaves active workspaces locally runnable. 
 - Verify: confirmation action matrix, RLS/membership tests, focused UI tests, route smoke.
 - Rollback: preserve old API adapters and pending action response shape.
 
-## Phase 8: Chat and integration
+## Phase 8: Chat and integration — FAST PASS COMPLETE; REFACTOR LATER
 
 - Objective: migrate project/Home chat and integrate feature shell.
 - Legacy -> target:

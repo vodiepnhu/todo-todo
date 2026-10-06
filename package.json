@@ -4,7 +4,9 @@
   "private": true,
   "workspaces": [
     "tgtd-Frontend",
-    "tgtd-Backend"
+    "tgtd-Backend",
+    "tgtd-Agent",
+    "tgtd-AI-RAG"
   ],
   "scripts": {
     "dev": "npm --workspace tgtd-Frontend run dev --",

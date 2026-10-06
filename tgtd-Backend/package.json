@@ -2,16 +2,27 @@
   "name": "@togo-todo/backend",
   "version": "0.1.0",
   "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
   "scripts": {
     "typecheck": "tsc --noEmit --incremental false",
     "seed:demo": "node scripts/seed-demo.mjs",
-    "test": "node scripts/seed-demo.test.mjs"
+    "test": "vitest run && node scripts/seed-demo.test.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.0"
+    "@supabase/supabase-js": "^2.117.0",
+    "@togo-todo/agent": "0.1.0",
+    "@togo-todo/ai-rag": "0.1.0",
+    "langsmith": "^0.10.5",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }
