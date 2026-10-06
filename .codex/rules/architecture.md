@@ -1,0 +1,18 @@
+# Architecture Rules
+
+- Features own feature-specific UI, domain logic, server use cases, and external adapters.
+- `src/app` contains route adapters and composition. Keep business workflows out of route files.
+- Dependency direction is `app -> features -> server`; shared modules never import features.
+- A feature may import `shared` and explicit server adapters; cross-feature imports need a stable contract and a reason.
+- UI components render and coordinate feature hooks. They do not query Supabase tables directly.
+- Business logic belongs in `features/*/domain` when pure and `features/*/server` when it needs auth, data, or external APIs.
+- API access belongs in feature repositories/use cases. External AI, Maps, embeddings, LangSmith, and Supabase clients stay behind server boundaries.
+- State belongs to the narrowest owner: route auth in server components, feature data in feature hooks, durable mutations in the database.
+- Database row types stay centralized until a deliberate generated/source-of-truth decision exists; behavior-specific types move to feature ownership.
+- Environment parsing belongs in `src/config`; server secrets never enter browser modules or `.codex` documents.
+- Constants live beside the domain that owns them. Shared constants need real multi-feature reuse.
+- Hooks belong to the feature that owns their state. Shared hooks must have stable, feature-neutral contracts.
+- Utilities need a specific named purpose and owner. No generic `utils`, `helpers`, `common`, or `misc` dumping grounds.
+- Use absolute `@/` imports. Use feature paths instead of long relative traversals.
+- One module has one clear responsibility. Split large files by behavior after tests pin current behavior.
+- Preserve current URLs, response shapes, auth checks, RLS assumptions, mock fallbacks, and confirmation semantics during migration.
