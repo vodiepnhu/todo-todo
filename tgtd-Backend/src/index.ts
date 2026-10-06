@@ -68,7 +68,9 @@ export { listRecentChatContext } from "./services/chat-context-service";
 export {
   advanceConfirmation,
   createPendingAction,
+  findActivePlanPending,
   isConfirmationKeyword,
+  updatePendingPlan,
 } from "./services/confirmation-service";
 export {
   clearHomeMessages,

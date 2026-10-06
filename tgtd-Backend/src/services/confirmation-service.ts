@@ -51,6 +51,52 @@ export async function createPendingAction(
   return data as PendingAction;
 }
 
+export async function findActivePlanPending(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  userId: string,
+): Promise<PendingAction | null> {
+  const { data, error } = await supabase
+    .from("pending_actions")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("initiated_by", userId)
+    .eq("action_type", "CREATE")
+    .eq("state", "AWAITING_CONFIRM_2")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as PendingAction | null) ?? null;
+}
+
+export async function updatePendingPlan(
+  supabase: SupabaseClient,
+  pendingId: string,
+  workspaceId: string,
+  userId: string,
+  payload: Record<string, unknown>,
+): Promise<PendingAction> {
+  const expires = new Date(
+    Date.now() + env.CONFIRMATION_TTL_MINUTES * 60_000,
+  ).toISOString();
+  const { data, error } = await supabase
+    .from("pending_actions")
+    .update({ payload_json: payload, expires_at: expires })
+    .eq("id", pendingId)
+    .eq("workspace_id", workspaceId)
+    .eq("initiated_by", userId)
+    .eq("action_type", "CREATE")
+    .eq("state", "AWAITING_CONFIRM_2")
+    .gt("expires_at", new Date().toISOString())
+    .select("*")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Pending plan not found");
+  return data as PendingAction;
+}
+
 export async function advanceConfirmation(
   supabase: SupabaseClient,
   pendingId: string,
