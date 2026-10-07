@@ -6,7 +6,7 @@ create table if not exists public.user_llm_settings (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   provider text not null default 'openrouter'
     check (provider in ('openrouter', 'openai', 'anthropic', 'gemini', 'ollama', 'custom')),
-  model text not null default 'google/gemma-4-31b-it:free',
+  model text not null default '',
   base_url text,
   -- AES-256-GCM payload: base64(iv || ciphertext || authTag). App-layer encryption.
   api_key_ciphertext text,

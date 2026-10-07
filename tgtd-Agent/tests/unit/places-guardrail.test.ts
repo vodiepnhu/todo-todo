@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { resolvePlace } from "@/agents/places-agent";
+import { runMapsSearchAgent } from "@/agents/maps-search-agent";
 import {
   extractGoogleMapsUrl,
   safeMapsRedirect,
@@ -118,6 +119,16 @@ describe("places-agent", () => {
       degraded: true,
       results: [],
     });
+  });
+
+  it("builds a free Google Maps search URL without an API key", async () => {
+    vi.stubEnv("GOOGLE_MAPS_SERVER_API_KEY", "");
+    const result = await runMapsSearchAgent({ query: "Bondi Beach" });
+    expect(result.degraded).toBe(true);
+    expect(result.topMapsUrl).toBe(
+      "https://www.google.com/maps/search/?api=1&query=Bondi%20Beach",
+    );
+    expect(result.note).toMatch(/free Google Maps search/i);
   });
 });
 

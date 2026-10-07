@@ -77,8 +77,8 @@ export function HomeAddModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 p-4 sm:items-center">
-      <Card className="w-full max-w-lg space-y-3 p-5">
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/35 backdrop-blur-xs p-4 sm:items-center">
+      <Card className="w-full max-w-lg space-y-4 p-6 rounded-3xl border border-white/90 bg-white/95 shadow-2xl backdrop-blur-md">
         <h2 className="text-lg font-semibold">Add to which project?</h2>
         <p className="text-xs text-muted">
           Pick an existing project or create a new one, then fill the activity
@@ -87,12 +87,12 @@ export function HomeAddModal({
         {projects.length === 0 ? (
           <p className="text-sm text-muted">No projects yet — create one below.</p>
         ) : (
-          <ul className="max-h-48 space-y-1 overflow-y-auto">
+          <ul className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
             {projects.map((p) => (
               <li key={p.id}>
                 <button
                   type="button"
-                  className="w-full rounded-lg border border-border px-3 py-2 text-left text-sm hover:bg-primary-soft/40"
+                  className="w-full rounded-xl border border-border/70 bg-white px-3.5 py-2.5 text-left text-sm font-medium shadow-xs transition hover:border-primary/40 hover:bg-primary-soft/40 hover:text-primary"
                   onClick={() => setWorkspaceId(p.id)}
                 >
                   {p.name}

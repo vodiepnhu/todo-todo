@@ -41,11 +41,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && (path === "/login" || path === "/signup")) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/app";
-    return NextResponse.redirect(redirectUrl);
-  }
-
   return response;
 }

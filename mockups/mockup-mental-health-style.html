@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Togo Travel Planner - Bright & Radiant Serenity Style</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Bảng màu TƯƠI SÁNG & RẠNG RỠ (Bright & Luminous Travel Serenity) */
+      --color-primary: #0284C7;        /* Sky Blue biển trời xanh ngát, tươi tắn */
+      --color-primary-light: #38BDF8;  /* Cyan sáng rực rỡ */
+      --color-secondary: #8B5CF6;      /* Lavender tím tươi trẻ, mộng mơ */
+      --color-secondary-light: #C084FC;
+      --color-accent: #FF6B4A;         /* San hô nhiệt đới (Tropical Coral) tươi vui */
+      --color-accent-hover: #F25330;
+      --color-sun: #FBBF24;            /* Nắng vàng rạng rỡ (Summer Sun) */
+      --color-mint: #10B981;           /* Xanh ngọc nhiệt đới tươi mát */
+      --color-mint-light: #6EE7B7;
+      --color-peach: #FFD8A8;          /* Kem đào ấm */
+      --color-rose: #F472B6;           /* Hồng hoa anh đào */
+
+      /* Nền sáng tinh khôi, trong trẻo (không bị xám đục) */
+      --color-bg: #F5F9FD;             /* Trắng sương mai phảng phất sắc xanh trời */
+      --color-bg-card: #FFFFFF;
+      --color-text: #1E293B;           /* Chữ Slate đậm rõ ràng, độ tương phản cao */
+      --color-text-muted: #64748B;     /* Slate xám dịu */
+      --color-text-subtle: #94A3B8;
+
+      /* Đổ bóng Neumorphic Tươi Sáng & Trong Veo (Luminous Glassy Shadows) */
+      --shadow-light: -8px -8px 20px rgba(255, 255, 255, 0.98);
+      --shadow-dark: 8px 8px 22px rgba(147, 175, 212, 0.38);
+      --shadow-hover-light: -10px -10px 25px rgba(255, 255, 255, 1);
+      --shadow-hover-dark: 10px 10px 26px rgba(147, 175, 212, 0.5);
+
+      --shadow-inset-light: inset -4px -4px 10px rgba(255, 255, 255, 0.95);
+      --shadow-inset-dark: inset 4px 4px 10px rgba(147, 175, 212, 0.35);
+
+      --font-heading: 'Quicksand', sans-serif;
+      --font-body: 'Nunito', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+      padding: 32px 20px 60px;
+      position: relative;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4, .font-heading {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    /* Ambient Pastel Radiant Orbs (Ánh sáng tươi sáng rực rỡ) */
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.65;
+    }
+    .orb-1 {
+      top: -80px;
+      right: 5%;
+      width: 460px;
+      height: 460px;
+      background: linear-gradient(135deg, #BAE6FD, #DDD6FE);
+    }
+    .orb-2 {
+      bottom: 8%;
+      left: 2%;
+      width: 420px;
+      height: 420px;
+      background: linear-gradient(135deg, #A7F3D0, #FEF08A);
+      opacity: 0.55;
+    }
+    .orb-3 {
+      top: 35%;
+      left: 30%;
+      width: 380px;
+      height: 380px;
+      background: linear-gradient(135deg, #FED7AA, #FBCFE8);
+      opacity: 0.45;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Gradient Text Tươi Tắn */
+    .gradient-text {
+      background: linear-gradient(135deg, #0284C7 0%, #8B5CF6 60%, #EC4899 100%);
+      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    /* Neumorphic Primitives */
+    .neu-card {
+      background: linear-gradient(145deg, #FFFFFF, var(--color-bg));
+      box-shadow: var(--shadow-light), var(--shadow-dark);
+      border-radius: 26px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+    .neu-card:hover {
+      box-shadow: var(--shadow-hover-light), var(--shadow-hover-dark);
+      transform: translateY(-2px);
+    }
+
+    .neu-inset {
+      background: var(--color-bg);
+      box-shadow: var(--shadow-inset-light), var(--shadow-inset-dark);
+      border-radius: 18px;
+    }
+
+    /* Buttons Tươi Tắn & Có Năng Lượng */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--color-accent) 0%, #FF8A65 100%);
+      color: #FFFFFF;
+      cursor: pointer;
+      border: none;
+      border-radius: 18px;
+      padding: 13px 26px;
+      font-weight: 700;
+      font-size: 14.5px;
+      font-family: var(--font-heading);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      box-shadow: -4px -4px 12px rgba(255, 255, 255, 0.8), 4px 6px 14px rgba(255, 107, 74, 0.35);
+      text-decoration: none;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: -6px -6px 16px rgba(255, 255, 255, 1), 6px 8px 18px rgba(255, 107, 74, 0.45);
+      background: linear-gradient(135deg, var(--color-accent-hover) 0%, #FF7A52 100%);
+    }
+    .btn-primary:active {
+      transform: translateY(1px);
+      box-shadow: inset 2px 2px 5px rgba(0,0,0,0.15);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(145deg, #FFFFFF, var(--color-bg));
+      color: var(--color-primary);
+      cursor: pointer;
+      box-shadow: var(--shadow-light), var(--shadow-dark);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: 18px;
+      padding: 12px 22px;
+      font-weight: 700;
+      font-size: 14px;
+      font-family: var(--font-heading);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      text-decoration: none;
+    }
+    .btn-secondary:hover {
+      color: var(--color-secondary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover-light), var(--shadow-hover-dark);
+    }
+    .btn-secondary:active {
+      box-shadow: var(--shadow-inset-light), var(--shadow-inset-dark);
+    }
+
+    /* Badges Rực Rỡ & Nổi Bật */
+    .badge {
+      background: #FFFFFF;
+      border-radius: 50px;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      box-shadow: -2px -2px 6px rgba(255, 255, 255, 0.9), 2px 3px 8px rgba(147, 175, 212, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+    .badge-primary { color: var(--color-primary); background: #E0F2FE; }
+    .badge-secondary { color: var(--color-secondary); background: #EDE9FE; }
+    .badge-mint { color: #047857; background: #D1FAE5; }
+    .badge-peach { color: #C2410C; background: #FFEDD5; }
+    .badge-sun { color: #B45309; background: #FEF3C7; }
+
+    /* Top Nav */
+    .navbar-serenity {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 26px;
+      margin-bottom: 34px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #0284C7 0%, #38BDF8 50%, #8B5CF6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 22px;
+      box-shadow: -3px -3px 8px rgba(255, 255, 255, 0.9), 4px 6px 14px rgba(2, 132, 199, 0.35);
+    }
+    .logo-text {
+      font-size: 24px;
+      font-weight: 700;
+      font-family: var(--font-heading);
+      letter-spacing: -0.02em;
+    }
+
+    /* Hero */
+    .hero {
+      margin-bottom: 42px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    .hero-title {
+      font-size: 42px;
+      line-height: 1.18;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+    .hero-subtitle {
+      color: var(--color-text-muted);
+      font-size: 16.5px;
+      max-width: 560px;
+    }
+
+    /* Layout 2-col (Bám sát kiến trúc Togo) */
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 32px;
+    }
+    @media (max-width: 960px) {
+      .layout-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Sidebar: Coming up + My Trips */
+    .sidebar-section {
+      margin-bottom: 28px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: 18.5px;
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Coming Up Timeline Inset */
+    .timeline-well {
+      padding: 18px;
+    }
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px dashed rgba(147, 175, 212, 0.4);
+    }
+    .timeline-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .timeline-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 4px #FFFFFF, 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .timeline-time {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+    .timeline-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--color-text);
+    }
+    .timeline-meta {
+      font-size: 11.5px;
+      color: var(--color-text-muted);
+    }
+
+    /* Trip Card Tươi Sáng */
+    .trip-card-item {
+      padding: 20px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      position: relative;
+    }
+    .trip-card-item:hover {
+      transform: translateY(-3px);
+    }
+    .trip-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .trip-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F0F7FF 100%);
+      box-shadow: -2px -2px 6px rgba(255, 255, 255, 0.95), 3px 4px 10px rgba(147, 175, 212, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+    .trip-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .trip-destination {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+    .trip-next-well {
+      padding: 11px 15px;
+      margin-top: 12px;
+      font-size: 12.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Right Column: AI Planner & Activities */
+    .ai-planner-box {
+      padding: 26px;
+      margin-bottom: 28px;
+      background: linear-gradient(145deg, #FFFFFF 0%, #F1F7FF 100%);
+    }
+    .ai-input-wrapper {
+      padding: 10px 14px 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 18px 0 14px;
+      background: #FFFFFF;
+    }
+    .ai-input-wrapper input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: var(--color-text);
+    }
+    .ai-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      background: #FFFFFF;
+      box-shadow: -2px -2px 6px rgba(255, 255, 255, 0.9), 2px 3px 8px rgba(147, 175, 212, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 7px 15px;
+      font-size: 12.5px;
+      font-family: var(--font-body);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+    .chip:hover {
+      color: var(--color-primary);
+      transform: translateY(-2px);
+      box-shadow: -3px -3px 8px rgba(255, 255, 255, 1), 3px 4px 10px rgba(2, 132, 199, 0.25);
+    }
+    .chip:active {
+      box-shadow: var(--shadow-inset-light), var(--shadow-inset-dark);
+    }
+
+    /* Filter Pills */
+    .filters-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .filter-btn {
+      padding: 9px 20px;
+      border-radius: 16px;
+      font-size: 13.5px;
+      font-weight: 700;
+      font-family: var(--font-heading);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .filter-btn.active {
+      background: #FFFFFF;
+      box-shadow: var(--shadow-inset-light), var(--shadow-inset-dark);
+      color: var(--color-primary);
+    }
+    .filter-btn:not(.active) {
+      background: linear-gradient(145deg, #FFFFFF, var(--color-bg));
+      box-shadow: -3px -3px 8px rgba(255, 255, 255, 0.95), 3px 3px 9px rgba(147, 175, 212, 0.28);
+      color: var(--color-text-muted);
+    }
+    .filter-btn:not(.active):hover {
+      color: var(--color-primary);
+      transform: translateY(-1px);
+    }
+
+    /* Activity Card */
+    .activity-card {
+      padding: 20px 24px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .activity-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .activity-icon-well {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      background: #FFFFFF;
+    }
+    .activity-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+    .activity-tags {
+      display: flex;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--color-text-muted);
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient Radiant Glow Orbs (Tươi sáng, năng động) -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+  <div class="ambient-orb orb-3"></div>
+
+  <div class="container">
+    <!-- Navbar Serenity Style -->
+    <nav class="neu-card navbar-serenity">
+      <div class="nav-logo">
+        <div class="logo-icon">✈️</div>
+        <span class="logo-text">Togo <span class="gradient-text">Planner</span></span>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <span class="badge badge-primary">☀️ Radiant Sky Mode</span>
+        <button class="btn-secondary" style="padding: 8px 16px; font-size: 12.5px;">🇻🇳 Tiếng Việt</button>
+        <button class="btn-secondary" style="padding: 8px 16px; font-size: 12.5px;">👤 Tài khoản</button>
+      </div>
+    </nav>
+
+    <!-- Hero Header (Bám sát kiến trúc & ngôn ngữ Togo) -->
+    <div class="hero">
+      <div>
+        <div class="badge badge-sun" style="margin-bottom: 12px;">
+          <span>🌴</span><span>Hành trình tiếp theo của bạn</span>
+        </div>
+        <h1 class="hero-title">
+          Chuyến phiêu lưu tiếp theo <br><span class="gradient-text">sẽ bắt đầu ở đâu nhỉ?</span>
+        </h1>
+        <p class="hero-subtitle">
+          Giao diện tươi sáng, ngập tràn ánh nắng và cảm hứng để bạn dễ dàng lưu lại những điểm đến mơ ước trong tương lai.
+        </p>
+      </div>
+      <div style="display: flex; gap: 14px;">
+        <button class="btn-primary">
+          <span>+ Lên kế hoạch chuyến đi</span>
+          <span>✈️</span>
+        </button>
+        <button class="btn-secondary">
+          <span>Hỏi AI ✨</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Layout (Kiến trúc 2 cột gốc của Togo) -->
+    <div class="layout-grid">
+      <!-- Cột trái: Sắp diễn ra & Danh sách Chuyến đi -->
+      <aside>
+        <!-- Section: Coming up / Lịch trình sắp tới -->
+        <div class="sidebar-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <span>📅</span> Sắp diễn ra
+            </h2>
+            <span style="font-size: 11.5px; font-weight: 700; color: var(--color-primary);">Sydney (AEST)</span>
+          </div>
+
+          <div class="neu-card" style="padding: 18px;">
+            <div class="neu-inset timeline-well">
+              <div class="timeline-item">
+                <div class="timeline-dot" style="background: var(--color-primary);"></div>
+                <div style="flex: 1;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span class="timeline-title">TeamLab Borderless</span>
+                    <span class="timeline-time" style="color: var(--color-primary);">10:30 AM</span>
+                  </div>
+                  <div class="timeline-meta">Tokyo in Spring · Minato City</div>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="timeline-dot" style="background: var(--color-accent);"></div>
+                <div style="flex: 1;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span class="timeline-title">Tsujihan Kaisendon</span>
+                    <span class="timeline-time" style="color: var(--color-accent);">01:00 PM</span>
+                  </div>
+                  <div class="timeline-meta">Tokyo in Spring · Nihonbashi</div>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="timeline-dot" style="background: var(--color-secondary);"></div>
+                <div style="flex: 1;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span class="timeline-title">Đền Fushimi Inari</span>
+                    <span class="timeline-time" style="color: var(--color-secondary);">09:00 AM (Mai)</span>
+                  </div>
+                  <div class="timeline-meta">Kyoto Weekend · Fushimi-ku</div>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-secondary" style="width: 100%; margin-top: 16px; justify-content: center; font-size: 13.5px; padding: 11px;">
+              + Thêm hoạt động mới
+            </button>
+          </div>
+        </div>
+
+        <!-- Section: My Trips / Chuyến đi của tôi -->
+        <div class="sidebar-section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <span>🧳</span> Chuyến đi của bạn
+            </h2>
+            <span class="badge badge-primary">3 chuyến đi</span>
+          </div>
+
+          <!-- Trip 1: Tokyo (Sky & Mint tươi sáng) -->
+          <div class="neu-card trip-card-item">
+            <div class="trip-header-row">
+              <div class="trip-icon-badge">🌸</div>
+              <span class="badge badge-mint" style="font-size: 11px;">Đang lên lịch</span>
+            </div>
+            <div class="trip-destination">TOKYO, NHẬT BẢN</div>
+            <div class="trip-name">Tokyo in Spring</div>
+            <div style="font-size: 12.5px; color: var(--color-text-muted);">
+              📅 12 – 20 Thg 3 · 12 địa điểm
+            </div>
+
+            <div class="neu-inset trip-next-well">
+              <span style="color: var(--color-text-muted);">Tiếp theo: TeamLab Borderless</span>
+              <span style="font-weight: 800; color: var(--color-primary);">10:30 AM</span>
+            </div>
+          </div>
+
+          <!-- Trip 2: Bali (Sun & Coral ấm áp) -->
+          <div class="neu-card trip-card-item">
+            <div class="trip-header-row">
+              <div class="trip-icon-badge">🌴</div>
+              <span class="badge badge-peach" style="font-size: 11px;">Tháng 5</span>
+            </div>
+            <div class="trip-destination">BALI, INDONESIA</div>
+            <div class="trip-name">Bali Healing Retreat</div>
+            <div style="font-size: 12.5px; color: var(--color-text-muted);">
+              📅 15 – 22 Thg 5 · 8 địa điểm
+            </div>
+
+            <div class="neu-inset trip-next-well">
+              <span style="color: var(--color-text-muted);">Tiếp theo: Ngắm bình minh Batur</span>
+              <span style="font-weight: 800; color: var(--color-accent);">04:00 AM</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Cột phải: AI Assistant & Danh sách Hoạt động -->
+      <main>
+        <!-- AI Assistant Card rạng rỡ -->
+        <div class="neu-card ai-planner-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 22px;">✨</span>
+              <h3 style="font-size: 19px;">Lập kế hoạch cùng AI Thông Minh</h3>
+            </div>
+            <span class="badge badge-primary">AI Ready ⚡</span>
+          </div>
+          <p style="font-size: 14px; color: var(--color-text-muted); margin-top: 5px;">
+            Hãy miêu tả ngày du lịch bạn mong muốn, AI sẽ sắp xếp lịch trình và gợi ý những địa điểm tràn đầy năng lượng nhất.
+          </p>
+
+          <div class="neu-inset ai-input-wrapper">
+            <span style="font-size: 18px;">💡</span>
+            <input type="text" placeholder="Ví dụ: Gợi ý 1 ngày ăn ngon và chụp ảnh đẹp ở Shibuya & Harajuku..." />
+            <button class="btn-primary" style="padding: 9px 20px; font-size: 13px; border-radius: 14px;">
+              Gợi ý ngay ✨
+            </button>
+          </div>
+
+          <div class="ai-chips">
+            <button class="chip">🍜 Top quán Ramen view đẹp ở Roppongi</button>
+            <button class="chip">☕ Quán cafe phong cách tối giản ở Omotesando</button>
+            <button class="chip">🌿 Đi dạo công viên Shinjuku Gyoen buổi sáng</button>
+          </div>
+        </div>
+
+        <!-- Section: Activities List / Hoạt động trong chuyến đi -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <h2 class="section-title">
+              <span>📍</span> Địa điểm & Hoạt động (Tokyo in Spring)
+            </h2>
+            <button class="btn-secondary" style="padding: 8px 18px; font-size: 13px;">+ Thêm địa điểm</button>
+          </div>
+
+          <!-- Bộ lọc trạng thái (Filters) -->
+          <div class="filters-bar">
+            <button class="filter-btn active">Tất cả (12)</button>
+            <button class="filter-btn">Sắp tới (8)</button>
+            <button class="filter-btn">Đã ghé thăm (4)</button>
+          </div>
+
+          <!-- Activity Item 1 (Sky Blue) -->
+          <div class="neu-card activity-card">
+            <div class="activity-left">
+              <div class="neu-inset activity-icon-well" style="color: var(--color-primary);">
+                📍
+              </div>
+              <div>
+                <div class="activity-title">TeamLab Borderless</div>
+                <div class="activity-tags">
+                  <span>🏛️ Bảo tàng nghệ thuật số</span>
+                  <span>·</span>
+                  <span>Minato City, Tokyo</span>
+                  <span>·</span>
+                  <span>⏰ 2 tiếng</span>
+                </div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge badge-mint">Planning</span>
+              <div style="font-size: 12px; font-weight: 800; color: var(--color-primary); margin-top: 4px;">10:30 AM</div>
+            </div>
+          </div>
+
+          <!-- Activity Item 2 (Coral Accent) -->
+          <div class="neu-card activity-card">
+            <div class="activity-left">
+              <div class="neu-inset activity-icon-well" style="color: var(--color-accent);">
+                🍜
+              </div>
+              <div>
+                <div class="activity-title">Tsujihan Kaisendon Nihonbashi</div>
+                <div class="activity-tags">
+                  <span>🍱 Cơm hải sản núi lửa</span>
+                  <span>·</span>
+                  <span>Nihonbashi</span>
+                  <span>·</span>
+                  <span>⏰ 1 tiếng</span>
+                </div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge badge-peach">Food Spot</span>
+              <div style="font-size: 12px; font-weight: 800; color: var(--color-accent); margin-top: 4px;">01:00 PM</div>
+            </div>
+          </div>
+
+          <!-- Activity Item 3 (Lavender Secondary) -->
+          <div class="neu-card activity-card">
+            <div class="activity-left">
+              <div class="neu-inset activity-icon-well" style="color: var(--color-secondary);">
+                ⛩️
+              </div>
+              <div>
+                <div class="activity-title">Đền Meiji Jingu (Meiji Shrine)</div>
+                <div class="activity-tags">
+                  <span>🌲 Đi dạo rừng cây cổ thụ</span>
+                  <span>·</span>
+                  <span>Shibuya, Tokyo</span>
+                  <span>·</span>
+                  <span>⏰ Sáng sớm</span>
+                </div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge badge-secondary">Tâm linh & Chill</span>
+              <div style="font-size: 12px; font-weight: 800; color: var(--color-secondary); margin-top: 4px;">Thứ Tư 08:30</div>
+            </div>
+          </div>
+
+          <!-- Activity Item 4 (Fresh Mint) -->
+          <div class="neu-card activity-card">
+            <div class="activity-left">
+              <div class="neu-inset activity-icon-well" style="color: var(--color-mint);">
+                ☕
+              </div>
+              <div>
+                <div class="activity-title">Koffee Mameya Kakeru</div>
+                <div class="activity-tags">
+                  <span>☕ Trải nghiệm Cafe Omakase</span>
+                  <span>·</span>
+                  <span>Koto City, Tokyo</span>
+                </div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge badge-mint">Khám phá</span>
+              <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 4px;">Tự do</div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

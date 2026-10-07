@@ -1,84 +1,64 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowUpRight,
+  CalendarClock,
+  CheckCircle2,
+  CircleAlert,
+  Clock3,
+  ListChecks,
+  Sparkles,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { HistoryClient } from "@/components/history/history-client";
-import type {
-  AuditLog,
-  Item,
-  ItemEvent,
-  Place,
-  PlanCost,
-} from "@/types/database";
+import { ActivityIcon } from "@/components/items/activity-icon";
+import type { Item, ItemEvent, PlanCost } from "@/types/database";
 import {
-  auditTrend,
   categoryCounts,
-  completionsOverTime,
-  costByCategory,
   countOverdue,
-  durationHistogram,
   eventsInRange,
   filterTodayItems,
-  memberCompare,
-  placesScatter,
-  statusCounts,
+  nextDashboardItems,
+  planProgress,
   totalEstimatedCost,
-  weekdayHeatmap,
   type DashRange,
 } from "@/lib/dashboard/aggregates";
 import { paths } from "@/lib/paths";
+import { cn } from "@/lib/utils";
+import { categoryPalette } from "@/lib/category-colors";
 
-const ChartPulse = () => (
-  <div className="h-48 animate-pulse rounded-xl bg-primary-soft" />
-);
+function formatWhen(iso: string | null): string | null {
+  if (!iso) return null;
+  try {
+    return new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
 
-const StatusDonut = dynamic(
-  () => import("@/components/dashboard/dashboard-charts").then((m) => m.StatusDonut),
-  { ssr: false, loading: ChartPulse },
-);
-const CategoryBar = dynamic(
-  () => import("@/components/dashboard/dashboard-charts").then((m) => m.CategoryBar),
-  { ssr: false, loading: ChartPulse },
-);
-const SimpleTrend = dynamic(
-  () => import("@/components/dashboard/dashboard-charts").then((m) => m.SimpleTrend),
-  { ssr: false, loading: ChartPulse },
-);
-const WeekdayBars = dynamic(
-  () => import("@/components/dashboard/dashboard-charts").then((m) => m.WeekdayBars),
-  { ssr: false, loading: ChartPulse },
-);
-const DurationBars = dynamic(
-  () => import("@/components/dashboard/dashboard-charts").then((m) => m.DurationBars),
-  { ssr: false, loading: ChartPulse },
-);
-const CostBars = dynamic(
-  () => import("@/components/dashboard/dashboard-charts").then((m) => m.CostBars),
-  { ssr: false, loading: ChartPulse },
-);
-const PlacesScatter = dynamic(
-  () => import("@/components/dashboard/dashboard-charts").then((m) => m.PlacesScatter),
-  { ssr: false, loading: ChartPulse },
-);
-const MemberBars = dynamic(
-  () => import("@/components/dashboard/dashboard-charts").then((m) => m.MemberBars),
-  { ssr: false, loading: ChartPulse },
-);
+function isOverdue(item: Item): boolean {
+  if (item.status !== "ACTIVE" || !item.due_at) return false;
+  const due = new Date(item.due_at).getTime();
+  return Number.isFinite(due) && due < Date.now();
+}
 
-function fmtUsd(n: number): string {
-  if (n === 0) return "$0";
-  if (n < 1) return `$${n.toFixed(2)}`;
-  return `$${n.toFixed(0)}`;
+function rangeLabel(range: DashRange): string {
+  return range === "all" ? "all time" : `last ${range} days`;
 }
 
 export function DashboardClient({ workspaceId }: { workspaceId: string }) {
   const [items, setItems] = useState<Item[]>([]);
-  const [audits, setAudits] = useState<AuditLog[]>([]);
   const [events, setEvents] = useState<ItemEvent[]>([]);
-  const [places, setPlaces] = useState<Place[]>([]);
   const [costs, setCosts] = useState<PlanCost[]>([]);
   const [range, setRange] = useState<DashRange>("7");
   const [loading, setLoading] = useState(true);
@@ -87,34 +67,25 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
     async function load() {
       setLoading(true);
       const supabase = createClient();
-      const [{ data: itemData }, { data: auditData }, { data: eventData }, { data: placeData }] =
-        await Promise.all([
-          supabase
-            .from("items")
-            .select("*")
-            .eq("workspace_id", workspaceId)
-            .is("deleted_at", null),
-          supabase
-            .from("audit_logs")
-            .select("*")
-            .eq("workspace_id", workspaceId)
-            .order("created_at", { ascending: false })
-            .limit(400),
-          supabase
-            .from("item_events")
-            .select("*")
-            .eq("workspace_id", workspaceId)
-            .order("occurred_at", { ascending: false })
-            .limit(400),
-          supabase.from("places").select("*").eq("workspace_id", workspaceId),
-        ]);
+      const [{ data: itemData }, { data: eventData }] = await Promise.all([
+        supabase
+          .from("items")
+          .select("*")
+          .eq("workspace_id", workspaceId)
+          .is("deleted_at", null),
+        supabase
+          .from("item_events")
+          .select("*")
+          .eq("workspace_id", workspaceId)
+          .order("occurred_at", { ascending: false })
+          .limit(400),
+      ]);
+
       const itemRows = (itemData ?? []) as Item[];
       setItems(itemRows);
-      setAudits((auditData ?? []) as AuditLog[]);
       setEvents((eventData ?? []) as ItemEvent[]);
-      setPlaces((placeData ?? []) as Place[]);
 
-      const ids = itemRows.map((i) => i.id);
+      const ids = itemRows.map((item) => item.id);
       if (ids.length > 0) {
         const { data: costData } = await supabase
           .from("plan_costs")
@@ -126,142 +97,189 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
       }
       setLoading(false);
     }
+
     void load();
     const onRefresh = () => void load();
     window.addEventListener("planner:refresh", onRefresh);
     return () => window.removeEventListener("planner:refresh", onRefresh);
   }, [workspaceId]);
 
-  useEffect(() => {
-    if (loading) return;
-    const hash = window.location.hash.replace(/^#/, "");
-    if (!hash) return;
-    const el = document.getElementById(hash);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [loading]);
-
-  const active = items.filter((i) => i.status === "ACTIVE");
-  const completed = items.filter((i) => i.status === "COMPLETED");
-  const overdue = countOverdue(items);
-  const eventCount = eventsInRange(events, range);
-  const estCost = totalEstimatedCost(costs);
+  const progress = useMemo(() => planProgress(items), [items]);
   const todayItems = useMemo(() => filterTodayItems(items), [items]);
-
-  const statusData = useMemo(() => {
-    const c = statusCounts(items);
-    return Object.entries(c).map(([name, value]) => ({ name, value }));
-  }, [items]);
-
-  const cats = useMemo(() => categoryCounts(items), [items]);
-  const trend = useMemo(() => auditTrend(audits, range), [audits, range]);
-  const comps = useMemo(
-    () => completionsOverTime(events, range),
-    [events, range],
-  );
-  const weekdays = useMemo(() => weekdayHeatmap(events, range), [events, range]);
-  const durations = useMemo(
-    () => durationHistogram(items, events),
-    [items, events],
-  );
-  const costData = useMemo(() => costByCategory(costs), [costs]);
-  const scatter = useMemo(() => placesScatter(places), [places]);
-  const members = useMemo(
-    () => memberCompare(audits, events, range),
-    [audits, events, range],
-  );
+  const nextItems = useMemo(() => nextDashboardItems(items), [items]);
+  const categories = useMemo(() => categoryCounts(items).slice(0, 6), [items]);
+  const overdue = countOverdue(items);
+  const periodEvents = eventsInRange(events, range);
+  const estimatedCost = totalEstimatedCost(costs);
+  const visitedPercent = progress.total
+    ? Math.round((progress.visited / progress.total) * 100)
+    : 0;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-2xl font-semibold">Dashboard</h2>
-        <div className="flex gap-1">
-          {(["7", "30", "90", "all"] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRange(r)}
-              className={`rounded-lg px-2 py-1 text-xs ${
-                range === r ? "bg-cta text-white" : "bg-primary-soft"
-              }`}
-            >
-              {r === "all" ? "All time" : `${r}d`}
-            </button>
-          ))}
+    <div className="space-y-6 pb-8">
+      <header className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 p-5 shadow-[-8px_-8px_18px_rgba(255,255,255,0.95),8px_12px_24px_rgba(147,175,212,0.2)] sm:p-7">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-primary-soft/70 blur-2xl" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-primary/70">
+              Project pulse
+            </p>
+            <h2 className="mt-1 font-heading text-3xl font-black tracking-tight text-foreground">
+              Dashboard
+            </h2>
+            <p className="mt-2 max-w-xl text-sm font-medium text-muted">
+              See what needs attention today, what is next, and how your plan is moving.
+            </p>
+          </div>
+          <div className="flex gap-1.5 rounded-2xl bg-primary-soft/70 p-1" aria-label="Dashboard range">
+            {(["7", "30", "90", "all"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRange(value)}
+                className={`rounded-xl px-3 py-2 text-xs font-black transition ${
+                  range === value
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-muted hover:bg-white/70 hover:text-foreground"
+                }`}
+              >
+                {value === "all" ? "All" : `${value}d`}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </header>
 
       {loading ? (
-        <p className="text-sm text-muted">Loading…</p>
+        <p className="text-sm font-medium text-muted">Loading dashboard…</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <Kpi label="Active" value={String(active.length)} />
-            <Kpi label="Completed" value={String(completed.length)} />
-            <Kpi label="Overdue" value={String(overdue)} />
-            <Kpi label="Events" value={String(eventCount)} />
-            <Kpi label="Est. cost" value={fmtUsd(estCost)} />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Up next"
+              value={String(progress.upcoming)}
+              detail={overdue ? `${overdue} overdue` : "Nothing overdue"}
+              icon={<CalendarClock className="h-5 w-5" aria-hidden />}
+              tone="sky"
+            />
+            <MetricCard
+              label="Visited"
+              value={`${progress.visited}/${progress.total}`}
+              detail={`${visitedPercent}% of your plan`}
+              icon={<CheckCircle2 className="h-5 w-5" aria-hidden />}
+              tone="emerald"
+            />
+            <MetricCard
+              label="Today"
+              value={String(todayItems.length)}
+              detail={todayItems.length ? "Keep the day moving" : "Clear calendar"}
+              icon={<ListChecks className="h-5 w-5" aria-hidden />}
+              tone="amber"
+            />
+            <MetricCard
+              label="Activity"
+              value={String(periodEvents)}
+              detail={`events ${rangeLabel(range)}`}
+              icon={<Sparkles className="h-5 w-5" aria-hidden />}
+              tone="violet"
+            />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <ChartCard title="Status">
-              <StatusDonut data={statusData} />
-            </ChartCard>
-            <ChartCard title="Category (active)">
-              <CategoryBar data={cats} />
-            </ChartCard>
-            <ChartCard title="Audit activity trend">
-              <SimpleTrend data={trend} />
-            </ChartCard>
-            <ChartCard title="Completions over time">
-              <SimpleTrend data={comps} />
-            </ChartCard>
-            <ChartCard title="Events by weekday">
-              <WeekdayBars data={weekdays} />
-            </ChartCard>
-            <ChartCard title="Duration">
-              <DurationBars data={durations} />
-            </ChartCard>
-            <ChartCard title="Cost by category">
-              <CostBars data={costData} />
-            </ChartCard>
-            <ChartCard title="Places (lat/lng)">
-              <PlacesScatter data={scatter} />
-            </ChartCard>
-            <ChartCard title="Member activity" className="md:col-span-2">
-              <MemberBars data={members} />
-            </ChartCard>
+          <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
+            <TrackCard
+              title="Today"
+              subtitle="Your next decisions live here."
+              action={
+                <Link
+                  href={paths.projectLists(workspaceId)}
+                  className="inline-flex items-center gap-1 text-xs font-black text-primary hover:underline"
+                >
+                  Open list <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                </Link>
+              }
+            >
+              {todayItems.length === 0 ? (
+                <EmptyState icon={<Sparkles className="h-5 w-5" aria-hidden />} text="No plans for today." />
+              ) : (
+                <div className="space-y-2.5">
+                  {todayItems.slice(0, 5).map((item) => (
+                    <ActivityRow key={item.id} item={item} />
+                  ))}
+                </div>
+              )}
+            </TrackCard>
+
+            <TrackCard title="Plan progress" subtitle="A simple read on your whole plan.">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-4xl font-black tracking-tight text-foreground">{visitedPercent}%</p>
+                  <p className="mt-1 text-xs font-bold text-muted">visited or completed</p>
+                </div>
+                <p className="text-right text-xs font-bold text-muted">
+                  {progress.visited} done<br />of {progress.total} activities
+                </p>
+              </div>
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-primary-soft" aria-label={`${visitedPercent}% visited`}>
+                <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${visitedPercent}%` }} />
+              </div>
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                <ProgressStat label="Upcoming" value={progress.upcoming} tone="sky" />
+                <ProgressStat label="Visited" value={progress.visited} tone="emerald" />
+                <ProgressStat label="Skipped" value={progress.skipped} tone="amber" />
+              </div>
+            </TrackCard>
           </div>
 
-          <section id="today" className="scroll-mt-20 space-y-3">
-            <div className="flex items-end justify-between gap-2">
-              <h3 className="text-lg font-semibold">Today</h3>
-              <Link
-                href={paths.projectLists(workspaceId)}
-                className="text-xs text-primary underline"
-              >
-                Open Lists
+          <section className="space-y-3">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70">Shape of your plan</p>
+                <h3 className="mt-1 font-heading text-xl font-black tracking-tight">By category</h3>
+              </div>
+              <Link href={paths.projectLists(workspaceId)} className="text-xs font-black text-primary hover:underline">
+                See all activities
               </Link>
             </div>
-            {todayItems.length === 0 ? (
-              <Card className="text-sm text-muted">
-                Nothing due or planned for today.
-              </Card>
+            {categories.length === 0 ? (
+              <Card className="border-dashed p-6 text-sm font-medium text-muted">Add an activity to see categories.</Card>
             ) : (
-              <ul className="space-y-2">
-                {todayItems.map((i) => (
-                  <Card key={i.id} className="flex items-center justify-between gap-2 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{i.title}</p>
-                      <p className="text-[11px] text-muted">
-                        {i.category_label || i.category || "Activity"}
-                        {i.due_at ? ` · due ${new Date(i.due_at).toLocaleString()}` : ""}
-                      </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {categories.map((category) => (
+                  <Card key={category.name} className={cn("flex items-center justify-between gap-3 p-4 shadow-[-4px_-4px_10px_rgba(255,255,255,0.9),4px_6px_14px_rgba(147,175,212,0.16)]", categoryPalette(category.name).card)}>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className={cn("neu-inset flex h-10 w-10 shrink-0 items-center justify-center", categoryPalette(category.name).icon)}>
+                        <ActivityIcon text={category.name} className="h-5 w-5" />
+                      </span>
+                      <span className="truncate text-sm font-black text-foreground">{category.name}</span>
                     </div>
+                    <span className={cn("text-2xl font-black tabular-nums", categoryPalette(category.name).count)}>{category.count}</span>
                   </Card>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
+
+          <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
+            <TrackCard title="Next up" subtitle="Upcoming activities, sorted by time.">
+              {nextItems.length === 0 ? (
+                <EmptyState icon={<CheckCircle2 className="h-5 w-5" aria-hidden />} text="Your plan is clear." />
+              ) : (
+                <div className="space-y-2.5">
+                  {nextItems.map((item) => (
+                    <ActivityRow key={item.id} item={item} compact />
+                  ))}
+                </div>
+              )}
+            </TrackCard>
+
+            <TrackCard title="Quick insights" subtitle={`Useful context for ${rangeLabel(range)}.`}>
+              <div className="space-y-3">
+                <InsightRow label="Estimated cost" value={formatCost(estimatedCost)} />
+                <InsightRow label="Overdue" value={String(overdue)} alert={overdue > 0} />
+                <InsightRow label="Skipped" value={String(progress.skipped)} />
+              </div>
+            </TrackCard>
+          </div>
 
           <section id="history" className="scroll-mt-20 space-y-3">
             <HistoryClient workspaceId={workspaceId} />
@@ -272,28 +290,123 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function formatCost(value: number): string {
+  return value === 0 ? "$0" : `$${value.toFixed(0)}`;
+}
+
+function MetricCard({
+  label,
+  value,
+  detail,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  icon: React.ReactNode;
+  tone: "sky" | "emerald" | "amber" | "violet";
+}) {
+  const toneClass = {
+    sky: "bg-sky-50 text-sky-600",
+    emerald: "bg-emerald-50 text-emerald-600",
+    amber: "bg-amber-50 text-amber-600",
+    violet: "bg-violet-50 text-violet-600",
+  }[tone];
+
   return (
-    <Card>
-      <p className="text-xs text-muted">{label}</p>
-      <p className="text-2xl font-semibold tabular-nums">{value}</p>
+    <Card className="border-white/80 bg-white/85 p-4 shadow-[-5px_-5px_12px_rgba(255,255,255,0.95),5px_7px_16px_rgba(147,175,212,0.17)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">{label}</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-foreground">{value}</p>
+        </div>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${toneClass}`}>{icon}</span>
+      </div>
+      <p className="mt-2 text-xs font-bold text-muted">{detail}</p>
     </Card>
   );
 }
 
-function ChartCard({
+function TrackCard({
   title,
+  subtitle,
+  action,
   children,
-  className,
 }: {
   title: string;
+  subtitle: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
-  className?: string;
-}): React.ReactElement {
+}) {
   return (
-    <Card className={className}>
-      <p className="mb-2 text-sm font-medium">{title}</p>
+    <Card className="border-white/80 bg-white/85 p-5 shadow-[-7px_-7px_16px_rgba(255,255,255,0.95),7px_10px_20px_rgba(147,175,212,0.18)] sm:p-6">
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-heading text-lg font-black tracking-tight text-foreground">{title}</h3>
+          <p className="mt-1 text-xs font-medium text-muted">{subtitle}</p>
+        </div>
+        {action}
+      </div>
       {children}
     </Card>
+  );
+}
+
+function ActivityRow({ item, compact = false }: { item: Item; compact?: boolean }) {
+  const time = formatWhen(item.due_at ?? item.planned_start_at);
+  const overdue = isOverdue(item);
+  const palette = categoryPalette(item.category_label ?? item.category ?? "");
+  return (
+    <div className={`flex items-center gap-3 rounded-2xl border border-border/60 bg-surface/75 ${compact ? "p-3" : "p-3.5"}`}>
+      <span className={cn("neu-inset flex h-10 w-10 shrink-0 items-center justify-center", palette.icon)}>
+        <ActivityIcon text={`${item.category_label ?? item.category ?? ""} ${item.title}`} className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-black text-foreground">{item.title}</p>
+        <p className={`mt-1 flex items-center gap-1 text-xs font-bold ${overdue ? "text-rose-600" : "text-muted"}`}>
+          {overdue ? <CircleAlert className="h-3.5 w-3.5" aria-hidden /> : <Clock3 className="h-3.5 w-3.5" aria-hidden />}
+          {overdue ? "Overdue" : time ?? "No time set"}
+        </p>
+      </div>
+      {item.category_label ? <span className={cn("hidden rounded-full border px-2.5 py-1 text-[10px] font-black sm:inline-flex", palette.badge)}>{item.category_label}</span> : null}
+    </div>
+  );
+}
+
+function ProgressStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "sky" | "emerald" | "amber";
+}) {
+  const dot = { sky: "bg-sky-400", emerald: "bg-emerald-500", amber: "bg-amber-400" }[tone];
+  return (
+    <div className="rounded-2xl bg-surface/80 p-3">
+      <span className={`mb-2 block h-2 w-2 rounded-full ${dot}`} />
+      <p className="text-lg font-black tabular-nums">{value}</p>
+      <p className="mt-0.5 text-[10px] font-bold text-muted">{label}</p>
+    </div>
+  );
+}
+
+function InsightRow({ label, value, alert = false }: { label: string; value: string; alert?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-3 last:border-0 last:pb-0">
+      <span className="text-sm font-bold text-muted">{label}</span>
+      <span className={`text-lg font-black tabular-nums ${alert ? "text-rose-600" : "text-foreground"}`}>{value}</span>
+    </div>
+  );
+}
+
+function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-dashed border-border bg-surface/60 p-4 text-sm font-bold text-muted">
+      <span className="text-primary">{icon}</span>
+      {text}
+    </div>
   );
 }

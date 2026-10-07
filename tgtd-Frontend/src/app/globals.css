@@ -1,18 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f2f7f5;
-  --foreground: #1a3d38;
-  --muted: #6b8a84;
-  --primary: #0f766e;
-  --primary-soft: #ddeee9;
-  --cta: #0f766e;
-  --cta-hover: #115e59;
-  --togo: #0d9488;
-  --todo: #c2410c;
+  --background: #f5f9fd;
+  --foreground: #1e293b;
+  --muted: #64748b;
+  --primary: #0284c7;
+  --primary-soft: #e0f2fe;
+  --cta: #ff6b4a;
+  --cta-hover: #f25330;
+  --togo: #0284c7;
+  --todo: #ff6b4a;
   --surface: #ffffff;
-  --border: #b8d4cc;
-  --danger: #be123c;
+  --border: #e2e8f0;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --secondary: #8b5cf6;
+  --mint: #10b981;
 }
 
 @theme inline {
@@ -28,15 +31,90 @@
   --color-surface: var(--surface);
   --color-border: var(--border);
   --color-danger: var(--danger);
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --color-warning: var(--warning);
+  --color-secondary: var(--secondary);
+  --color-mint: var(--mint);
+  --font-serif: var(--font-quicksand, "Quicksand", sans-serif);
+  --font-sans: var(--font-nunito, "Nunito", sans-serif);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-serif);
+  font-weight: 700;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Luminous Neumorphic Primitives matching mockup */
+.neu-card {
+  background: linear-gradient(145deg, #ffffff, #f5f9fd);
+  box-shadow: -8px -8px 20px rgba(255, 255, 255, 0.98), 8px 8px 22px rgba(147, 175, 212, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 1.5rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.neu-card:hover {
+  box-shadow: -10px -10px 25px rgba(255, 255, 255, 1), 10px 10px 26px rgba(147, 175, 212, 0.45);
+}
+
+.neu-inset {
+  background: #f5f9fd;
+  box-shadow: inset -4px -4px 10px rgba(255, 255, 255, 0.95), inset 4px 4px 10px rgba(147, 175, 212, 0.3);
+  border-radius: 1.125rem;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #0284c7 0%, #8b5cf6 60%, #ec4899 100%);
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Ambient Pastel Radiant Glow Orbs */
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.65;
+}
+.orb-1 {
+  top: -80px;
+  right: 5%;
+  width: 460px;
+  height: 460px;
+  background: linear-gradient(135deg, #bae6fd, #ddd6fe);
+}
+.orb-2 {
+  bottom: 8%;
+  left: 2%;
+  width: 420px;
+  height: 420px;
+  background: linear-gradient(135deg, #a7f3d0, #fef08a);
+  opacity: 0.55;
+}
+.orb-3 {
+  top: 35%;
+  left: 30%;
+  width: 380px;
+  height: 380px;
+  background: linear-gradient(135deg, #fed7aa, #fbcfe8);
+  opacity: 0.45;
+}
+
+.home-atmosphere {
+  position: relative;
+  background-color: var(--background);
+  overflow-x: hidden;
 }

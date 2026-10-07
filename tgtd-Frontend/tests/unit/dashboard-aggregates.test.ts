@@ -3,6 +3,8 @@ import {
   categoryCounts,
   countOverdue,
   filterTodayItems,
+  nextDashboardItems,
+  planProgress,
   statusCounts,
   totalEstimatedCost,
   weekdayHeatmap,
@@ -51,6 +53,25 @@ describe("dashboard aggregates", () => {
     ];
     expect(statusCounts(items).ACTIVE).toBe(2);
     expect(categoryCounts(items).find((c) => c.name === "Food")?.count).toBe(1);
+  });
+
+  it("summarizes plan progress and orders next scheduled activities", () => {
+    const items = [
+      item({
+        id: "1",
+        title: "Dinner",
+        status: "ACTIVE",
+        plan_status: "PLANNING",
+        planned_start_at: "2026-09-25T10:00:00Z",
+      }),
+      item({ id: "2", title: "Beach", status: "ACTIVE", plan_status: "VISITED" }),
+      item({ id: "3", title: "Museum", status: "ACTIVE", plan_status: "SKIPPED" }),
+      item({ id: "4", title: "Cafe", status: "COMPLETED", plan_status: null }),
+      item({ id: "5", title: "Unscheduled", status: "ACTIVE", plan_status: "PLANNING" }),
+    ];
+
+    expect(planProgress(items)).toEqual({ total: 5, upcoming: 2, visited: 2, skipped: 1 });
+    expect(nextDashboardItems(items).map((entry: Item) => entry.id)).toEqual(["1", "5"]);
   });
 
   it("overdue and today filters", () => {

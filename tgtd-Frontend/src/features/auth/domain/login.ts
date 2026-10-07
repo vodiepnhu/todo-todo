@@ -16,8 +16,15 @@ export function resolveLoginEmail(identifier: string, allowDemoAlias: boolean) {
 }
 
 export function safeNextPath(value: string | null | undefined) {
+  if (value === "/app") return "/projects";
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/app";
+    return "/projects";
   }
   return value;
+}
+
+export function googleAuthRedirectUrl(origin: string) {
+  const url = new URL("/auth/callback", origin);
+  url.searchParams.set("next", "/projects");
+  return url.toString();
 }

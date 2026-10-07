@@ -20,6 +20,8 @@ export function EditItemModal({
   initialMode = "edit",
   projectName,
   onDelete,
+  canEdit = true,
+  canDelete = true,
 }: {
   item: Item;
   onClose: () => void;
@@ -27,6 +29,8 @@ export function EditItemModal({
   initialMode?: EditItemModalMode;
   projectName?: string | null;
   onDelete?: (item: Item) => void | Promise<void>;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }) {
   const [mode, setMode] = useState<EditItemModalMode>(initialMode);
   const [mounted, setMounted] = useState(false);
@@ -68,6 +72,8 @@ export function EditItemModal({
         openedAs={initialMode}
         projectName={projectName}
         onDelete={onDelete}
+        canEdit={canEdit}
+        canDelete={canDelete}
       />
     </div>,
     document.body,

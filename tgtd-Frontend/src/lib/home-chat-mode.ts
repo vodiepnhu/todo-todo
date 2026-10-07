@@ -1,6 +1,6 @@
 export type HomeChatMode = "ask" | "add";
 
-/** Bias NL planner without hard-locking intent. */
+/** Bias NL planner without skipping consultation or schedule confirmation. */
 export function applyHomeModeBias(
   message: string,
   mode: HomeChatMode,
@@ -8,7 +8,7 @@ export function applyHomeModeBias(
   const trimmed = message.trim();
   if (!trimmed) return trimmed;
   if (mode === "add") {
-    return `${trimmed}\n\n(Context: Home Add mode — prefer CREATE_ITEM / saving an activity; if project is unclear, ask which project or offer new project.)`;
+    return `${trimmed}\n\n(Context: Home Add mode — use selected project as destination. For vague place requests, recommend first, ask which place, then ask whether to schedule. Only an explicit yes or explicit add/save/schedule request may create a plan.)`;
   }
-  return `${trimmed}\n\n(Context: Home Ask mode — prefer recommendations and search across projects; only mutate if the user clearly asks to save/add.)`;
+  return `${trimmed}\n\n(Context: Home Ask mode — consult first. For place requests, recommend options, ask which place, then ask whether to schedule. Only an explicit yes or explicit add/save/schedule request may create a plan.)`;
 }

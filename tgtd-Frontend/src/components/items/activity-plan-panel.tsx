@@ -17,6 +17,7 @@ import {
 import { loadPlanDraft } from "@/services/plan-persist-service";
 import type { Item } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n";
 
 export type EditItemModalMode = "view" | "edit";
 
@@ -32,10 +33,10 @@ function normalizePlanStatus(status: PlanStatus | null | undefined): PlanStatus 
   return status === "VISITED" || status === "SKIPPED" ? status : "PLANNING";
 }
 
-function statusLabel(status: PlanStatus): string {
-  if (status === "VISITED") return "Visited";
-  if (status === "SKIPPED") return "Skipped";
-  return "Planning";
+function statusLabel(status: PlanStatus, vi = false): string {
+  if (status === "VISITED") return vi ? "Đã thực hiện" : "Visited";
+  if (status === "SKIPPED") return vi ? "Đã bỏ qua" : "Skipped";
+  return vi ? "Đang lập kế hoạch" : "Planning";
 }
 
 export function ActivityPlanPanel({
@@ -48,6 +49,8 @@ export function ActivityPlanPanel({
   openedAs = "view",
   projectName,
   onDelete,
+  canEdit = true,
+  canDelete = true,
 }: {
   item: Item;
   mode: EditItemModalMode;
@@ -58,6 +61,8 @@ export function ActivityPlanPanel({
   openedAs?: EditItemModalMode;
   projectName?: string | null;
   onDelete?: (item: Item) => void | Promise<void>;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }) {
   const [plan, setPlan] = useState<PlanDraft>(() => ({
     ...emptyPlan(),
@@ -65,7 +70,9 @@ export function ActivityPlanPanel({
   }));
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const readOnly = mode === "view";
+  const { locale } = useLocale();
+  const vi = locale === "vi";
+  const readOnly = mode === "view" || !canEdit;
   const currentStatus = normalizePlanStatus(plan.status);
 
   useEffect(() => {
@@ -91,6 +98,7 @@ export function ActivityPlanPanel({
   }, [item.id, item.title]);
 
   function enableEdit() {
+    if (!canEdit) return;
     onModeChange("edit");
   }
 
@@ -162,10 +170,10 @@ export function ActivityPlanPanel({
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-primary">
-            {readOnly ? "Activity" : "Edit activity"}
+            {readOnly ? (vi ? "Hoạt động" : "Activity") : (vi ? "Chỉnh sửa hoạt động" : "Edit activity")}
           </p>
           <h2 className="text-lg font-semibold">
-            {readOnly ? "Details" : "Edit then save"}
+            {readOnly ? (vi ? "Chi tiết" : "Details") : (vi ? "Chỉnh sửa và lưu" : "Edit then save")}
           </h2>
           {projectName ? (
             <p className="mt-1 text-xs font-medium text-foreground/60">
@@ -175,32 +183,32 @@ export function ActivityPlanPanel({
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <label className="sr-only" htmlFor={`item-status-${item.id}`}>
-            Activity status
+            {vi ? "Trạng thái hoạt động" : "Activity status"}
           </label>
           <select
             id={`item-status-${item.id}`}
             className="h-8 rounded-lg border border-border bg-surface px-2 text-xs font-semibold text-foreground"
             data-testid={`item-status-${item.id}`}
             value={currentStatus}
-            disabled={loading || busy}
+            disabled={loading || busy || !canEdit}
             onChange={(e) => void changeStatus(e.target.value as PlanStatus)}
           >
             {PANEL_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {statusLabel(s)}
+                {statusLabel(s, vi)}
               </option>
             ))}
           </select>
           {onClose && !embedded ? (
             <Button size="sm" variant="ghost" onClick={onClose} disabled={busy}>
-              Close
+              {vi ? "Đóng" : "Close"}
             </Button>
           ) : null}
         </div>
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted">Loading plan…</p>
+        <p className="text-sm text-muted">{vi ? "Đang tải kế hoạch…" : "Loading plan…"}</p>
       ) : (
         <AddToPlanForm
           value={plan}
@@ -210,12 +218,13 @@ export function ActivityPlanPanel({
           busy={busy}
           readOnly={readOnly}
           hideActions
-          heading={readOnly ? "ACTIVITY" : "EDIT PLAN"}
+          heading={readOnly ? (vi ? "HOẠT ĐỘNG" : "ACTIVITY") : vi ? "CHỈNH SỬA KẾ HOẠCH" : "EDIT PLAN"}
         />
       )}
 
       <div className="flex flex-wrap gap-2 pt-1">
         {readOnly ? (
+          canEdit ? (
           <Button
             type="button"
             data-testid="edit-item-enable-edit"
@@ -223,8 +232,9 @@ export function ActivityPlanPanel({
             disabled={loading}
           >
             <Pencil className="h-4 w-4" />
-            Edit
+            {vi ? "Sửa" : "Edit"}
           </Button>
+          ) : null
         ) : (
           <>
             <Button
@@ -233,7 +243,7 @@ export function ActivityPlanPanel({
               onClick={cancelEdit}
               disabled={busy}
             >
-              Cancel
+              {vi ? "Hủy" : "Cancel"}
             </Button>
             <Button
               type="button"
@@ -241,11 +251,11 @@ export function ActivityPlanPanel({
               onClick={() => void submit()}
               disabled={busy || loading}
             >
-              Save
+              {vi ? "Lưu" : "Save"}
             </Button>
           </>
         )}
-        {readOnly && onDelete ? (
+        {readOnly && canDelete && onDelete ? (
           <Button
             type="button"
             variant="ghost"
@@ -254,7 +264,7 @@ export function ActivityPlanPanel({
             disabled={loading || busy}
           >
             <Trash2 className="h-4 w-4" />
-            Delete
+            {vi ? "Xóa" : "Delete"}
           </Button>
         ) : null}
         {embedded && onClose ? (
@@ -264,7 +274,7 @@ export function ActivityPlanPanel({
             onClick={onClose}
             disabled={busy}
           >
-            Close
+            {vi ? "Đóng" : "Close"}
           </Button>
         ) : null}
       </div>

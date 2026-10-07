@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Togo - Trip Detail</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #FAF7F2;
+            --fg: #1C3832;
+            --muted: #64827A;
+            --primary: #0E625B;
+            --primary-soft: #E7F0EC;
+            --cta: #DF6951;
+            --cta-hover: #C95740;
+            --surface: #FFFFFF;
+            --border: #E3DED6;
+            --danger: #BE123C;
+            --warning: #F59E0B;
+            --trip-accent: #0f766e;
+            --trip-accent-soft: rgba(15, 118, 110, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--fg);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Fraunces', serif;
+            color: var(--fg);
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            background: none;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 14px;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background-color: var(--cta);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: var(--cta-hover);
+        }
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--fg);
+        }
+        .btn-outline:hover {
+            background-color: rgba(0,0,0,0.03);
+        }
+        .btn-ghost {
+            color: var(--muted);
+            padding: 8px;
+        }
+        .btn-ghost:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        .icon-svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            position: fixed;
+            height: 100vh;
+            background: var(--bg);
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            margin-bottom: 32px;
+            padding-left: 12px;
+        }
+
+        .sidebar-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-bottom: 8px;
+            padding-left: 12px;
+            font-weight: 600;
+        }
+
+        .sidebar-title {
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-left: 12px;
+            font-size: 15px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            color: var(--muted);
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(0,0,0,0.03);
+            color: var(--fg);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 240px;
+            flex: 1;
+            padding-bottom: 64px;
+        }
+
+        /* Trip Header */
+        .trip-header {
+            position: relative;
+            padding: 48px 48px 32px 48px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to bottom, var(--trip-accent-soft), transparent);
+        }
+
+        .trip-header-inner {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header-emoji {
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 16px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .header-title {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .header-meta {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Content Area */
+        .content-area {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 48px;
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 48px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 24px;
+        }
+
+        /* Stats Pills */
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Activity Cards */
+        .activities-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .activity-card {
+            background: var(--surface);
+            border: 1px solid rgba(227, 222, 214, 0.8);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+            box-shadow: 0 2px 8px rgba(28, 56, 50, 0.03);
+            transition: transform 0.15s ease;
+            cursor: pointer;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-1px);
+            border-color: var(--border);
+            box-shadow: 0 4px 12px rgba(28, 56, 50, 0.05);
+        }
+
+        .activity-time-col {
+            min-width: 60px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--fg);
+            padding-top: 4px;
+        }
+
+        .activity-icon-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .icon-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-soft);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .activity-line {
+            width: 2px;
+            flex: 1;
+            background: var(--border);
+            opacity: 0.5;
+            margin-top: 4px;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .activity-location {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .activity-tags {
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .activity-tag {
+            background: var(--bg);
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-planning {
+            background-color: #f0fdfa;
+            border: 1px solid #bbf7d0;
+            color: #115e59;
+        }
+
+        /* Budget Widget */
+        .widget-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .widget-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .budget-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+        .budget-row:last-of-type {
+            border-bottom: none;
+            margin-bottom: 16px;
+        }
+        .budget-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 15px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <a href="mockup-home.html" class="breadcrumb">
+            <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            All Trips
+        </a>
+        
+        <div class="sidebar-label">TRIP</div>
+        <div class="sidebar-title">✈️ Tokyo in Spring</div>
+
+        <nav>
+            <div class="nav-item active">
+                <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                Overview
+            </div>
+            <div class="nav-item">
+                <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                AI Planner ✨
+            </div>
+            <div class="nav-item">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                Activities
+            </div>
+            <div class="nav-item">
+                <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Settings
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="trip-header">
+            <div class="trip-header-inner">
+                <div class="header-top">
+                    <div>
+                        <div class="header-emoji">🇯🇵</div>
+                        <h1 class="header-title">Tokyo in Spring</h1>
+                        <div class="header-meta">12 activities &middot; 3 places &middot; Planning</div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline">Share</button>
+                        <button class="btn btn-primary">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add
+                        </button>
+                        <button class="btn btn-ghost">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div>
+                <div class="stats-row">
+                    <div class="stat-pill">
+                        <svg class="icon-svg" style="color: var(--primary)" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        12 Activities
+                    </div>
+                    <div class="stat-pill">
+                        <svg class="icon-svg" style="color: var(--primary)" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        $1,330 Est. Budget
+                    </div>
+                    <div class="stat-pill">
+                        <svg class="icon-svg" style="color: var(--primary)" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        3 Places
+                    </div>
+                </div>
+
+                <h2 class="section-title">Coming up</h2>
+                
+                <div class="activities-list">
+                    <!-- Activity 1 -->
+                    <div class="activity-card">
+                        <div class="activity-time-col">10:30<br><span style="font-size: 11px; color: var(--muted); font-weight: normal;">Tue 12 Mar</span></div>
+                        <div class="activity-icon-col">
+                            <div class="icon-circle">
+                                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            </div>
+                            <div class="activity-line"></div>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                <span>TeamLab Borderless</span>
+                                <span class="badge badge-planning">Planning</span>
+                            </div>
+                            <div class="activity-location">Azabudai Hills</div>
+                            <div class="activity-tags">
+                                <span class="activity-tag">2hr</span>
+                                <span class="activity-tag">Indoor</span>
+                            </div>
+                        </div>
+                        <div style="color: var(--muted); padding-top: 4px;">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+
+                    <!-- Activity 2 -->
+                    <div class="activity-card">
+                        <div class="activity-time-col">13:00<br><span style="font-size: 11px; color: var(--muted); font-weight: normal;">Tue 12 Mar</span></div>
+                        <div class="activity-icon-col">
+                            <div class="icon-circle">
+                                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            </div>
+                            <div class="activity-line"></div>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                <span>Lunch at Tsujihan</span>
+                                <span class="badge badge-planning">Planning</span>
+                            </div>
+                            <div class="activity-location">Nihonbashi</div>
+                            <div class="activity-tags">
+                                <span class="activity-tag">1hr</span>
+                                <span class="activity-tag">Food</span>
+                            </div>
+                        </div>
+                        <div style="color: var(--muted); padding-top: 4px;">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+
+                    <!-- Activity 3 -->
+                    <div class="activity-card">
+                        <div class="activity-time-col" style="font-size: 12px;">Morning<br><span style="font-size: 11px; color: var(--muted); font-weight: normal;">Wed 13 Mar</span></div>
+                        <div class="activity-icon-col">
+                            <div class="icon-circle">
+                                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            </div>
+                            <div class="activity-line"></div>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                <span>Meiji Shrine</span>
+                                <span class="badge badge-planning">Planning</span>
+                            </div>
+                            <div class="activity-location">Shibuya</div>
+                            <div class="activity-tags">
+                                <span class="activity-tag">Outdoor</span>
+                            </div>
+                        </div>
+                        <div style="color: var(--muted); padding-top: 4px;">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+
+                    <!-- Activity 4 -->
+                    <div class="activity-card" style="opacity: 0.8;">
+                        <div class="activity-time-col" style="color: var(--muted); font-weight: normal;">Anytime</div>
+                        <div class="activity-icon-col">
+                            <div class="icon-circle" style="background: var(--bg); border: 1px dashed var(--muted); color: var(--muted);">
+                                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            </div>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                <span>Blue Bottle Coffee</span>
+                                <span class="badge badge-planning" style="background: transparent;">Planning</span>
+                            </div>
+                            <div class="activity-location">Aoyama</div>
+                            <div class="activity-tags">
+                                <span class="activity-tag">Café</span>
+                            </div>
+                        </div>
+                        <div style="color: var(--muted); padding-top: 4px;">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Widgets -->
+            <div>
+                <div class="widget-card">
+                    <h3 class="widget-title">Trip Budget</h3>
+                    <div class="budget-row">
+                        <span style="color: var(--muted);">Flights</span>
+                        <span>$800</span>
+                    </div>
+                    <div class="budget-row">
+                        <span style="color: var(--muted);">Food</span>
+                        <span>$320</span>
+                    </div>
+                    <div class="budget-row">
+                        <span style="color: var(--muted);">Activities</span>
+                        <span>$210</span>
+                    </div>
+                    <div class="budget-total">
+                        <span>Estimated Total</span>
+                        <span>$1,330</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

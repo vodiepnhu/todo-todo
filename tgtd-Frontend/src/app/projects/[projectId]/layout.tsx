@@ -19,19 +19,26 @@ export default async function ProjectLayout({
 
   const { data: membership } = await supabase
     .from("workspace_members")
-    .select("role, workspaces(id, name)")
+    .select("role, can_add, can_edit, can_delete, workspaces(id, name)")
     .eq("workspace_id", projectId)
     .eq("profile_id", user.id)
     .maybeSingle();
 
   if (!membership) notFound();
   const ws = membership.workspaces as unknown as { id: string; name: string };
+  const role = membership.role as string;
+  const isAdmin = role === "OWNER" || role === "ADMIN";
 
   return (
     <WorkspaceLayoutClient
       workspaceId={projectId}
       workspaceName={ws.name}
       userId={user.id}
+      access={{
+        canAdd: isAdmin || membership.can_add === true,
+        canEdit: isAdmin || membership.can_edit === true,
+        canDelete: isAdmin || membership.can_delete === true,
+      }}
     >
       {children}
     </WorkspaceLayoutClient>

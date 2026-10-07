@@ -11,12 +11,15 @@ import {
   createSharedWorkspace,
   setSharingEnabled,
 } from "@/services/workspace-service";
+import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 
 export function OnboardingClient({ userId }: { userId: string }) {
   const router = useRouter();
   const [name, setName] = useState("Our Space");
   const [mode, setMode] = useState<"me" | "partner" | "family">("me");
   const [loading, setLoading] = useState(false);
+  const { locale } = useLocale();
+  const vi = locale === "vi";
 
   async function continueOnboarding() {
     setLoading(true);
@@ -49,14 +52,17 @@ export function OnboardingClient({ userId }: { userId: string }) {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <Card className="w-full max-w-lg space-y-4 p-6">
-        <h1 className="text-2xl font-semibold">Welcome</h1>
-        <p className="text-sm text-muted">How will you use Planner?</p>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold">{vi ? "Chào mừng" : "Welcome"}</h1>
+          <LanguageSwitcher />
+        </div>
+        <p className="text-sm text-muted">{vi ? "Bạn muốn dùng Planner theo cách nào?" : "How will you use Planner?"}</p>
         <div className="grid gap-2">
           {(
             [
-              ["me", "Just me"],
-              ["partner", "With my partner"],
-              ["family", "With family"],
+              ["me", vi ? "Chỉ mình tôi" : "Just me"],
+              ["partner", vi ? "Cùng bạn đời" : "With my partner"],
+              ["family", vi ? "Cùng gia đình" : "With family"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -75,11 +81,11 @@ export function OnboardingClient({ userId }: { userId: string }) {
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Name your project"
+            placeholder={vi ? "Đặt tên dự án" : "Name your project"}
           />
         )}
         <Button className="w-full" onClick={continueOnboarding} disabled={loading}>
-          Continue
+          {vi ? "Tiếp tục" : "Continue"}
         </Button>
       </Card>
     </div>

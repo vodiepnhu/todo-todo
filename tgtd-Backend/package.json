@@ -11,7 +11,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit --incremental false",
     "seed:demo": "node scripts/seed-demo.mjs",
-    "test": "vitest run && node scripts/seed-demo.test.mjs"
+    "seed:demo-data": "node scripts/seed-demo-data.mjs",
+    "copy:demo-drafts": "node scripts/copy-demo-drafts.mjs",
+    "test": "vitest run && node scripts/seed-demo.test.mjs && node scripts/copy-demo-drafts.test.mjs && node scripts/seed-demo-data.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",

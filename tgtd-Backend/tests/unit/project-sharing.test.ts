@@ -21,6 +21,9 @@ type Member = {
   profile_id: string;
   role: string;
   archived_at: string | null;
+  can_add: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
 };
 
 type Invite = {
@@ -30,6 +33,9 @@ type Invite = {
   created_by: string;
   email: string | null;
   role: string;
+  can_add: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
   expires_at: string;
   accepted_at: string | null;
 };
@@ -135,6 +141,9 @@ function createMockSupabase(state: State): SupabaseClient {
             created_by: String(row.created_by),
             email: (row.email as string | null) ?? null,
             role: String(row.role ?? "MEMBER"),
+            can_add: Boolean(row.can_add),
+            can_edit: Boolean(row.can_edit),
+            can_delete: Boolean(row.can_delete),
             expires_at: new Date(Date.now() + 86400000).toISOString(),
             accepted_at: null,
           };
@@ -199,6 +208,9 @@ function createMockSupabase(state: State): SupabaseClient {
           workspace_id: inv.workspace_id,
           profile_id: "user-b",
           role: inv.role,
+          can_add: inv.can_add,
+          can_edit: inv.can_edit,
+          can_delete: inv.can_delete,
           archived_at: null,
         });
       }
@@ -227,8 +239,16 @@ describe("project sharing lifecycle", () => {
     await setSharingEnabled(supabase, project.id, true);
     expect(state.workspaces[project.id].sharing_enabled).toBe(true);
 
-    const invite = await createInvite(supabase, project.id, "user-a");
+    const invite = await createInvite(supabase, project.id, "user-a", "person@example.com", {
+      canAdd: true,
+      canEdit: false,
+      canDelete: true,
+    });
     expect(invite.token).toBeTruthy();
+    expect(invite.email).toBe("person@example.com");
+    expect(invite.can_add).toBe(true);
+    expect(invite.can_edit).toBe(false);
+    expect(invite.can_delete).toBe(true);
 
     const joinedId = await acceptInvite(supabase, invite.token, "user-b");
     expect(joinedId).toBe(project.id);
@@ -245,12 +265,20 @@ describe("project sharing lifecycle", () => {
     const forB = await listWorkspaces(supabase, "user-b");
     expect(forB.find((s) => s.workspace.id === project.id)).toBeUndefined();
 
-    await expect(createInvite(supabase, project.id, "user-a")).rejects.toThrow(
+    await expect(createInvite(supabase, project.id, "user-a", "person@example.com", {
+      canAdd: true,
+      canEdit: true,
+      canDelete: true,
+    })).rejects.toThrow(
       /Sharing is disabled/,
     );
 
     await setSharingEnabled(supabase, project.id, true);
-    const invite2 = await createInvite(supabase, project.id, "user-a");
+    const invite2 = await createInvite(supabase, project.id, "user-a", "person@example.com", {
+      canAdd: true,
+      canEdit: true,
+      canDelete: true,
+    });
     await acceptInvite(supabase, invite2.token, "user-b");
     expect(
       state.members.find((m) => m.profile_id === "user-b")?.archived_at,
@@ -276,6 +304,9 @@ describe("project sharing lifecycle", () => {
           workspace_id: "ws1",
           profile_id: "user-a",
           role: "OWNER",
+          can_add: true,
+          can_edit: true,
+          can_delete: true,
           archived_at: null,
         },
       ],
@@ -287,6 +318,9 @@ describe("project sharing lifecycle", () => {
           created_by: "user-a",
           email: null,
           role: "MEMBER",
+          can_add: true,
+          can_edit: true,
+          can_delete: true,
           expires_at: new Date(Date.now() + 86400000).toISOString(),
           accepted_at: null,
         },
@@ -296,5 +330,20 @@ describe("project sharing lifecycle", () => {
     await expect(acceptInvite(supabase, "tok-dead", "user-b")).rejects.toThrow(
       /Sharing is disabled/,
     );
+  });
+
+  it("rejects account invites without an email", async () => {
+    const state: State = { workspaces: {}, members: [], invites: [] };
+    const supabase = createMockSupabase(state);
+    const project = await createProject(supabase, "user-a", "Trip");
+    await setSharingEnabled(supabase, project.id, true);
+
+    await expect(
+      createInvite(supabase, project.id, "user-a", "", {
+        canAdd: true,
+        canEdit: false,
+        canDelete: false,
+      }),
+    ).rejects.toThrow(/Invite email required/);
   });
 });

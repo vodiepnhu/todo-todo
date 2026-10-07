@@ -41,8 +41,8 @@ export async function runMapsSearchAgent(input: {
     return {
       degraded: true,
       hits: [],
-      topMapsUrl: null,
-      note: "Maps API unavailable — set GOOGLE_MAPS_SERVER_API_KEY",
+      topMapsUrl: googleMapsPlaceUrl({ name: query }),
+      note: "Maps API unavailable — using free Google Maps search",
     };
   }
   const hits: MapsSearchHit[] = found.results.map(

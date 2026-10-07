@@ -58,6 +58,52 @@ export function statusCounts(items: Item[]): Record<string, number> {
   return out;
 }
 
+export type DashboardProgress = {
+  total: number;
+  upcoming: number;
+  visited: number;
+  skipped: number;
+};
+
+export function planProgress(items: Item[]): DashboardProgress {
+  const progress: DashboardProgress = {
+    total: items.length,
+    upcoming: 0,
+    visited: 0,
+    skipped: 0,
+  };
+  for (const item of items) {
+    if (item.plan_status === "SKIPPED" || item.status === "ARCHIVED") {
+      progress.skipped += 1;
+    } else if (item.plan_status === "VISITED" || item.status === "COMPLETED") {
+      progress.visited += 1;
+    } else {
+      progress.upcoming += 1;
+    }
+  }
+  return progress;
+}
+
+export function nextDashboardItems(items: Item[], limit = 5): Item[] {
+  return items
+    .filter(
+      (item) =>
+        item.plan_status !== "VISITED" &&
+        item.plan_status !== "SKIPPED" &&
+        item.status !== "COMPLETED" &&
+        item.status !== "ARCHIVED",
+    )
+    .sort((a, b) => {
+      const aTime = a.due_at ?? a.planned_start_at;
+      const bTime = b.due_at ?? b.planned_start_at;
+      if (!aTime && !bTime) return a.updated_at.localeCompare(b.updated_at);
+      if (!aTime) return 1;
+      if (!bTime) return -1;
+      return new Date(aTime).getTime() - new Date(bTime).getTime();
+    })
+    .slice(0, limit);
+}
+
 export function categoryCounts(items: Item[]): { name: string; count: number }[] {
   const map = new Map<string, number>();
   for (const i of items) {

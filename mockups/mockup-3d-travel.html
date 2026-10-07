@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Togo - Modern 3D Tactile Travel UI Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F4EFE6;
+      --bg-radial: radial-gradient(circle at 50% 0%, #FFFDF9 0%, #EFE7DA 100%);
+      --fg: #162F2A;
+      --muted: #577870;
+      --primary: #0E625B;
+      --primary-dark: #083E3A;
+      --primary-soft: #E2ECE8;
+      --cta: #DF6951;
+      --cta-dark: #B94C36;
+      --cta-hover: #D05942;
+      --surface: #FFFFFF;
+      --border: #DFD7CB;
+      --gold: #E5A93C;
+      --gold-dark: #B88022;
+
+      /* 3D Shadows & Lighting */
+      --shadow-clay: 
+        0 18px 36px -10px rgba(22, 47, 42, 0.12),
+        0 8px 16px -6px rgba(22, 47, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        inset 0 -2px 0 rgba(22, 47, 42, 0.06);
+
+      --shadow-floating: 
+        0 24px 48px -12px rgba(14, 98, 91, 0.18),
+        0 12px 24px -8px rgba(22, 47, 42, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.9);
+
+      --shadow-btn-3d: 
+        0 5px 0 var(--cta-dark),
+        0 12px 20px -3px rgba(223, 105, 81, 0.35);
+
+      --shadow-btn-primary-3d: 
+        0 5px 0 var(--primary-dark),
+        0 12px 20px -3px rgba(14, 98, 91, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      background-image: var(--bg-radial);
+      color: var(--fg);
+      min-height: 100vh;
+      padding: 40px 24px;
+      overflow-x: hidden;
+      perspective: 1200px;
+    }
+
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Fraunces', serif;
+    }
+
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+    }
+
+    /* Top bar badge */
+    .top-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 999px;
+      box-shadow: 0 4px 14px rgba(22, 47, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    /* Hero section */
+    .hero {
+      margin-bottom: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .hero-title {
+      font-size: 42px;
+      line-height: 1.15;
+      color: var(--fg);
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 520px;
+    }
+
+    /* 3D Tactile Buttons */
+    .btn-3d {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 13px 26px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      user-select: none;
+    }
+
+    .btn-3d-cta {
+      background: linear-gradient(180deg, #F07E67 0%, var(--cta) 100%);
+      color: #FFFFFF;
+      box-shadow: var(--shadow-btn-3d);
+      border-top: 1px solid rgba(255, 255, 255, 0.35);
+    }
+    .btn-3d-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 var(--cta-dark), 0 16px 24px -2px rgba(223, 105, 81, 0.4);
+    }
+    .btn-3d-cta:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 var(--cta-dark), 0 4px 8px rgba(223, 105, 81, 0.3);
+    }
+
+    .btn-3d-secondary {
+      background: linear-gradient(180deg, #FFFFFF 0%, #F5EFE6 100%);
+      color: var(--fg);
+      border: 1px solid rgba(223, 215, 203, 0.8);
+      box-shadow: 0 4px 0 #D5C9B7, 0 8px 16px rgba(22, 47, 42, 0.05);
+    }
+    .btn-3d-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #D5C9B7, 0 12px 20px rgba(22, 47, 42, 0.08);
+    }
+    .btn-3d-secondary:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #D5C9B7, 0 4px 8px rgba(22, 47, 42, 0.05);
+    }
+
+    /* Grid layout */
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 32px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 3D Interactive Card (Tilt Effect) */
+    .card-3d-wrapper {
+      perspective: 1000px;
+    }
+
+    .card-3d {
+      background: var(--surface);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: var(--shadow-clay);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+      transform-style: preserve-3d;
+      padding: 24px;
+    }
+
+    .card-3d:hover {
+      transform: translateY(-6px) rotateX(2deg) rotateY(-2deg);
+      box-shadow: var(--shadow-floating);
+    }
+
+    /* Embossed Top Accent Strip with 3D Pill Depth */
+    .card-accent-pill {
+      position: absolute;
+      top: 0;
+      left: 24px;
+      right: 24px;
+      height: 6px;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15), inset 0 -1px 1px rgba(0,0,0,0.2);
+    }
+
+    /* 3D Floating Avatar / Badge */
+    .emoji-sphere {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F0E8DC 100%);
+      box-shadow: 
+        0 10px 20px -4px rgba(22, 47, 42, 0.12),
+        inset 0 2px 2px rgba(255, 255, 255, 0.9),
+        inset 0 -3px 4px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      transform: translateZ(24px);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .card-3d:hover .emoji-sphere {
+      transform: translateZ(36px) scale(1.08) rotate(-4deg);
+    }
+
+    /* Status Pill 3D */
+    .pill-3d {
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.06);
+    }
+    .pill-teal {
+      background: #E4F4F1;
+      color: #0E625B;
+      border: 1px solid #BEE4DC;
+    }
+    .pill-amber {
+      background: #FEF3D6;
+      color: #925C05;
+      border: 1px solid #F8DF9E;
+    }
+
+    /* Trip Grid */
+    .trips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 22px;
+      margin-bottom: 32px;
+    }
+
+    .trip-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      margin-top: 4px;
+    }
+
+    .trip-destination {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .trip-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 10px;
+    }
+
+    .trip-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .trip-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Next stop 3D Inset Well */
+    .next-stop-well {
+      background: #F7F3EB;
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: inset 0 2px 4px rgba(22, 47, 42, 0.05), inset 0 1px 1px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(223, 215, 203, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .next-stop-well strong {
+      color: var(--fg);
+      font-weight: 600;
+    }
+
+    /* 3D Boarding Pass / Ticket Card */
+    .boarding-pass {
+      background: #FFFFFF;
+      border-radius: 24px;
+      box-shadow: var(--shadow-clay);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      margin-bottom: 28px;
+    }
+
+    .boarding-header {
+      background: linear-gradient(135deg, var(--primary) 0%, #157971 100%);
+      color: #FFFFFF;
+      padding: 20px 24px;
+      position: relative;
+    }
+    .boarding-header::after {
+      content: "OFFICIAL PASS";
+      position: absolute;
+      right: 20px;
+      top: 18px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      color: rgba(255, 255, 255, 0.4);
+      border: 1px dashed rgba(255, 255, 255, 0.3);
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .boarding-body {
+      padding: 24px;
+      position: relative;
+    }
+
+    /* Perforated ticket edge */
+    .perforation {
+      position: relative;
+      height: 18px;
+      background: var(--bg);
+      margin: 0 -10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .perforation::before, .perforation::after {
+      content: "";
+      width: 20px;
+      height: 20px;
+      background: var(--bg);
+      border-radius: 50%;
+      box-shadow: inset 0 2px 4px rgba(22, 47, 42, 0.12);
+    }
+    .perforation-line {
+      flex: 1;
+      border-bottom: 2px dashed #DFD7CB;
+      margin: 0 8px;
+    }
+
+    .flight-route {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .route-code {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--fg);
+    }
+
+    .route-arrow {
+      color: var(--cta);
+      font-size: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    /* 3D Tactile AI Assistant Bar */
+    .ai-smart-bar {
+      background: linear-gradient(180deg, #FFFFFF 0%, #FAF6EE 100%);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 
+        0 14px 28px -6px rgba(22, 47, 42, 0.09),
+        0 4px 10px rgba(22, 47, 42, 0.04),
+        inset 0 1px 0 #FFFFFF;
+      padding: 20px;
+      position: relative;
+    }
+
+    .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #FFF1EE 0%, #FFE2DC 100%);
+      color: var(--cta);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(223, 105, 81, 0.2);
+      box-shadow: 0 2px 4px rgba(223, 105, 81, 0.1);
+    }
+
+    .ai-input-well {
+      background: #FFFFFF;
+      border-radius: 14px;
+      border: 1.5px solid #DFD7CB;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: inset 0 2px 4px rgba(22, 47, 42, 0.06);
+      transition: all 0.2s ease;
+    }
+
+    .ai-input-well:focus-within {
+      border-color: var(--primary);
+      box-shadow: 
+        inset 0 2px 4px rgba(14, 98, 91, 0.08),
+        0 0 0 3px rgba(14, 98, 91, 0.15);
+    }
+
+    .ai-input-well input {
+      border: none;
+      outline: none;
+      flex: 1;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--fg);
+      background: transparent;
+    }
+
+    .ai-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .chip-3d {
+      background: #FFFFFF;
+      border: 1px solid #DFD7CB;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--fg);
+      cursor: pointer;
+      box-shadow: 0 2px 0 #E3DBD0, 0 4px 8px rgba(0,0,0,0.03);
+      transition: all 0.15s ease;
+    }
+    .chip-3d:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 0 #E3DBD0, 0 6px 10px rgba(0,0,0,0.06);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .chip-3d:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 #E3DBD0;
+    }
+
+    /* 3D Timeline */
+    .timeline-item {
+      display: flex;
+      gap: 14px;
+      position: relative;
+      padding-bottom: 22px;
+    }
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: 17px;
+      top: 34px;
+      bottom: 0;
+      width: 2px;
+      background: #DFD7CB;
+    }
+    .timeline-item:last-child::before {
+      display: none;
+    }
+
+    .timeline-pin-3d {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F0ECE4 100%);
+      box-shadow: 
+        0 4px 8px rgba(22, 47, 42, 0.08),
+        inset 0 1px 1px #FFFFFF,
+        0 2px 0 #D5CBBB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+
+    .timeline-content {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 12px 16px;
+      border: 1px solid rgba(223, 215, 203, 0.7);
+      box-shadow: 0 4px 10px rgba(22, 47, 42, 0.04), inset 0 1px 0 #FFFFFF;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header Badge -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <div class="top-badge">
+        <span>✨ TOGO 3D TACTILE EXPERIENCE</span>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <button class="btn-3d btn-3d-secondary" style="padding: 8px 16px; font-size: 12px;">
+          🇻🇳 Tiếng Việt
+        </button>
+        <button class="btn-3d btn-3d-secondary" style="padding: 8px 16px; font-size: 12px;">
+          👤 Tài khoản
+        </button>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div>
+        <h1 class="hero-title">Chuyến phiêu lưu tiếp theo<br>sẽ ở đâu nhỉ?</h1>
+        <p class="hero-subtitle">
+          Sổ tay du lịch cá nhân hóa với chiều sâu không gian 3D, xúc giác nổi khối và trợ lý AI thông minh.
+        </p>
+      </div>
+      <div style="display: flex; gap: 14px;">
+        <button class="btn-3d btn-3d-cta">
+          <span>+ Lên kế hoạch chuyến đi</span>
+          <span style="font-size: 16px;">✈️</span>
+        </button>
+        <button class="btn-3d btn-3d-secondary">
+          <span>Hỏi AI</span>
+          <span>✨</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid-layout">
+      <!-- Left Column: 3D Trip Cards & Smart AI -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px;">
+          <h2 class="font-heading" style="font-size: 24px;">Chuyến đi của bạn (4)</h2>
+          <span style="font-size: 13px; color: var(--muted); font-weight: 600;">Sắp xếp theo ngày đi</span>
+        </div>
+
+        <!-- 3D Trips Grid -->
+        <div class="trips-grid">
+          <!-- Card 1: Tokyo -->
+          <div class="card-3d-wrapper">
+            <div class="card-3d" id="tokyoCard">
+              <div class="card-accent-pill" style="background: linear-gradient(90deg, #0E625B, #14B8A6);"></div>
+              
+              <div class="trip-card-header">
+                <div class="emoji-sphere">🌸</div>
+                <span class="pill-3d pill-teal">Planning</span>
+              </div>
+
+              <div class="trip-destination">TOKYO, NHẬT BẢN</div>
+              <h3 class="trip-title font-heading">Tokyo in Spring</h3>
+
+              <div class="trip-meta">
+                <span>📅 12 – 20 Thg 3</span>
+                <span>📍 12 địa điểm</span>
+              </div>
+
+              <div class="next-stop-well">
+                <div>
+                  <span style="color: var(--muted); display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;">Tiếp theo:</span>
+                  <strong>TeamLab Borderless</strong>
+                </div>
+                <span style="font-weight: 700; color: var(--primary);">10:30 AM</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Bali -->
+          <div class="card-3d-wrapper">
+            <div class="card-3d">
+              <div class="card-accent-pill" style="background: linear-gradient(90deg, #DF6951, #F59E0B);"></div>
+              
+              <div class="trip-card-header">
+                <div class="emoji-sphere">🌴</div>
+                <span class="pill-3d pill-amber">Mùa hè</span>
+              </div>
+
+              <div class="trip-destination">BALI, INDONESIA</div>
+              <h3 class="trip-title font-heading">Bali Healing Retreat</h3>
+
+              <div class="trip-meta">
+                <span>📅 15 – 22 Thg 5</span>
+                <span>📍 8 địa điểm</span>
+              </div>
+
+              <div class="next-stop-well">
+                <div>
+                  <span style="color: var(--muted); display: block; font-size: 10px; font-weight: 700; text-transform: uppercase;">Tiếp theo:</span>
+                  <strong>Ngắm bình minh Mt. Batur</strong>
+                </div>
+                <span style="font-weight: 700; color: var(--cta);">04:00 AM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3D AI Travel Assistant -->
+        <div class="ai-smart-bar">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span class="ai-badge">✨ AI TRAVEL COMPASS</span>
+            <span style="font-size: 11px; color: var(--muted); font-weight: 600;">Nhận diện địa điểm & gợi ý lịch trình</span>
+          </div>
+
+          <h3 class="font-heading" style="font-size: 20px; margin-bottom: 12px;">Bạn muốn ngày mai tại Tokyo sẽ như thế nào?</h3>
+
+          <div class="ai-input-well">
+            <span style="font-size: 18px;">💡</span>
+            <input type="text" placeholder="Ví dụ: Lên lịch 1 ngày ăn sập Tokyo quanh Shibuya, cà phê chill..." />
+            <button class="btn-3d btn-3d-cta" style="padding: 8px 18px; font-size: 12px; border-radius: 10px;">
+              Gợi ý ngay ✨
+            </button>
+          </div>
+
+          <div class="ai-chips">
+            <button class="chip-3d">🍜 Quán ramen ngon nhất quanh Roppongi</button>
+            <button class="chip-3d">⛩️ Lịch trình dạo Kyoto chiều chủ nhật</button>
+            <button class="chip-3d">☕ Cafe view đẹp ở Omotesando</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: 3D Boarding Pass & Tactile Timeline -->
+      <div>
+        <div style="margin-bottom: 18px;">
+          <h2 class="font-heading" style="font-size: 24px;">Hành trình sắp tới</h2>
+        </div>
+
+        <!-- 3D Boarding Pass Ticket -->
+        <div class="boarding-pass">
+          <div class="boarding-header">
+            <div style="font-size: 11px; opacity: 0.8; text-transform: uppercase; font-weight: 700;">CHUYẾN BAY TIẾP THEO</div>
+            <div style="font-size: 18px; font-weight: 700; margin-top: 2px;">Vietnam Airlines · VN300</div>
+          </div>
+
+          <div class="boarding-body">
+            <div class="flight-route">
+              <div>
+                <div class="route-code">SGN</div>
+                <div style="font-size: 11px; color: var(--muted);">TP. Hồ Chí Minh</div>
+              </div>
+              <div class="route-arrow">
+                <span>✈️</span>
+                <span style="font-size: 10px; color: var(--muted); font-weight: 600;">5h 45m</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="route-code">NRT</div>
+                <div style="font-size: 11px; color: var(--muted);">Tokyo Narita</div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 12px; border-top: 1px solid #EFE8DC; padding-top: 14px;">
+              <div>
+                <span style="color: var(--muted); font-size: 10px; display: block; font-weight: 700;">NGÀY BAY</span>
+                <strong>12 THG 3, 2026</strong>
+              </div>
+              <div>
+                <span style="color: var(--muted); font-size: 10px; display: block; font-weight: 700;">CỬA RA (GATE)</span>
+                <strong>GATE 18</strong>
+              </div>
+              <div style="text-align: right;">
+                <span style="color: var(--muted); font-size: 10px; display: block; font-weight: 700;">GHẾ</span>
+                <strong>14A</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="perforation">
+            <div class="perforation-line"></div>
+          </div>
+
+          <div style="padding: 16px 24px; background: #FAF7F0; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-family: monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px;">
+              ||| | ||||| |||| | ||
+            </div>
+            <button class="btn-3d btn-3d-secondary" style="padding: 6px 14px; font-size: 11px; border-radius: 8px;">
+              Mở vé điện tử ↗
+            </button>
+          </div>
+        </div>
+
+        <!-- 3D Tactile Timeline -->
+        <div style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.85); box-shadow: var(--shadow-clay); padding: 20px;">
+          <h4 class="font-heading" style="font-size: 16px; margin-bottom: 16px;">Lịch trình hôm nay</h4>
+
+          <div class="timeline-item">
+            <div class="timeline-pin-3d">📍</div>
+            <div class="timeline-content">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                <span style="font-weight: 700; color: var(--primary);">10:30 AM</span>
+                <span style="color: var(--muted);">Minato-ku</span>
+              </div>
+              <div style="font-weight: 700; font-size: 13px; color: var(--fg);">TeamLab Borderless</div>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Đã đặt vé qua Klook</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-pin-3d">🍜</div>
+            <div class="timeline-content">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                <span style="font-weight: 700; color: var(--cta);">01:00 PM</span>
+                <span style="color: var(--muted);">Nihonbashi</span>
+              </div>
+              <div style="font-weight: 700; font-size: 13px; color: var(--fg);">Tsujihan Kaisendon</div>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Xếp hàng ~30 phút</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Smooth 3D tilt on card hover
+    const cards = document.querySelectorAll('.card-3d');
+    cards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        const rotateX = -(y / rect.height) * 12;
+        const rotateY = (x / rect.width) * 12;
+        card.style.transform = `translateY(-8px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0) rotateX(0deg) rotateY(0deg)';
+      });
+    });
+  </script>
+</body>
+</html>

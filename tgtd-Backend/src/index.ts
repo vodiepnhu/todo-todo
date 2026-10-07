@@ -70,12 +70,14 @@ export {
   createPendingAction,
   findActivePlanPending,
   isConfirmationKeyword,
+  formatConfirmationReply,
   updatePendingPlan,
 } from "./services/confirmation-service";
 export {
   clearHomeMessages,
   insertHomeMessage,
   listHomeMessages,
+  listRecentHomeMessages,
 } from "./services/home-chat-service";
 export { fetchAgentOpsStats } from "./services/langsmith-stats-service";
 export {
@@ -86,6 +88,7 @@ export {
 export {
   acceptInvite,
   createInvite,
+  createViewLink,
   listItems,
   listWorkspaces,
   setSharingEnabled,

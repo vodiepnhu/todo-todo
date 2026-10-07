@@ -1,6 +1,9 @@
 import type { PlannerRequest } from "../schemas/planner";
 import type { ActionType, Item } from "../types/database";
 import type { RagHit } from "./rag-agent";
+import type { PlanExtractionResult } from "../lib/ai/extract-plan";
+import type { PlanDraft } from "../lib/plans/plan-schema";
+import type { Language } from "./language-agent";
 
 export type IngestResult = {
   request: PlannerRequest;
@@ -18,6 +21,15 @@ export type CreatePendingInput = {
   userId: string;
 };
 
+export type ActivePlanPending = {
+  id: string;
+  workspace_id: string | null;
+  action_type: ActionType;
+  payload_json: Record<string, unknown>;
+  state: string;
+  expires_at: string;
+};
+
 export type OrchestratorDeps = {
   ingest: (input: {
     message: string;
@@ -26,15 +38,30 @@ export type OrchestratorDeps = {
     workspaceTimezone: string;
     userId: string;
     recentChat?: string;
+    retrievedContext?: string;
+    language?: Language;
   }) => Promise<IngestResult>;
   listItems: (workspaceId: string) => Promise<Item[]>;
   createPending: (input: CreatePendingInput) => Promise<{ id: string }>;
+  findActivePlanPending?: (
+    workspaceId: string,
+    userId: string,
+  ) => Promise<ActivePlanPending | null>;
+  updatePendingPlan?: (
+    pendingId: string,
+    workspaceId: string,
+    userId: string,
+    payload: Record<string, unknown>,
+  ) => Promise<ActivePlanPending>;
   extractPlan?: (input: {
     userId: string;
     text: string;
     timezone: string;
     lookupMaps: boolean;
-  }) => Promise<{ draft: import("../lib/plans/plan-schema").PlanDraft }>;
+    currentRequest?: string;
+    basePlan?: PlanDraft;
+    language?: Language;
+  }) => Promise<Pick<PlanExtractionResult, "draft"> & Partial<PlanExtractionResult>>;
   extractMapsUrl: (text: string) => string | undefined;
   /** Optional vector retrieve; omit → heuristic-only recommend */
   retrieve?: (workspaceIds: string[], query: string) => Promise<RagHit[]>;
@@ -60,4 +87,10 @@ export type OrchestratorResult = {
   mocked: boolean;
   latencyMs: number;
   provider?: string;
+  language?: Language;
+};
+
+export type PlannerProgressEvent = {
+  step: "understand" | "context" | "places" | "draft" | "check" | "save" | "complete";
+  status: "active" | "done";
 };

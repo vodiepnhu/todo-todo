@@ -3,9 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import {
   clearLlmApiKey,
   getLlmSettingsPublic,
+  LLM_MODELS,
+  LLM_PROVIDERS,
   upsertLlmSettings,
-} from "@togo-todo/backend";
-import { LLM_PROVIDERS, LLM_MODELS, type LlmProvider } from "@togo-todo/agent";
+  type LlmProvider,
+} from "@togo-todo/agent";
 import { z } from "zod";
 
 export async function GET() {
@@ -48,6 +50,7 @@ const putSchema = z.object({
     "ollama",
     "custom",
     "shopaikey",
+    "nvidia",
   ]),
   model: z.string().min(1).max(200),
   baseUrl: z.string().max(500).nullable().optional(),
@@ -82,7 +85,7 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const supabase = await createClient();
     const {
@@ -91,7 +94,22 @@ export async function DELETE() {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const settings = await clearLlmApiKey(user.id);
+    const providerParam = new URL(request.url).searchParams.get("provider");
+    const provider = providerParam
+      ? z
+          .enum([
+            "openrouter",
+            "openai",
+            "anthropic",
+            "gemini",
+            "ollama",
+            "custom",
+            "shopaikey",
+            "nvidia",
+          ])
+          .parse(providerParam)
+      : undefined;
+    const settings = await clearLlmApiKey(user.id, provider);
     return NextResponse.json({ settings });
   } catch (e) {
     return NextResponse.json(

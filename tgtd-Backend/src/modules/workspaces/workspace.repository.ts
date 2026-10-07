@@ -7,7 +7,7 @@ import type {
 } from "../../contracts/database";
 
 const MEMBERSHIP_SELECT =
-  "id, workspace_id, profile_id, role, joined_at, last_seen_at, archived_at, workspaces(*)";
+  "id, workspace_id, profile_id, role, joined_at, last_seen_at, archived_at, can_add, can_edit, can_delete, workspaces(*)";
 
 function throwWorkspaceQueryError(
   error: { message?: string } | Error,
@@ -32,6 +32,9 @@ function mapMembership(row: unknown): WorkspaceMembership {
       joined_at: value.joined_at as string,
       last_seen_at: value.last_seen_at ?? null,
       archived_at: value.archived_at ?? null,
+      can_add: value.can_add ?? true,
+      can_edit: value.can_edit ?? true,
+      can_delete: value.can_delete ?? true,
     },
     workspace: value.workspaces,
   };

@@ -226,6 +226,16 @@ export async function keywordMatchChatMessages(
   }));
 }
 
+export function buildRagSearchQuery(
+  query: string,
+  recentChat?: string,
+  maxContextChars = 1200,
+): string {
+  const current = query.trim();
+  const context = recentChat?.trim().slice(-maxContextChars);
+  return context ? `${current}\nRecent context:\n${context}` : current;
+}
+
 /**
  * Hybrid retrieve: semantic (pgvector) + keyword (FTS) + optional chat keyword,
  * fused with Reciprocal Rank Fusion. Metadata filters from query heuristics.
@@ -244,10 +254,7 @@ export async function hybridRetrieveItemHits(
   if (!ids.length || !query.trim()) return [];
   const limit = opts?.limit ?? 20;
   const filters = parseRagMetaFilters(query);
-  const expanded =
-    opts?.recentChat && opts.recentChat.length > 0
-      ? `${query}\n${opts.recentChat.slice(0, 800)}`
-      : query;
+  const expanded = buildRagSearchQuery(query, opts?.recentChat);
 
   const [sem, kw, chat] = await Promise.all([
     semanticHits(

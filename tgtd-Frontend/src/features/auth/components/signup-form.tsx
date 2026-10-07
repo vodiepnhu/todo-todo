@@ -7,7 +7,9 @@ import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { PasswordRequirements } from "./password-requirements";
+import { GoogleAuthButton } from "./google-auth-button";
 import { evaluatePassword, PASSWORD_MAX, PASSWORD_MIN } from "../domain/password-policy";
+import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 
 export function SignupForm() {
   const [displayName, setDisplayName] = useState("");
@@ -16,6 +18,7 @@ export function SignupForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { dictionary } = useLocale();
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,18 +49,23 @@ export function SignupForm() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-[radial-gradient(ellipse_at_top,_#ddeee9_0%,_#f2f7f5_50%)] px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-[radial-gradient(ellipse_at_top,_#e0f2fe_0%,_#f5f9fd_60%)] px-4">
       <Card className="w-full max-w-md space-y-4 p-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Join Planner</h1>
-          <p className="text-sm text-muted">Create an account for shared planning.</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">{dictionary.auth.joinPlanner}</h1>
+              <p className="text-sm text-muted">{dictionary.auth.createAccount}</p>
+            </div>
+            <LanguageSwitcher />
+          </div>
         </div>
         <form onSubmit={onSubmit} className="space-y-3">
-          <Input placeholder="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
-          <Input type="email" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          <Input placeholder={dictionary.auth.displayName} value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+          <Input type="email" placeholder={dictionary.auth.email} value={email} onChange={(event) => setEmail(event.target.value)} required />
           <Input
             type="password"
-            placeholder={`Password (${PASSWORD_MIN}+ chars)`}
+            placeholder={`${dictionary.auth.password} (${PASSWORD_MIN}+ chars)`}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             minLength={PASSWORD_MIN}
@@ -69,11 +77,12 @@ export function SignupForm() {
           {error && <p className="text-sm text-danger">{error}</p>}
           {message && <p className="text-sm text-primary">{message}</p>}
           <Button className="w-full" disabled={loading || !evaluatePassword(password).ok}>
-            {loading ? "Creating..." : "Sign up"}
+            {loading ? dictionary.auth.creating : dictionary.auth.signUp}
           </Button>
         </form>
+        <GoogleAuthButton label={dictionary.auth.signUpWithGoogle} />
         <p className="text-center text-sm text-muted">
-          Have an account? <Link className="text-primary underline" href="/login">Sign in</Link>
+          {dictionary.auth.haveAccount} <Link className="text-primary underline" href="/login">{dictionary.auth.signIn}</Link>
         </p>
       </Card>
     </div>

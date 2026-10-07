@@ -1,4 +1,5 @@
 export { runIngestAgent } from "./ingest-agent";
+export { detectLanguage, runLanguageAgent } from "./language-agent";
 export { runPlannerOrchestrator } from "./orchestrator";
 export { buildMutationDraft } from "./mutation-agent";
 export {
@@ -6,6 +7,8 @@ export {
   formatClarifyReply,
   formatMutationReply,
   formatRecommendReply,
+  formatScheduleDeclinedReply,
+  formatScheduleQuestion,
   formatRefuseReply,
 } from "./communication-agent";
 export { runRagAgent, hybridRankCandidates } from "./rag-agent";
@@ -23,6 +26,8 @@ export type {
   IngestResult,
   OrchestratorDeps,
   OrchestratorResult,
+  PlannerProgressEvent,
 } from "./types";
+export type { Language } from "./language-agent";
 export type { RagHit } from "./rag-agent";
 export type { PlaceResolution } from "./places-agent";

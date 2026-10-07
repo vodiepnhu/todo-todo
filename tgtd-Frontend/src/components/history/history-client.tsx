@@ -3,23 +3,26 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, Badge } from "@/components/ui/card";
-import type { ItemEvent } from "@/types/database";
+import {
+  filterHistoryEvents,
+  historyCategories,
+  historyCategory,
+  type HistoryEvent,
+} from "@/lib/history-filters";
 
 export function HistoryClient({ workspaceId }: { workspaceId: string }) {
-  const [events, setEvents] = useState<
-    (ItemEvent & { items?: { title: string } | null })[]
-  >([]);
+  const [events, setEvents] = useState<HistoryEvent[]>([]);
   const [filter, setFilter] = useState<string>("ALL");
 
   async function load() {
     const supabase = createClient();
     const { data } = await supabase
       .from("item_events")
-      .select("*, items(title)")
+      .select("*, items(title, category, category_label)")
       .eq("workspace_id", workspaceId)
       .order("occurred_at", { ascending: false })
       .limit(50);
-    setEvents((data ?? []) as typeof events);
+    setEvents((data ?? []) as HistoryEvent[]);
   }
 
   useEffect(() => {
@@ -46,16 +49,14 @@ export function HistoryClient({ workspaceId }: { workspaceId: string }) {
     };
   }, [workspaceId]);
 
-  const filtered =
-    filter === "ALL"
-      ? events
-      : events.filter((e) => e.event_type === filter);
+  const categories = historyCategories(events);
+  const filtered = filterHistoryEvents(events, filter);
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">History</h3>
       <div className="flex flex-wrap gap-2">
-        {["ALL", "COMPLETED", "VISITED", "TRIED"].map((f) => (
+        {["ALL", ...categories].map((f) => (
           <button
             key={f}
             type="button"
@@ -64,13 +65,13 @@ export function HistoryClient({ workspaceId }: { workspaceId: string }) {
               filter === f ? "bg-cta text-white" : "bg-primary-soft"
             }`}
           >
-            {f}
+            {f === "ALL" ? "All" : f}
           </button>
         ))}
       </div>
       {filtered.length === 0 ? (
         <Card className="text-sm text-muted">
-          No history yet. Completing or visiting items creates events here.
+          No activity history yet.
         </Card>
       ) : (
         filtered.map((e) => (
@@ -84,7 +85,7 @@ export function HistoryClient({ workspaceId }: { workspaceId: string }) {
                 {e.note ? ` · ${e.note}` : ""}
               </p>
             </div>
-            <Badge>{e.event_type}</Badge>
+            <Badge>{historyCategory(e)}</Badge>
           </Card>
         ))
       )}

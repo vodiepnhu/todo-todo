@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flattenOwned } from "@/lib/home-projects";
+import { flattenOwned, projectCardBackground } from "@/lib/home-projects";
 import type { HomeTree } from "@/services/folder-service";
 import type { Workspace } from "@/types/database";
 
@@ -38,5 +38,11 @@ describe("flattenOwned", () => {
       sharedWithMe: [ws({ id: "w9", name: "Shared" })],
     };
     expect(flattenOwned(tree)).toEqual([]);
+  });
+
+  it("uses project color for wishlist card background", () => {
+    expect(projectCardBackground("#22c55e")).toBe(
+      "linear-gradient(135deg, #ffffff 0%, rgba(34, 197, 94, 0.16) 100%)",
+    );
   });
 });

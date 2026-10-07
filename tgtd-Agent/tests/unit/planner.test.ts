@@ -8,6 +8,7 @@ import {
   extractGoogleMapsUrl,
   safeMapsRedirect,
 } from "@/lib/maps/maps";
+import { extractAvailableMinutes } from "@/agents/rag-agent";
 import type { Item } from "@/types/database";
 
 describe("PlannerRequestSchema", () => {
@@ -24,6 +25,14 @@ describe("PlannerRequestSchema", () => {
 });
 
 describe("recommendations", () => {
+  it("parses natural-language hour limits", () => {
+    expect(extractAvailableMinutes("about an hour")).toBe(90);
+  });
+
+  it("parses Vietnamese minute limits", () => {
+    expect(extractAvailableMinutes("tôi muốn tìm chỗ đi dạo khoảng 30 phút")).toBe(60);
+  });
+
   const base: Item = {
     id: "1",
     workspace_id: "w",
@@ -68,6 +77,30 @@ describe("recommendations", () => {
       plan_status: "PLANNING" as const,
     };
     expect(rankPlaceCandidates([place])).toHaveLength(1);
+  });
+
+  it("keeps place recommendations near requested duration", () => {
+    const short = {
+      ...base,
+      id: "short",
+      title: "Short visit",
+      estimated_duration_min: 60,
+      plan_status: "PLANNING" as const,
+    };
+    const long = {
+      ...base,
+      id: "long",
+      title: "Long visit",
+      estimated_duration_min: 180,
+      plan_status: "PLANNING" as const,
+    };
+
+    const query = "tôi muốn tìm chỗ đi dạo khoảng 30 phút";
+    expect(
+      rankPlaceCandidates([long, short], {
+        availableMinutes: extractAvailableMinutes(query),
+      }).map((c) => c.item.id),
+    ).toEqual(["short"]);
   });
 });
 

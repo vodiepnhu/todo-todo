@@ -1,0 +1,290 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Togo Todo Agent Flow",
+    "subtitle": "Current chat flow: separate read-only recommendations from confirmed mutations",
+    "locale": "vi",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "standard",
+    "output": ".archify/workflow-agent-flow-20261007-234433/agent-flow.html",
+    "repository": {
+      "url": "https://github.com/vodiepnhu/todo-todo",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "96083a861cd7a3f2dcc11ff82dc071df6c82b909"
+    },
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "lanes": [
+    { "id": "ui", "label": "User / UI" },
+    { "id": "api", "label": "API chat" },
+    { "id": "agent", "label": "Agent runtime" },
+    { "id": "control", "label": "Policy / Confirmation", "variant": "exception" },
+    { "id": "data", "label": "Database / External" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "Intake", "fromCol": 0, "toCol": 1 },
+    { "id": "understand", "label": "Understand request", "fromCol": 2, "toCol": 4, "variant": "emphasis" },
+    { "id": "route", "label": "Route + execute", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "planner_loop", "label": "Planner loop", "lane": "agent", "fromCol": 2, "toCol": 4, "variant": "emphasis" },
+    { "id": "recommendation_path", "label": "Recommendation: read-only", "lane": "data", "fromCol": 4, "toCol": 5, "variant": "dashed" },
+    { "id": "mutation_path", "label": "Mutation: pending + confirm", "lane": "control", "fromCol": 4, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["user", "chat_api", "orchestrator", "language", "ingest", "policy"],
+  "nodes": [
+    {
+      "id": "user",
+      "lane": "ui",
+      "col": 0,
+      "type": "external",
+      "label": "User",
+      "sublabel": "message / CONFIRM",
+      "icon": "person",
+      "width": 138
+    },
+    {
+      "id": "chat_api",
+      "lane": "api",
+      "col": 1,
+      "type": "frontend",
+      "label": "Chat API",
+      "sublabel": "home or project route",
+      "tag": "auth + persist message",
+      "sources": [
+        { "path": "tgtd-Frontend/src/app/api/ai/home/route.ts", "line": 45, "end_line": 80, "label": "home entry" },
+        { "path": "tgtd-Frontend/src/app/api/ai/planner/route.ts", "line": 40, "end_line": 83, "label": "project entry" }
+      ],
+      "width": 150
+    },
+    {
+      "id": "orchestrator",
+      "lane": "agent",
+      "col": 2,
+      "type": "backend",
+      "label": "Orchestrator",
+      "sublabel": "route agents + progress",
+      "tag": "scope: project / cross",
+      "sources": [
+        { "path": "tgtd-Agent/src/agents/orchestrator.ts", "line": 112, "end_line": 172, "label": "orchestrator entry" }
+      ],
+      "width": 150
+    },
+    {
+      "id": "language",
+      "lane": "agent",
+      "col": 3,
+      "type": "backend",
+      "label": "Language Agent",
+      "sublabel": "detect EN / VI",
+      "sources": [
+        { "path": "tgtd-Agent/src/agents/orchestrator.ts", "line": 143, "end_line": 145, "label": "language call" }
+      ],
+      "width": 150
+    },
+    {
+      "id": "ingest",
+      "lane": "agent",
+      "col": 4,
+      "type": "backend",
+      "label": "Ingest / Planner",
+      "sublabel": "intent + entities + query",
+      "tag": "RECOMMEND_* vs CREATE_*",
+      "sources": [
+        { "path": "tgtd-Agent/src/agents/orchestrator.ts", "line": 160, "end_line": 184, "label": "ingest call" },
+        { "path": "tgtd-Agent/src/lib/ai/openrouter.ts", "line": 22, "end_line": 45, "label": "intent contract" },
+        { "path": "tgtd-Agent/src/agents/ingest-agent.ts", "line": 1, "end_line": 15, "label": "ingest adapter" }
+      ],
+      "width": 164
+    },
+    {
+      "id": "policy",
+      "lane": "control",
+      "col": 5,
+      "type": "security",
+      "label": "Policy",
+      "sublabel": "unsafe / scope / confidence",
+      "tag": "allow or refuse",
+      "sources": [
+        { "path": "tgtd-Agent/src/agents/orchestrator.ts", "line": 187, "end_line": 230, "label": "policy gate" },
+        { "path": "tgtd-Agent/src/agents/policy-agent.ts", "line": 27, "end_line": 59, "label": "policy rules" }
+      ],
+      "width": 160
+    },
+    {
+      "id": "saved_items",
+      "lane": "data",
+      "col": 4,
+      "type": "database",
+      "label": "Saved Activities",
+      "sublabel": "workspace activities",
+      "yOffset": 0,
+      "sources": [
+        { "path": "tgtd-Backend/src/services/workspace-service.ts", "line": 203, "end_line": 220, "label": "listItems" }
+      ],
+      "width": 154
+    },
+    {
+      "id": "rag",
+      "lane": "data",
+      "col": 5,
+      "type": "backend",
+      "label": "RAG Agent",
+      "sublabel": "retrieve + hybrid rank",
+      "tag": "recommendation read-only",
+      "sources": [
+        { "path": "tgtd-Agent/src/agents/orchestrator.ts", "line": 242, "end_line": 285, "label": "RAG route" },
+        { "path": "tgtd-Agent/src/agents/rag-agent.ts", "line": 11, "end_line": 83, "label": "filter + rank" },
+        { "path": "tgtd-AI-RAG/src/services/rag-service.ts", "line": 229, "end_line": 280, "label": "hybrid retrieval" }
+      ],
+      "width": 164
+    },
+    {
+      "id": "place_lookup",
+      "lane": "data",
+      "col": 4,
+      "type": "cloud",
+      "label": "Places Agent",
+      "sublabel": "maps URL / place search",
+      "yOffset": 80,
+      "sources": [
+        { "path": "tgtd-Agent/src/agents/places-agent.ts", "line": 42, "end_line": 95, "label": "resolve place" },
+        { "path": "tgtd-Agent/src/lib/maps/maps.ts", "line": 50, "end_line": 85, "label": "Google Places call" }
+      ],
+      "width": 154
+    },
+    {
+      "id": "mutation",
+      "lane": "agent",
+      "col": 5,
+      "type": "backend",
+      "label": "Mutation + Guardrail",
+      "sublabel": "draft → validate → pending",
+      "tag": "CREATE / UPDATE / DELETE / LOG",
+      "sources": [
+        { "path": "tgtd-Agent/src/agents/orchestrator.ts", "line": 309, "end_line": 420, "label": "mutation route" },
+        { "path": "tgtd-Agent/src/agents/orchestrator.ts", "line": 460, "end_line": 512, "label": "create pending" }
+      ],
+      "width": 174
+    },
+    {
+      "id": "pending",
+      "lane": "data",
+      "col": 5,
+      "type": "database",
+      "label": "pending_actions",
+      "sublabel": "AWAITING_CONFIRM_2",
+      "yOffset": 90,
+      "sources": [
+        { "path": "tgtd-Backend/src/services/confirmation-service.ts", "line": 28, "end_line": 59, "label": "create pending" }
+      ],
+      "width": 154
+    },
+    {
+      "id": "communication",
+      "lane": "agent",
+      "col": 5,
+      "type": "messagebus",
+      "label": "Communication",
+      "sublabel": "reply in EN / VI",
+      "tag": "no DB write",
+      "yOffset": 90,
+      "sources": [
+        { "path": "tgtd-Agent/src/agents/orchestrator.ts", "line": 278, "end_line": 307, "label": "recommend reply" },
+        { "path": "tgtd-Agent/src/agents/communication-agent.ts", "line": 43, "end_line": 73, "label": "format reply" }
+      ],
+      "width": 154
+    },
+    {
+      "id": "confirm",
+      "lane": "control",
+      "col": 4,
+      "type": "security",
+      "label": "CONFIRM Gate",
+      "sublabel": "expiry + membership + payload",
+      "tag": "explicit user consent",
+      "sources": [
+        { "path": "tgtd-Backend/src/services/confirmation-service.ts", "line": 110, "end_line": 177, "label": "confirmation checks" }
+      ],
+      "width": 168
+    },
+    {
+      "id": "items_write",
+      "lane": "data",
+      "col": 5,
+      "type": "database",
+      "label": "items / project state",
+      "sublabel": "EXECUTED after confirmation",
+      "yOffset": 170,
+      "sources": [
+        { "path": "tgtd-Backend/src/services/confirmation-service.ts", "line": 218, "end_line": 263, "label": "execute + finalize" }
+      ],
+      "width": 164
+    },
+    {
+      "id": "reply",
+      "lane": "ui",
+      "col": 1,
+      "type": "frontend",
+      "label": "AI Reply",
+      "sublabel": "recommendation or draft",
+      "sources": [
+        { "path": "tgtd-Frontend/src/app/api/ai/home/route.ts", "line": 215, "end_line": 226, "label": "persist AI reply" }
+      ],
+      "width": 150
+    }
+  ],
+  "edges": [
+    { "id": "user-chat", "from": "user", "to": "chat_api", "label": "send message", "variant": "emphasis", "role": "main" },
+    { "id": "api-orchestrator", "from": "chat_api", "to": "orchestrator", "label": "auth + context + stream", "variant": "emphasis", "role": "main" },
+    { "id": "orchestrator-language", "from": "orchestrator", "to": "language", "label": "detect language", "role": "main" },
+    { "id": "language-ingest", "from": "language", "to": "ingest", "label": "EN / VI", "role": "main" },
+    { "id": "ingest-policy", "from": "ingest", "to": "policy", "label": "PlannerRequest", "role": "main" },
+    { "id": "policy-rag", "from": "policy", "to": "rag", "label": "RECOMMEND_* / LIST_*", "variant": "dashed", "role": "branch" },
+    { "id": "saved-rag", "from": "saved_items", "to": "rag", "label": "items + semantic / keyword hits", "variant": "dashed", "role": "async" },
+    { "id": "policy-place", "from": "policy", "to": "place_lookup", "label": "mutation with place", "variant": "dashed", "role": "branch" },
+    { "id": "place-mutation", "from": "place_lookup", "to": "mutation", "label": "place metadata", "variant": "dashed", "role": "branch" },
+    { "id": "policy-mutation", "from": "policy", "to": "mutation", "label": "CREATE / UPDATE / DELETE / LOG", "variant": "security", "role": "branch" },
+    { "id": "mutation-pending", "from": "mutation", "to": "pending", "label": "createPending", "variant": "security" },
+    { "id": "pending-confirm", "from": "pending", "to": "confirm", "label": "user enters CONFIRM", "variant": "security", "role": "async" },
+    { "id": "confirm-items", "from": "confirm", "to": "items_write", "label": "executePending → EXECUTED", "variant": "security" },
+    { "id": "rag-communication", "from": "rag", "to": "communication", "label": "ranked candidates", "variant": "emphasis" },
+    { "id": "mutation-communication", "from": "mutation", "to": "communication", "label": "draft / validation result", "variant": "emphasis" },
+    { "id": "policy-refuse", "from": "policy", "to": "communication", "label": "refuse", "variant": "security", "role": "error" },
+    { "id": "communication-reply", "from": "communication", "to": "reply", "label": "AI content", "variant": "emphasis", "role": "return" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Recommendation path",
+      "items": [
+        "RECOMMEND_* enters RAG and only reads saved activities.",
+        "Food queries filter by FOOD category or food-related content.",
+        "No createPending call; no DB mutation."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Mutation path",
+      "items": [
+        "CREATE / UPDATE / DELETE / LOG creates a pending action first.",
+        "CONFIRM checks membership, expiry, payload, and version before execution.",
+        "Pending becomes EXECUTED after a successful write."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Repository note",
+      "items": [
+        "Diagram reflects the current working tree.",
+        "HEAD: 96083a861cd7a3f2dcc11ff82dc071df6c82b909.",
+        "Working tree has uncommitted changes; source links identify code locations."
+      ]
+    }
+  ]
+}

@@ -15,9 +15,15 @@ export type LlmSettingsPublic = {
   baseUrl: string | null;
   hasApiKey: boolean;
   apiKeyDisplay: string | null;
+  keysByProvider: Partial<Record<LlmProvider, LlmProviderKeyStatus>>;
   encryptionReady: boolean;
   /** True when the user has saved a user_llm_settings row. */
   configured: boolean;
+};
+
+export type LlmProviderKeyStatus = {
+  hasApiKey: boolean;
+  apiKeyDisplay: string | null;
 };
 
 type Row = {
@@ -29,6 +35,39 @@ type Row = {
   has_api_key: boolean;
 };
 
+type ProviderKeyRow = {
+  user_id: string;
+  provider: LlmProvider;
+  api_key_ciphertext: string | null;
+  api_key_last4: string | null;
+  has_api_key: boolean;
+};
+
+function keyStatus(
+  row: Pick<ProviderKeyRow, "api_key_last4" | "has_api_key"> | null | undefined,
+): LlmProviderKeyStatus {
+  return {
+    hasApiKey: Boolean(row?.has_api_key),
+    apiKeyDisplay: row?.api_key_last4 ? `••••••••${row.api_key_last4}` : null,
+  };
+}
+
+function providerKeyMap(
+  rows: ProviderKeyRow[],
+): Partial<Record<LlmProvider, LlmProviderKeyStatus>> {
+  return Object.fromEntries(
+    rows.map((row) => [row.provider, keyStatus(row)]),
+  ) as Partial<Record<LlmProvider, LlmProviderKeyStatus>>;
+}
+
+function legacyKeyStatus(
+  data: Row | null,
+  provider: string,
+): LlmProviderKeyStatus | null {
+  if (!data || data.provider !== provider) return null;
+  return keyStatus(data);
+}
+
 export async function getLlmSettingsPublic(
   userId: string,
 ): Promise<LlmSettingsPublic> {
@@ -39,6 +78,13 @@ export async function getLlmSettingsPublic(
       .select("provider, model, base_url, api_key_last4, has_api_key")
       .eq("user_id", userId)
       .maybeSingle();
+    const { data: providerKeyRows } = await admin
+      .from("user_llm_provider_keys")
+      .select("provider, api_key_last4, has_api_key")
+      .eq("user_id", userId);
+    const keysByProvider = providerKeyMap(
+      (providerKeyRows ?? []) as ProviderKeyRow[],
+    );
 
     if (!data) {
       return {
@@ -47,19 +93,28 @@ export async function getLlmSettingsPublic(
         baseUrl: null,
         hasApiKey: false,
         apiKeyDisplay: null,
+        keysByProvider,
         encryptionReady: canEncrypt(),
         configured: false,
       };
     }
 
+    if (!(data.provider in keysByProvider)) {
+      const legacy = legacyKeyStatus(data as Row, data.provider);
+      if (legacy) keysByProvider[data.provider as LlmProvider] = legacy;
+    }
+    const activeKey = keysByProvider[data.provider as LlmProvider] ?? {
+      hasApiKey: false,
+      apiKeyDisplay: null,
+    };
+
     return {
       provider: data.provider as LlmProvider,
       model: data.model,
       baseUrl: data.base_url,
-      hasApiKey: data.has_api_key,
-      apiKeyDisplay: data.api_key_last4
-        ? `••••••••${data.api_key_last4}`
-        : null,
+      hasApiKey: activeKey.hasApiKey,
+      apiKeyDisplay: activeKey.apiKeyDisplay,
+      keysByProvider,
       encryptionReady: canEncrypt(),
       configured: true,
     };
@@ -70,6 +125,7 @@ export async function getLlmSettingsPublic(
       baseUrl: null,
       hasApiKey: false,
       apiKeyDisplay: null,
+      keysByProvider: {},
       encryptionReady: canEncrypt(),
       configured: false,
     };
@@ -89,42 +145,60 @@ export async function resolveLlmCallConfig(
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (data?.has_api_key && data.api_key_ciphertext) {
-      const apiKey = decryptSecret(data.api_key_ciphertext);
-      return {
-        provider: data.provider as LlmProvider,
-        model: data.model,
-        apiKey,
-        baseUrl: data.base_url,
-      };
-    }
+    if (data) {
+      const { data: providerKey } = await admin
+        .from("user_llm_provider_keys")
+        .select("provider, api_key_ciphertext, has_api_key")
+        .eq("user_id", userId)
+        .eq("provider", data.provider)
+        .maybeSingle();
+      const ciphertext = providerKey
+        ? providerKey.api_key_ciphertext
+        : data.api_key_ciphertext;
+      const hasKey = providerKey
+        ? providerKey.has_api_key
+        : data.has_api_key;
 
-    if (
-      data &&
-      (data.provider === "ollama" || data.provider === "custom") &&
-      data.model
-    ) {
-      return {
-        provider: data.provider as LlmProvider,
-        model: data.model,
-        apiKey: null,
-        baseUrl: data.base_url,
-      };
-    }
+      if (hasKey && ciphertext) {
+        const apiKey = decryptSecret(ciphertext);
+        return {
+          provider: data.provider as LlmProvider,
+          model: data.model,
+          apiKey,
+          baseUrl: data.base_url,
+        };
+      }
 
-    if (data?.model && env.OPENROUTER_API_KEY) {
-      return {
-        provider: (data.provider as LlmProvider) || "openrouter",
-        model: data.model,
-        apiKey: env.OPENROUTER_API_KEY,
-        baseUrl: data.base_url || "https://openrouter.ai/api/v1",
-      };
+      if (
+        (data.provider === "ollama" || data.provider === "custom") &&
+        data.model
+      ) {
+        return {
+          provider: data.provider as LlmProvider,
+          model: data.model,
+          apiKey: null,
+          baseUrl: data.base_url,
+        };
+      }
+
+      if (
+        data.provider === "openrouter" &&
+        data.model &&
+        env.OPENROUTER_API_KEY
+      ) {
+        return {
+          provider: "openrouter",
+          model: data.model,
+          apiKey: env.OPENROUTER_API_KEY,
+          baseUrl: data.base_url || "https://openrouter.ai/api/v1",
+        };
+      }
     }
   } catch {
     // No admin client / encryption — fall through to env
   }
 
-  if (env.OPENROUTER_API_KEY) {
+  if (env.OPENROUTER_API_KEY && env.OPENROUTER_MODEL) {
     return {
       provider: "openrouter",
       model: env.OPENROUTER_MODEL,
@@ -157,11 +231,23 @@ export async function upsertLlmSettings(
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
+  const { data: existingProviderKey } = await admin
+    .from("user_llm_provider_keys")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("provider", input.provider)
+    .maybeSingle();
 
   const meta = LLM_PROVIDERS.find((p) => p.id === input.provider)!;
-  let ciphertext: string | null = existing?.api_key_ciphertext ?? null;
-  let last4: string | null = existing?.api_key_last4 ?? null;
-  let hasKey = existing?.has_api_key ?? false;
+  let ciphertext = existingProviderKey?.api_key_ciphertext ?? null;
+  let last4 = existingProviderKey?.api_key_last4 ?? null;
+  let hasKey = existingProviderKey?.has_api_key ?? false;
+
+  if (!existingProviderKey && existing?.provider === input.provider) {
+    ciphertext = existing.api_key_ciphertext ?? null;
+    last4 = existing.api_key_last4 ?? null;
+    hasKey = existing.has_api_key ?? false;
+  }
 
   if (input.clearApiKey) {
     ciphertext = null;
@@ -173,7 +259,6 @@ export async function upsertLlmSettings(
         "Server missing APP_ENCRYPTION_SECRET — cannot store API keys",
       );
     }
-    // Reject accidental paste of masked value
     if (input.apiKey.includes("•")) {
       throw new Error("Paste a full API key, not the masked display");
     }
@@ -181,9 +266,20 @@ export async function upsertLlmSettings(
     ciphertext = encryptSecret(key);
     last4 = maskApiKey(key).last4;
     hasKey = true;
-  } else if (meta.needsKey && !hasKey && !getEnv().OPENROUTER_API_KEY) {
-    // allow saving provider/model without key; planner will mock until key set
   }
+
+  const providerKeyRow = {
+    user_id: userId,
+    provider: input.provider,
+    api_key_ciphertext: ciphertext,
+    api_key_last4: last4,
+    has_api_key: hasKey,
+    updated_at: new Date().toISOString(),
+  };
+  const { error: providerKeyError } = await admin
+    .from("user_llm_provider_keys")
+    .upsert(providerKeyRow, { onConflict: "user_id,provider" });
+  if (providerKeyError) throw providerKeyError;
 
   const row = {
     user_id: userId,
@@ -201,16 +297,38 @@ export async function upsertLlmSettings(
   });
   if (error) throw error;
 
-  // Never select ciphertext for response
   return getLlmSettingsPublic(userId);
 }
 
-export async function clearLlmApiKey(userId: string) {
-  return upsertLlmSettings(userId, {
-    provider: (await getLlmSettingsPublic(userId)).provider,
-    model: (await getLlmSettingsPublic(userId)).model,
-    clearApiKey: true,
-  });
+export async function clearLlmApiKey(
+  userId: string,
+  provider?: LlmProvider,
+) {
+  const current = await getLlmSettingsPublic(userId);
+  const targetProvider = provider ?? current.provider;
+  const admin = createAdminClient();
+  const { error } = await admin.from("user_llm_provider_keys").upsert(
+    {
+      user_id: userId,
+      provider: targetProvider,
+      api_key_ciphertext: null,
+      api_key_last4: null,
+      has_api_key: false,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,provider" },
+  );
+  if (error) throw error;
+
+  if (current.provider === targetProvider) {
+    return upsertLlmSettings(userId, {
+      provider: current.provider,
+      model: current.model,
+      baseUrl: current.baseUrl,
+      clearApiKey: true,
+    });
+  }
+  return getLlmSettingsPublic(userId);
 }
 
 /** Type guard helper for unused Row */

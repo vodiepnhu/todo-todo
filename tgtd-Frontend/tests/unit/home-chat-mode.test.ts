@@ -13,6 +13,7 @@ describe("applyHomeModeBias", () => {
     const out = applyHomeModeBias("Bondi Saturday", "add");
     expect(out).toContain("Bondi Saturday");
     expect(out).toMatch(/Add mode/i);
-    expect(out).toMatch(/CREATE_ITEM/i);
+    expect(out).toMatch(/recommend first/i);
+    expect(out).toMatch(/explicit yes/i);
   });
 });

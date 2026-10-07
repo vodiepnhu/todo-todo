@@ -7,10 +7,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
-  OPENROUTER_MODEL: z.string().default("google/gemma-4-31b-it:free"),
-  OPENROUTER_FALLBACK_MODEL: z
-    .string()
-    .default("nvidia/nemotron-3-ultra-550b-a55b:free"),
+  OPENROUTER_MODEL: z.string().default(""),
+  OPENROUTER_FALLBACK_MODEL: z.string().default(""),
   GOOGLE_MAPS_SERVER_API_KEY: z.string().optional(),
   NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY: z.string().optional(),
   NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: z.coerce.boolean().default(false),

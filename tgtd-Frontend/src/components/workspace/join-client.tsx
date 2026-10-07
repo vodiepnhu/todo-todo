@@ -6,39 +6,36 @@ import { createClient } from "@/lib/supabase/client";
 import { paths } from "@/lib/paths";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 
 export function JoinClient({ token }: { token: string }) {
   const router = useRouter();
   const [preview, setPreview] = useState<{ name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { locale } = useLocale();
+  const vi = locale === "vi";
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: invite } = await supabase
-        .from("workspace_invites")
-        .select("workspace_id, expires_at, workspaces(name, sharing_enabled)")
-        .eq("token", token)
-        .is("accepted_at", null)
-        .maybeSingle();
+      const { data: invite } = await supabase.rpc("preview_workspace_invite", {
+        invite_token: token,
+      });
       if (!invite) {
         setError("Invite not found or expired");
         return;
       }
-      if (new Date(invite.expires_at) < new Date()) {
+      const preview = Array.isArray(invite) ? invite[0] : invite;
+      if (!preview || new Date(preview.expires_at) < new Date()) {
         setError("Invite expired");
         return;
       }
-      const ws = invite.workspaces as unknown as {
-        name: string;
-        sharing_enabled: boolean;
-      };
-      if (!ws?.sharing_enabled) {
+      if (!preview.sharing_enabled) {
         setError("Sharing is disabled for this project");
         return;
       }
-      setPreview({ name: ws?.name ?? "Shared project" });
+      setPreview({ name: preview.name ?? "Shared project" });
     }
     void load();
   }, [token]);
@@ -73,15 +70,18 @@ export function JoinClient({ token }: { token: string }) {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <Card className="w-full max-w-md space-y-4 p-6">
-        <h1 className="text-2xl font-semibold">Join project</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold">{vi ? "Tham gia dự án" : "Join project"}</h1>
+          <LanguageSwitcher />
+        </div>
         {preview && (
           <p className="text-muted">
-            You&apos;re invited to <strong className="text-foreground">{preview.name}</strong>
+            {vi ? "Bạn được mời tham gia " : "You&apos;re invited to "}<strong className="text-foreground">{preview.name}</strong>
           </p>
         )}
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button className="w-full" onClick={join} disabled={loading || !!error}>
-          {loading ? "Joining…" : "Join"}
+          {loading ? (vi ? "Đang tham gia…" : "Joining…") : (vi ? "Tham gia" : "Join")}
         </Button>
       </Card>
     </div>

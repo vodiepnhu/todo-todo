@@ -29,7 +29,9 @@ export function filterListItems(
   now = new Date(),
 ): Item[] {
   return items.filter((item) => {
-    if (item.status === "ARCHIVED") return false;
+    if (item.status === "ARCHIVED" && item.plan_status !== "SKIPPED") {
+      return false;
+    }
     const visited = item.plan_status === "VISITED" || visitedIds.has(item.id);
     if (filter === "All") return true;
     if (filter === "Upcoming") return isUpcomingItem(item, now);

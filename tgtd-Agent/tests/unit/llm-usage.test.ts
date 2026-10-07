@@ -3,7 +3,18 @@ import {
   aggregateUsages,
   estimateCostUsd,
   finalizeUsageFromApi,
+  recordLlmUsage,
 } from "@/lib/ai/llm-usage";
+import { runWithLlmUsage } from "@/lib/ai/llm-usage-als";
+
+const usage = (provider: string) =>
+  finalizeUsageFromApi({
+    provider,
+    model: "gpt-4o-mini",
+    promptTokens: 1,
+    completionTokens: 1,
+    providerCostUsd: 0.001,
+  });
 
 describe("llm-usage", () => {
   it("estimates gpt-4o-mini cost", () => {
@@ -54,5 +65,33 @@ describe("llm-usage", () => {
     expect(t.promptTokens).toBe(110);
     expect(t.completionTokens).toBe(25);
     expect(t.costUsd).toBeCloseTo(0.01, 5);
+  });
+
+  it("keeps concurrent request usage isolated", async () => {
+    const [a, b] = await Promise.all([
+      runWithLlmUsage(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        recordLlmUsage(usage("a"));
+      }),
+      runWithLlmUsage(async () => {
+        recordLlmUsage(usage("b"));
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }),
+    ]);
+
+    expect(a.usage.llmCalls).toBe(1);
+    expect(b.usage.llmCalls).toBe(1);
+  });
+
+  it("stops request when LLM call budget is exceeded", async () => {
+    await expect(
+      runWithLlmUsage(
+        async () => {
+          recordLlmUsage(usage("a"));
+          recordLlmUsage(usage("b"));
+        },
+        { maxCalls: 1 },
+      ),
+    ).rejects.toThrow("LLM call budget exceeded");
   });
 });

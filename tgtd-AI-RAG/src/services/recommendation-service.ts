@@ -53,8 +53,11 @@ export function rankTaskCandidates(
 }
 
 /** Prefer activities that look place-oriented (legacy TOGO + places). */
-export function rankPlaceCandidates(items: Item[]): RankedCandidate[] {
-  return items
+export function rankPlaceCandidates(
+  items: Item[],
+  opts: { availableMinutes?: number } = {},
+): RankedCandidate[] {
+  const placeItems = items
     .filter((i) => i.status === "ACTIVE")
     .filter(
       (i) =>
@@ -62,13 +65,23 @@ export function rankPlaceCandidates(items: Item[]): RankedCandidate[] {
           description: i.description,
           source_text: i.source_text,
         }) || i.plan_status != null,
-    )
+    );
+  const matchingItems = opts.availableMinutes == null
+    ? placeItems
+    : placeItems.filter(
+        (item) => (item.estimated_duration_min ?? 45) <= opts.availableMinutes!,
+      );
+
+  return matchingItems
     .map((item) => {
       const reasons = ["From your activities"];
       let score = 40;
       if (item.planned_start_at) {
         score += 20;
         reasons.push("Already planned");
+      }
+      if (opts.availableMinutes != null) {
+        reasons.push(`Fits ~${item.estimated_duration_min ?? 45} min`);
       }
       return { item, score, reasons };
     })

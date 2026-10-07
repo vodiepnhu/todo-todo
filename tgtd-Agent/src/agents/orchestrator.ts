@@ -1,19 +1,17 @@
 import { env } from "../lib/env";
-import { buildMutationDraft } from "./mutation-agent";
 import {
   formatClarifyReply,
   formatHelpReply,
+  formatAskOnlyReply,
+  formatAddScopeUnavailableReply,
   formatMutationReply,
   formatPickProjectReply,
-  formatRecommendReply,
+  formatScheduleDeclinedReply,
+  formatScheduleQuestion,
   formatRefuseReply,
+  formatWebSearchNone,
+  formatWebSearchResults,
 } from "./communication-agent";
-import { runRagAgent } from "./rag-agent";
-import { resolvePlace } from "./places-agent";
-import {
-  shouldClarify,
-  validateMutationDraft,
-} from "./guardrail-agent";
 import { evaluatePolicy } from "./policy-agent";
 import { recordAgentEvent } from "../lib/agentops/agentops";
 import type {
@@ -21,12 +19,10 @@ import type {
   AgentTrace,
   SpanSummary,
 } from "../lib/agentops/trace";
-import { safeMapsRedirect } from "../lib/maps/maps";
-import { extractPlanFromChat } from "../lib/ai/extract-plan";
-import { PlanSchema } from "../lib/plans/plan-schema";
 import type {
   OrchestratorDeps,
   OrchestratorResult,
+  PlannerProgressEvent,
 } from "./types";
 import type { ChatScope } from "../lib/chat-scope";
 import {
@@ -34,6 +30,19 @@ import {
   shouldAskProjectBeforeMutate,
   stripAllPrefix,
 } from "../lib/chat-scope";
+import { runLanguageAgent, type Language } from "./language-agent";
+import {
+  RAG_INTENTS,
+  resolveRecommendationTurn,
+  runRecommendationFlow,
+} from "./recommendation-flow";
+import {
+  parseActivePlanPending,
+  runMutationFlow,
+} from "./mutation-flow";
+import { shouldClarify } from "./guardrail-agent";
+import { matchesGreeting } from "../lib/policy/patterns";
+import { normalizePlannerRequest } from "../lib/ai/openrouter";
 
 const MUTATE_INTENTS = new Set([
   "CREATE_ITEM",
@@ -48,13 +57,58 @@ const RECOMMEND_INTENTS = new Set([
   "RECOMMEND_BOTH",
 ]);
 
-const RAG_INTENTS = new Set([
-  ...RECOMMEND_INTENTS,
-  "LIST_ITEMS",
-  "GET_ITEM",
-  "LIST_HISTORY",
-  "HELP",
-]);
+function hasExplicitCreateRequest(message: string): boolean {
+  const userMessage = (message.split(/\s*\(Context:/i, 1)[0] ?? message).trim();
+  return /\b(?:add|save|create|plan|schedule|remind|put|thêm|lưu|tạo|lập\s+kế\s+hoạch|nhắc)\b|lên\s+lịch|đặt\s+lịch/i.test(
+    userMessage,
+  );
+}
+
+function projectForReadQuery(
+  message: string,
+  projects: Array<{ id: string; name: string }>,
+): string | null {
+  const userMessage = (message.split(/\s*\(Context:/i, 1)[0] ?? message).trim().toLocaleLowerCase();
+  return projects.find((project) => userMessage.includes(project.name.toLocaleLowerCase()))?.id ?? null;
+}
+
+function isPlanClarificationFollowUp(message: string, recentChat?: string): boolean {
+  if (!/(?:^|\n).*\bDraft:|\[Confirm\]\s*pending:/i.test(recentChat ?? "")) {
+    return false;
+  }
+  const current = message.trim();
+  return /^(?:yes|yeah|yep|y|correct|right|that's|that is)\b/i.test(current) ||
+    /\b(?:that's|that is|it is|correct|right)\b/i.test(current);
+}
+
+function needsRetrievedContext(message: string, recentChat?: string): boolean {
+  if (!recentChat?.trim()) return false;
+  const current = (message.split(/\s*\(Context:/i, 1)[0] ?? message).trim();
+  const words = current.split(/\s+/).filter(Boolean).length;
+  const referencesContext = /\b(?:it|that|this|them|same|selected|option|one|yes|no|again|instead|change|move|update)\b|(?:đó|này|vừa\s+chọn|như\s+trên|tiếp|lại|đổi|sang|nó|cái\s+đó)/i.test(current);
+  if (referencesContext) return true;
+  if (words > 4) return false;
+  return !/^(?:add|save|create|schedule|remind|thêm|lưu|tạo|lập\s+kế\s+hoạch|nhắc)\b/i.test(current);
+}
+
+function formatRetrievedContext(
+  hits: Array<{
+    sourceId: string;
+    chunkText: string;
+    score: number;
+    projectName?: string;
+    channel?: string;
+  }>,
+): string | undefined {
+  if (!hits.length) return undefined;
+  return hits
+    .slice(0, 8)
+    .map((hit, index) =>
+      `[${index + 1}] ${hit.channel ?? "context"} ${hit.projectName ?? ""}`.trim() +
+      `\n${hit.chunkText.slice(0, 500)}`,
+    )
+    .join("\n\n");
+}
 
 async function runSpan<T>(
   trace: AgentTrace | undefined,
@@ -69,10 +123,6 @@ async function runSpan<T>(
   return trace.span(agent, fn, opts);
 }
 
-/**
- * Orchestrator — routes ingest → Policy → Places? → Guardrail → Mutation | RAG | Communication.
- * Mutation only creates pending_actions (single confirm).
- */
 export async function runPlannerOrchestrator(input: {
   workspaceId: string | null;
   scope?: ChatScope;
@@ -85,6 +135,9 @@ export async function runPlannerOrchestrator(input: {
   workspaceTimezone?: string;
   recentChat?: string;
   trace?: AgentTrace;
+  onProgress?: (event: PlannerProgressEvent) => void | Promise<void>;
+  readOnly?: boolean;
+  addRequiresProject?: boolean;
   deps: OrchestratorDeps;
 }): Promise<OrchestratorResult> {
   const scope: ChatScope =
@@ -93,19 +146,46 @@ export async function runPlannerOrchestrator(input: {
   const memberWorkspaceIds =
     input.memberWorkspaceIds ??
     (input.workspaceId ? [input.workspaceId] : memberProjects.map((p) => p.id));
-
   const tz = input.workspaceTimezone ?? env.DEFAULT_TIMEZONE;
   const now = new Date();
   const currentDate =
-    input.currentDate ??
-    now.toLocaleDateString("en-CA", { timeZone: tz });
+    input.currentDate ?? now.toLocaleDateString("en-CA", { timeZone: tz });
   const currentDatetime =
-    input.currentDatetime ??
-    now.toLocaleString("en-AU", { timeZone: tz });
-
+    input.currentDatetime ?? now.toLocaleString("en-AU", { timeZone: tz });
   const cleanedMessage = stripAllPrefix(input.message);
   const trace = input.trace;
+  const language: Language = (
+    await runSpan(
+      trace,
+      "language",
+      () => runLanguageAgent({ message: cleanedMessage }),
+      { summary: (result) => ({ language: result.language }) },
+    )
+  ).language;
+  const activePlanPendingPromise =
+    scope === "project" && input.workspaceId && input.deps.findActivePlanPending
+      ? input.deps.findActivePlanPending(input.workspaceId, input.userId)
+      : Promise.resolve(null);
+  const contextWorkspaceIds =
+    scope === "project" && input.workspaceId
+      ? [input.workspaceId]
+      : memberWorkspaceIds;
+  const retrievedContextPromise =
+    input.deps.retrieve && needsRetrievedContext(cleanedMessage, input.recentChat)
+      ? input.deps.retrieve(contextWorkspaceIds, cleanedMessage).catch(() => [])
+      : Promise.resolve([]);
+  const report = async (event: PlannerProgressEvent) => {
+    try {
+      await input.onProgress?.(event);
+    } catch {
+      // Progress transport must not break planner execution.
+    }
+  };
 
+  await report({ step: "understand", status: "active" });
+  const retrievedContext = formatRetrievedContext(
+    await retrievedContextPromise,
+  );
   const ingest = await runSpan(
     trace,
     "ingest",
@@ -117,37 +197,232 @@ export async function runPlannerOrchestrator(input: {
         workspaceTimezone: tz,
         userId: input.userId,
         recentChat: input.recentChat,
+        retrievedContext,
+        language,
       }),
     {
-      summary: (r) => ({
-        intent: r.request.intent,
-        confidence: r.request.confidence,
-        model: r.model,
-        mocked: r.mocked,
+      summary: (result) => ({
+        intent: result.request.intent,
+        confidence: result.request.confidence,
+        model: result.model,
+        mocked: result.mocked,
       }),
-      payload: (r) => ({ request: r.request, model: r.model }),
+      payload: (result) => ({ request: result.request, model: result.model }),
     },
   );
+  let planner = normalizePlannerRequest(cleanedMessage, ingest.request);
+  if (matchesGreeting(cleanedMessage)) {
+    planner = {
+      ...planner,
+      intent: "HELP",
+      confidence: 1,
+      ambiguities: [],
+      reply:
+        language === "vi"
+          ? "Chào bạn! Tôi có thể giúp bạn lập kế hoạch địa điểm và hoạt động."
+          : "Hi! I can help you plan places and activities.",
+    };
+  }
+  const activePlanFollowUp =
+    scope === "project" &&
+    input.workspaceId &&
+    input.deps.findActivePlanPending &&
+    isPlanClarificationFollowUp(cleanedMessage, input.recentChat)
+      ? parseActivePlanPending(await activePlanPendingPromise)
+      : null;
+  if (
+    activePlanFollowUp &&
+    (planner.intent === "UNKNOWN" || planner.intent === "HELP")
+  ) {
+    planner = {
+      ...planner,
+      intent: "UPDATE_ITEM",
+      confidence: 0.9,
+      ambiguities: [],
+      reply: undefined,
+      targetReference: activePlanFollowUp.plan.placeName,
+    };
+  }
+  const explicitCreate = hasExplicitCreateRequest(cleanedMessage);
+  if (
+    explicitCreate &&
+    (RECOMMEND_INTENTS.has(planner.intent) || planner.intent === "CREATE_ITEM")
+  ) {
+    planner = {
+      ...planner,
+      intent: "CREATE_ITEM",
+      confidence: Math.max(planner.confidence, 0.9),
+      ambiguities: [],
+      recommendationQuery: undefined,
+      event: undefined,
+      reply:
+        planner.reply &&
+        !/(?:would you like|do you want|should i|want me to|bạn có muốn|có muốn)/i.test(
+          planner.reply,
+        )
+          ? planner.reply
+          : undefined,
+    };
+  }
+  if (input.readOnly && MUTATE_INTENTS.has(planner.intent)) {
+    planner = {
+      ...planner,
+      intent: "HELP",
+      ambiguities: [],
+      reply: formatAskOnlyReply(language),
+    };
+  }
+  await report({ step: "understand", status: "done" });
 
-  const planner = ingest.request;
+  if (input.addRequiresProject) {
+    await report({ step: "complete", status: "done" });
+    return {
+      planner,
+      aiContent: formatAddScopeUnavailableReply(language),
+      pendingId: null,
+      model: ingest.model,
+      mocked: ingest.mocked,
+      latencyMs: ingest.latencyMs,
+      provider: ingest.provider,
+    };
+  }
+
+  if (ingest.mocked && ingest.model === "mock-fallback") {
+    await report({ step: "complete", status: "done" });
+    return {
+      planner,
+      aiContent: formatHelpReply(planner.reply, language),
+      pendingId: null,
+      model: ingest.model,
+      mocked: true,
+      latencyMs: ingest.latencyMs,
+      provider: ingest.provider,
+    };
+  }
+
+  const recommendationTurn = resolveRecommendationTurn({
+    message: cleanedMessage,
+    recentChat: input.recentChat,
+  });
+  if (recommendationTurn?.kind === "selection") {
+    if (input.readOnly) {
+      await report({ step: "complete", status: "done" });
+      return {
+        planner,
+        aiContent: formatAskOnlyReply(language),
+        pendingId: null,
+        model: ingest.model,
+        mocked: ingest.mocked,
+        latencyMs: ingest.latencyMs,
+        provider: ingest.provider,
+      };
+    }
+    await report({ step: "complete", status: "done" });
+    return {
+      planner,
+      aiContent: await runSpan(
+        trace,
+        "communication",
+        () => formatScheduleQuestion(recommendationTurn.place, language),
+        {
+          summary: () => ({ replyKind: "recommend_schedule_gate" }),
+          payload: (content) => ({ content }),
+        },
+      ),
+      pendingId: null,
+      model: ingest.model,
+      mocked: ingest.mocked,
+      latencyMs: ingest.latencyMs,
+      provider: ingest.provider,
+    };
+  }
+  if (recommendationTurn?.kind === "schedule_declined") {
+    await report({ step: "complete", status: "done" });
+    return {
+      planner,
+      aiContent: await runSpan(
+        trace,
+        "communication",
+        () => formatScheduleDeclinedReply(language),
+        {
+          summary: () => ({ replyKind: "recommend_schedule_declined" }),
+          payload: (content) => ({ content }),
+        },
+      ),
+      pendingId: null,
+      model: ingest.model,
+      mocked: ingest.mocked,
+      latencyMs: ingest.latencyMs,
+      provider: ingest.provider,
+    };
+  }
+  if (recommendationTurn?.kind === "web_search_declined") {
+    await report({ step: "complete", status: "done" });
+    return {
+      planner,
+      aiContent: formatWebSearchNone(language),
+      pendingId: null,
+      model: ingest.model,
+      mocked: ingest.mocked,
+      latencyMs: ingest.latencyMs,
+      provider: ingest.provider,
+    };
+  }
+  if (recommendationTurn?.kind === "web_search_confirmed") {
+    const found = input.deps.searchPlace
+      ? await input.deps.searchPlace(recommendationTurn.query)
+      : { degraded: true, results: [] };
+    const results = found.results.slice(0, 5).map((result) => ({
+      name: result.name,
+      formattedAddress: result.formattedAddress,
+      googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.name)}`,
+    }));
+    await report({ step: "complete", status: "done" });
+    return {
+      planner,
+      aiContent: found.degraded || !results.length
+        ? formatWebSearchNone(language)
+        : formatWebSearchResults(results, language),
+      pendingId: null,
+      model: ingest.model,
+      mocked: ingest.mocked,
+      latencyMs: ingest.latencyMs,
+      provider: ingest.provider,
+    };
+  }
+  let mutationMessage = cleanedMessage;
+  if (recommendationTurn?.kind === "schedule_confirmed") {
+    planner = {
+      ...planner,
+      intent: "CREATE_ITEM",
+      confidence: 1,
+      targetReference: recommendationTurn.place,
+      recommendationQuery: undefined,
+      event: undefined,
+      items: [
+        {
+          itemType: "ACTIVITY",
+          subtype: "TASK",
+          title: recommendationTurn.place,
+          placeQuery: recommendationTurn.place,
+        },
+      ],
+    };
+    mutationMessage = `Schedule ${recommendationTurn.place}`;
+  }
 
   const policy = await runSpan(
     trace,
     "policy",
-    () =>
-      evaluatePolicy({
-        message: cleanedMessage,
-        planner,
-      }),
+    () => evaluatePolicy({ message: cleanedMessage, planner }),
     {
-      summary: (r) =>
-        r.decision === "refuse"
-          ? { decision: r.decision, reason: r.reason }
-          : { decision: r.decision },
-      payload: (r) => r,
+      summary: (result) =>
+        result.decision === "refuse"
+          ? { decision: result.decision, reason: result.reason }
+          : { decision: result.decision },
+      payload: (result) => result,
     },
   );
-
   if (policy.decision === "refuse") {
     recordAgentEvent({
       event: "policy_refuse",
@@ -159,10 +434,10 @@ export async function runPlannerOrchestrator(input: {
     const aiContent = await runSpan(
       trace,
       "communication",
-      () => formatRefuseReply(),
+      () => formatRefuseReply(language),
       {
         summary: () => ({ replyKind: "refuse" }),
-        payload: (c) => ({ content: c }),
+        payload: (content) => ({ content }),
       },
     );
     return {
@@ -176,82 +451,37 @@ export async function runPlannerOrchestrator(input: {
     };
   }
 
+  let aiContent = formatHelpReply(planner.reply, language);
   let pendingId: string | null = null;
-  let aiContent = formatHelpReply(planner.reply);
-  let replyKind:
-    | "help"
-    | "refuse"
-    | "clarify"
-    | "recommend"
-    | "mutation"
-    | "pick_project" = "help";
 
   if (RAG_INTENTS.has(planner.intent)) {
+    const requestedProjectId =
+      scope === "cross" ? projectForReadQuery(cleanedMessage, memberProjects) : null;
     const ids =
       scope === "cross"
-        ? memberWorkspaceIds
+        ? requestedProjectId
+          ? [requestedProjectId]
+          : memberWorkspaceIds
         : input.workspaceId
           ? [input.workspaceId]
           : memberWorkspaceIds;
-    const rag = await runSpan(
-      trace,
-      "rag",
-      () =>
-        runRagAgent({
-          intent: planner.intent,
-          workspaceIds: ids,
-          query: planner.recommendationQuery || cleanedMessage,
-          listItems: input.deps.listItems,
-          retrieve: input.deps.retrieve,
-        }),
-      {
-        summary: (r) => ({ candidateCount: r.candidates.length }),
-        payload: (r) => ({
-          candidateIds: r.candidates.slice(0, 10).map((c) => c.item.id),
-        }),
-      },
-    );
-    const { candidates, projectByItemId } = rag;
-    if (scope === "cross") {
-      for (const c of candidates) {
-        if (!projectByItemId.has(c.item.id)) {
-          const proj = memberProjects.find((p) => p.id === c.item.workspace_id);
-          if (proj) projectByItemId.set(c.item.id, proj.name);
-        }
-      }
-    }
-    if (RECOMMEND_INTENTS.has(planner.intent)) {
-      replyKind = "recommend";
-      aiContent = formatRecommendReply({
-        intent: planner.intent,
-        candidates,
-        projectByItemId: scope === "cross" ? projectByItemId : undefined,
-      });
-    } else if (candidates.length > 0) {
-      replyKind = "recommend";
-      const top = candidates.slice(0, 5);
-      const lines = top.map((c, i) => {
-        const proj = projectByItemId.get(c.item.id);
-        const prefix = proj ? `[${proj}] ` : "";
-        return `${i + 1}. ${prefix}${c.item.title}`;
-      });
-      const chatNote = input.recentChat
-        ? "\n(Also considered recent chat — soft-deleted messages excluded.)"
-        : "";
-      aiContent = `${planner.reply || "Here is what I found in your saved data:"}\n\n${lines.join("\n")}${chatNote}`;
-    }
-
-    aiContent = await runSpan(
-      trace,
-      "communication",
-      () => aiContent,
-      {
-        summary: () => ({ replyKind }),
-        payload: (c) => ({ content: c }),
-      },
-    );
+    const recommendation = await runRecommendationFlow({
+      planner,
+      language,
+      scope,
+      workspaceIds: ids,
+      memberProjects,
+      cleanedMessage,
+      recentChat: input.recentChat,
+      deps: input.deps,
+      report,
+      runSpan: (agent, fn, opts) => runSpan(trace, agent, fn, opts),
+      fallbackContent: aiContent,
+    });
+    aiContent = recommendation.aiContent;
   } else if (MUTATE_INTENTS.has(planner.intent)) {
-    let wsId = input.workspaceId;
+    let workspaceId = input.workspaceId;
+    await report({ step: "context", status: "active" });
 
     if (scope === "cross") {
       const resolved = resolveProjectFromMessage(cleanedMessage, memberProjects);
@@ -282,7 +512,6 @@ export async function runPlannerOrchestrator(input: {
             payload: () => ({ name: resolved.name }),
           },
         );
-        pendingId = pending.id;
         aiContent = await runSpan(
           trace,
           "communication",
@@ -292,16 +521,17 @@ export async function runPlannerOrchestrator(input: {
               draftTitle: `New project: ${resolved.name}`,
               actionType: "CREATE_PROJECT",
               pendingId: pending.id,
+              language,
             }),
           {
             summary: () => ({ replyKind: "mutation" }),
-            payload: (c) => ({ content: c }),
+            payload: (content) => ({ content }),
           },
         );
         return {
           planner,
           aiContent,
-          pendingId,
+          pendingId: pending.id,
           model: ingest.model,
           mocked: ingest.mocked,
           latencyMs: ingest.latencyMs,
@@ -309,7 +539,7 @@ export async function runPlannerOrchestrator(input: {
         };
       }
       if (resolved.kind === "existing") {
-        wsId = resolved.workspaceId;
+        workspaceId = resolved.workspaceId;
       } else if (
         shouldAskProjectBeforeMutate({
           scope: "cross",
@@ -317,6 +547,7 @@ export async function runPlannerOrchestrator(input: {
           resolvedWorkspaceId: null,
         })
       ) {
+        await report({ step: "context", status: "done" });
         aiContent = await runSpan(
           trace,
           "communication",
@@ -324,10 +555,11 @@ export async function runPlannerOrchestrator(input: {
             formatPickProjectReply({
               baseReply: planner.reply,
               projects: memberProjects,
+              language,
             }),
           {
             summary: () => ({ replyKind: "pick_project" }),
-            payload: (c) => ({ content: c }),
+            payload: (content) => ({ content }),
           },
         );
         return {
@@ -342,7 +574,16 @@ export async function runPlannerOrchestrator(input: {
       }
     }
 
-    if (!wsId) {
+    const activePlan =
+      scope === "project" &&
+      (planner.intent === "CREATE_ITEM" || planner.intent === "UPDATE_ITEM") &&
+      workspaceId &&
+      input.deps.findActivePlanPending
+        ? parseActivePlanPending(await activePlanPendingPromise)
+        : null;
+    await report({ step: "context", status: "done" });
+
+    if (!workspaceId) {
       aiContent = await runSpan(
         trace,
         "communication",
@@ -350,13 +591,14 @@ export async function runPlannerOrchestrator(input: {
           formatPickProjectReply({
             baseReply: planner.reply,
             projects: memberProjects,
+            language,
           }),
         {
           summary: () => ({ replyKind: "pick_project" }),
-          payload: (c) => ({ content: c }),
+          payload: (content) => ({ content }),
         },
       );
-    } else if (shouldClarify(planner)) {
+    } else if (!activePlan && shouldClarify(planner)) {
       aiContent = await runSpan(
         trace,
         "communication",
@@ -364,174 +606,30 @@ export async function runPlannerOrchestrator(input: {
           formatClarifyReply({
             baseReply: planner.reply,
             ambiguities: planner.ambiguities,
+            language,
           }),
         {
           summary: () => ({ replyKind: "clarify" }),
-          payload: (c) => ({ content: c }),
+          payload: (content) => ({ content }),
         },
       );
     } else {
-      const item0 = planner.items[0] ?? {};
-      const place = await runSpan(
-        trace,
-        "places",
-        () =>
-          resolvePlace({
-            message: cleanedMessage,
-            placeQuery: item0.placeQuery,
-            googleMapsUrl: item0.googleMapsUrl,
-            extractMapsUrl: input.deps.extractMapsUrl,
-            safeMapsUrl: input.deps.safeMapsUrl ?? safeMapsRedirect,
-            searchPlace: input.deps.searchPlace,
-          }),
-        {
-          summary: (p) => ({
-            degraded: p.degraded,
-            hasMapsUrl: Boolean(p.googleMapsUrl),
-            placeName: p.name ?? undefined,
-          }),
-          payload: (p) => p,
-        },
-      );
-
-      const items = planner.items.length
-        ? [
-            {
-              ...item0,
-              placeQuery: place.placeQuery ?? item0.placeQuery,
-              googleMapsUrl: place.googleMapsUrl ?? item0.googleMapsUrl,
-              title: item0.title || place.name || item0.title,
-            },
-            ...planner.items.slice(1),
-          ]
-        : planner.items;
-
-      const draft = buildMutationDraft({
-        intent: planner.intent as
-          | "CREATE_ITEM"
-          | "UPDATE_ITEM"
-          | "DELETE_ITEM"
-          | "LOG_EVENT",
-        message: cleanedMessage,
-        items,
-        event: planner.event,
-        targetReference: planner.targetReference,
-        extractMapsUrl: input.deps.extractMapsUrl,
+      const mutation = await runMutationFlow({
+        workspaceId,
+        scope,
+        planner,
+        language,
+        cleanedMessage: mutationMessage,
+        userId: input.userId,
+        recentChat: input.recentChat,
+        workspaceTimezone: tz,
+        activePlan,
+        deps: input.deps,
+        report,
+        runSpan: (agent, fn, opts) => runSpan(trace, agent, fn, opts),
       });
-
-      if (item0.placeQuery || place.placeQuery || place.name) {
-        const extracted = await (input.deps.extractPlan ?? extractPlanFromChat)({
-          userId: input.userId,
-          text: [input.recentChat, cleanedMessage].filter(Boolean).join("\n"),
-          timezone: tz,
-          lookupMaps: false,
-        });
-        const plan = PlanSchema.parse({
-          ...extracted.draft,
-          placeName: place.name || extracted.draft.placeName || item0.placeQuery || item0.title,
-          location: place.formattedAddress ?? extracted.draft.location,
-          googleMapsUrl: place.googleMapsUrl ?? extracted.draft.googleMapsUrl,
-          googlePlaceId: place.googlePlaceId ?? extracted.draft.googlePlaceId,
-          latitude: place.latitude ?? extracted.draft.latitude,
-          longitude: place.longitude ?? extracted.draft.longitude,
-          sourceText: cleanedMessage,
-        });
-        draft.payload = {
-          ...draft.payload,
-          schema: "plan",
-          title: plan.placeName,
-          placeQuery: plan.placeName,
-          googleMapsUrl: plan.googleMapsUrl ?? undefined,
-          plan,
-        };
-      }
-
-      if (place.googlePlaceId) {
-        draft.payload.googlePlaceId = place.googlePlaceId;
-      }
-      if (place.formattedAddress) {
-        draft.payload.formattedAddress = place.formattedAddress;
-      }
-      if (place.degraded && place.note) {
-        draft.payload.placeDegraded = true;
-        draft.payload.placeNote = place.note;
-      }
-
-      const gated = await runSpan(
-        trace,
-        "guardrail",
-        () =>
-          validateMutationDraft(draft, {
-            safeMapsUrl: input.deps.safeMapsUrl ?? safeMapsRedirect,
-          }),
-        {
-          summary: (g) =>
-            g.ok
-              ? { clarify: false }
-              : { clarify: true, reasons: g.reasons },
-          payload: (g) => g,
-        },
-      );
-
-      if (!gated.ok) {
-        aiContent = await runSpan(
-          trace,
-          "communication",
-          () =>
-            formatClarifyReply({
-              baseReply: planner.reply,
-              reasons: gated.reasons,
-            }),
-          {
-            summary: () => ({ replyKind: "clarify" }),
-            payload: (c) => ({ content: c }),
-          },
-        );
-      } else {
-        const pending = await runSpan(
-          trace,
-          "mutation",
-          () =>
-            input.deps.createPending({
-              workspaceId: wsId,
-              actionType: gated.draft.actionType,
-              payload: gated.draft.payload,
-              baseVersion: null,
-              userId: input.userId,
-            }),
-          {
-            summary: () => ({
-              actionType: gated.draft.actionType,
-              draftTitle: gated.draft.draftTitle,
-            }),
-            payload: () => ({
-              actionType: gated.draft.actionType,
-              payload: gated.draft.payload,
-            }),
-          },
-        );
-        pendingId = pending.id;
-        const placeHint = place.degraded
-          ? " (place lookup degraded)"
-          : place.googleMapsUrl
-            ? " (maps link attached)"
-            : "";
-        aiContent = await runSpan(
-          trace,
-          "communication",
-          () =>
-            formatMutationReply({
-              baseReply: `${planner.reply ?? ""}${placeHint}`.trim(),
-              draftTitle: gated.draft.draftTitle,
-              actionType: gated.draft.actionType,
-              pendingId: pending.id,
-            }),
-          {
-            summary: () => ({ replyKind: "mutation" }),
-            payload: (c) => ({ content: c }),
-          },
-        );
-      }
+      aiContent = mutation.aiContent;
+      pendingId = mutation.pendingId;
     }
   } else {
     aiContent = await runSpan(
@@ -540,11 +638,12 @@ export async function runPlannerOrchestrator(input: {
       () => aiContent,
       {
         summary: () => ({ replyKind: "help" }),
-        payload: (c) => ({ content: c }),
+        payload: (content) => ({ content }),
       },
     );
   }
 
+  await report({ step: "complete", status: "done" });
   return {
     planner,
     aiContent,

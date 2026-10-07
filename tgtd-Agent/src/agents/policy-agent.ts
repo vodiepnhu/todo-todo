@@ -1,6 +1,7 @@
 import type { PlannerRequest } from "../schemas/planner";
 import {
   matchesAppHelp,
+  matchesAppAction,
   matchesOffDomain,
   matchesUnsafe,
 } from "../lib/policy/patterns";
@@ -41,6 +42,10 @@ export function evaluatePolicy(input: {
 
   if (intent === "HELP") {
     if (matchesAppHelp(message)) return { decision: "allow" };
+    return { decision: "refuse", reason: "out_of_scope" };
+  }
+
+  if (matchesOffDomain(message) && !matchesAppAction(message)) {
     return { decision: "refuse", reason: "out_of_scope" };
   }
 

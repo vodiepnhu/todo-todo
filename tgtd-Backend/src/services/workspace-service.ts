@@ -135,12 +135,21 @@ export async function setSharingEnabled(
   return data as Workspace;
 }
 
+export type InvitePermissions = {
+  canAdd: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+};
+
 export async function createInvite(
   supabase: SupabaseClient,
   workspaceId: string,
   userId: string,
-  email?: string,
+  email: string,
+  permissions: InvitePermissions,
 ) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) throw new Error("Invite email required");
   const { data: ws, error: wsErr } = await supabase
     .from("workspaces")
     .select("sharing_enabled")
@@ -156,13 +165,27 @@ export async function createInvite(
     .insert({
       workspace_id: workspaceId,
       created_by: userId,
-      email: email ?? null,
+      email: normalizedEmail,
       role: "MEMBER",
+      can_add: permissions.canAdd,
+      can_edit: permissions.canEdit,
+      can_delete: permissions.canDelete,
     })
     .select("*")
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function createViewLink(
+  supabase: SupabaseClient,
+  workspaceId: string,
+) {
+  const { data, error } = await supabase.rpc("create_workspace_view_link", {
+    ws: workspaceId,
+  });
+  if (error) throwQueryError(error);
+  return { token: data as string };
 }
 
 export async function acceptInvite(

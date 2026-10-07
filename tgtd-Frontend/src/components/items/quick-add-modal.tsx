@@ -11,6 +11,7 @@ import { PlanSchema, emptyPlan } from "@/lib/plans/plan-schema";
 import type { PlanDraft } from "@/lib/plans/plan-schema";
 import { planToPendingPayload } from "@/lib/plans/plan-payload";
 import { PlannerWaitPanel } from "@/components/ui/planner-wait-panel";
+import { useLocale } from "@/lib/i18n";
 
 type Step = "compose" | "plan" | "extracting";
 
@@ -34,6 +35,8 @@ export function QuickAddModal({
   const [planMissing, setPlanMissing] = useState<string[]>([]);
   const [planSuggested, setPlanSuggested] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { locale } = useLocale();
+  const vi = locale === "vi";
 
   useEffect(() => {
     if (open) {
@@ -62,14 +65,32 @@ export function QuickAddModal({
           lookupMaps: true,
         }),
       });
-      const json = await res.json();
+      const json = (await res.json()) as {
+        draft?: PlanDraft;
+        missing?: string[];
+        mocked?: boolean;
+        fallbackReason?:
+          | "no_config"
+          | "no_api_key"
+          | "provider_error"
+          | "invalid_response";
+        fallbackDetail?: string;
+        error?: string;
+      };
       if (!res.ok) throw new Error(json.error || "Extract failed");
       setPlan(json.draft as PlanDraft);
       setPlanMissing((json.missing as string[]) ?? []);
       setPlanSuggested(true);
       setStep("plan");
       if (json.mocked) {
-        toast.message("Drafted with mock model (no API key)");
+        const reason = json.fallbackReason;
+        toast.message(
+          reason === "provider_error"
+              ? `LLM request failed (${json.fallbackDetail ?? "provider error"}); drafted with fallback model.`
+            : reason === "invalid_response"
+              ? `LLM returned invalid plan data (${json.fallbackDetail ?? "schema mismatch"}); drafted with fallback model.`
+              : "No usable account LLM key; drafted with fallback model. Check Account > AI settings.",
+        );
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Extract failed");
@@ -132,12 +153,12 @@ export function QuickAddModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 p-4 sm:items-center">
-      <Card className="max-h-[90dvh] w-full max-w-lg space-y-3 overflow-y-auto p-5">
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/35 backdrop-blur-xs p-4 sm:items-center">
+      <Card className="max-h-[90dvh] w-full max-w-lg space-y-3.5 overflow-y-auto p-6 rounded-3xl border border-white/90 bg-white/95 shadow-2xl backdrop-blur-md">
         {step === "extracting" && (
           <PlannerWaitPanel
-            title="Planner is drafting your plan…"
-            hint="Looking up Maps if needed"
+            title={vi ? "Planner đang chuẩn bị kế hoạch…" : "Planner is drafting your plan…"}
+            hint={vi ? "Đang tìm địa điểm trên Maps nếu cần" : "Looking up Maps if needed"}
           />
         )}
 
@@ -155,10 +176,10 @@ export function QuickAddModal({
 
         {step === "compose" && (
           <>
-            <h2 className="text-lg font-semibold">What would you like to add?</h2>
+            <h2 className="text-lg font-semibold">{vi ? "Bạn muốn thêm gì?" : "What would you like to add?"}</h2>
             <Textarea
               autoFocus
-              placeholder='e.g. "IKEA Tempe Saturday" or paste a Maps link'
+              placeholder={vi ? 'Ví dụ: "IKEA Tempe thứ bảy" hoặc dán liên kết Maps' : 'e.g. "IKEA Tempe Saturday" or paste a Maps link'}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
@@ -166,9 +187,7 @@ export function QuickAddModal({
               }}
             />
             <p className="text-xs text-muted">
-              Planner fills the Add to Plan form (place, activities, prep,
-              timing, notes) — edit before saving. Won&apos;t invent maps links
-              or costs.
+              {vi ? "Planner sẽ điền sẵn kế hoạch gồm địa điểm, hoạt động, phần chuẩn bị, thời gian và ghi chú. Bạn có thể chỉnh sửa trước khi lưu. Planner không tự thêm liên kết Maps hoặc chi phí." : "Planner fills the Add to Plan form (place, activities, prep, timing, notes) — edit before saving. Won&apos;t invent maps links or costs."}
             </p>
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
@@ -177,10 +196,10 @@ export function QuickAddModal({
                   onClick={() => void runExtractPlan("compose")}
                   disabled={!text.trim() || busy}
                 >
-                  Continue with Planner
+                  {vi ? "Tiếp tục với Planner" : "Continue with Planner"}
                 </Button>
                 <Button variant="ghost" onClick={onClose}>
-                  Cancel
+                  {vi ? "Hủy" : "Cancel"}
                 </Button>
               </div>
               <Button
@@ -193,7 +212,7 @@ export function QuickAddModal({
                   setStep("plan");
                 }}
               >
-                Add trip plan manually
+                {vi ? "Tự tạo kế hoạch chuyến đi" : "Add trip plan manually"}
               </Button>
             </div>
           </>

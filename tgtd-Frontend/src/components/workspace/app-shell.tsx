@@ -13,33 +13,38 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { paths } from "@/lib/paths";
+import { LanguageSwitcher, useLocale } from "@/lib/i18n";
+import { FunnyLogo } from "@/components/ui/funny-logo";
 
 const nav = [
-  { href: "", label: "Dashboard", icon: LayoutDashboard },
-  { href: "chat", label: "Chat", icon: MessageCircle },
-  { href: "lists", label: "Lists", icon: ListTodo },
-  { href: "settings", label: "Settings", icon: Settings },
+  { href: "", key: "dashboard" as const, icon: LayoutDashboard },
+  { href: "chat", key: "chat" as const, icon: MessageCircle },
+  { href: "lists", key: "lists" as const, icon: ListTodo },
+  { href: "settings", key: "settings" as const, icon: Settings },
 ];
 
 const mobileNav = [
-  { href: "", label: "Dash", icon: LayoutDashboard },
-  { href: "chat", label: "Chat", icon: MessageCircle },
-  { href: "lists", label: "Lists", icon: ListTodo },
-  { href: "settings", label: "Settings", icon: Settings },
+  { href: "", key: "dashboard" as const, icon: LayoutDashboard },
+  { href: "chat", key: "chat" as const, icon: MessageCircle },
+  { href: "lists", key: "lists" as const, icon: ListTodo },
+  { href: "settings", key: "settings" as const, icon: Settings },
 ];
 
 export function AppShell({
   workspaceId,
   workspaceName,
+  canAdd,
   children,
   onQuickAdd,
 }: {
   workspaceId: string;
   workspaceName: string;
+  canAdd: boolean;
   children: React.ReactNode;
   onQuickAdd?: () => void;
 }) {
   const pathname = usePathname();
+  const { dictionary } = useLocale();
   const base = paths.project(workspaceId);
 
   function hrefFor(segment: string) {
@@ -68,20 +73,23 @@ export function AppShell({
   }, [onQuickAdd]);
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#ddeee9_0%,_#f2f7f5_45%,_#fff_100%)]">
+    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#e0f2fe_0%,_#f5f9fd_45%,_#ffffff_100%)]">
       <div className="mx-auto flex min-h-dvh max-w-6xl">
-        <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r border-border/70 bg-surface/60 p-4 backdrop-blur md:flex">
+        <aside className="hidden w-60 shrink-0 flex-col gap-1.5 border-r border-white/80 bg-white/75 p-4.5 backdrop-blur-md md:flex shadow-xs">
           <div className="mb-4 px-2">
+            <Link href={paths.projects()} className="mb-3 block">
+              <FunnyLogo size="sm" />
+            </Link>
             <Link
               href={paths.projects()}
-              className="text-xs uppercase tracking-wide text-primary hover:underline"
+              className="text-xs uppercase tracking-wide text-primary font-bold hover:underline"
             >
-              ← All projects
+              ← {dictionary.nav.allProjects}
             </Link>
-            <p className="mt-1 text-xs uppercase tracking-wide text-muted">
-              Project
+            <p className="mt-1 text-xs uppercase tracking-wide text-muted font-medium">
+              {dictionary.nav.project}
             </p>
-            <p className="truncate text-sm font-semibold text-foreground">
+            <p className="truncate text-base font-bold text-foreground">
               {workspaceName}
             </p>
           </div>
@@ -91,36 +99,39 @@ export function AppShell({
             const Icon = item.icon;
             return (
               <Link
-                key={item.label}
+                key={item.key}
                 href={href}
                 className={cn(
-                  "flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted transition-colors duration-150 hover:bg-primary-soft",
-                  active && "bg-primary-soft font-medium text-foreground",
+                  "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-muted font-medium transition-all duration-150 hover:bg-primary-soft/50 hover:text-foreground",
+                  active && "bg-primary-soft/90 font-bold text-primary shadow-xs",
                 )}
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                {dictionary.nav[item.key]}
               </Link>
             );
           })}
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border/70 bg-surface/80 px-4 py-3 backdrop-blur">
-            <h1 className="text-base font-semibold text-foreground md:hidden">
+          <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/80 bg-white/80 px-5 py-3.5 backdrop-blur-md shadow-xs">
+            <h1 className="text-base font-bold text-foreground md:hidden">
               {workspaceName}
             </h1>
-            <div className="ml-auto">
-              <Button size="sm" className="rounded-full" onClick={onQuickAdd}>
-                <Plus className="h-4 w-4" /> Add
-              </Button>
+            <div className="ml-auto flex items-center gap-2.5">
+              <LanguageSwitcher />
+              {canAdd ? (
+                <Button size="sm" className="rounded-full shadow-xs" onClick={onQuickAdd}>
+                  <Plus className="h-4 w-4" /> {dictionary.nav.add}
+                </Button>
+              ) : null}
             </div>
           </header>
-          <main className="flex-1 px-4 py-4 pb-24 md:pb-6">{children}</main>
+          <main className="flex-1 px-4 py-5 pb-24 md:pb-8">{children}</main>
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/80 bg-white/90 backdrop-blur-md shadow-[-4px_-2px_12px_rgba(147,175,212,0.18)] md:hidden">
         <div className="mx-auto flex max-w-lg justify-around px-2 py-2">
           {mobileNav.map((item) => {
             const href = hrefFor(item.href);
@@ -128,15 +139,15 @@ export function AppShell({
             const Icon = item.icon;
             return (
               <Link
-                key={item.label}
+                key={item.key}
                 href={href}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] text-muted",
-                  active && "text-primary",
+                  "flex flex-col items-center gap-0.5 rounded-xl px-2.5 py-1 text-[11px] font-semibold text-muted transition-colors",
+                  active && "text-primary bg-primary-soft/70 shadow-xs",
                 )}
               >
                 <Icon className="h-5 w-5" />
-                {item.label}
+                {dictionary.nav[item.key]}
               </Link>
             );
           })}

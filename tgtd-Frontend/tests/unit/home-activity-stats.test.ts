@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   activityAt,
   aggregateHomeActivityStats,
   dateKeyInTimeZone,
+  listHomeActivityStats,
 } from "@/lib/home-activity-stats";
 
 describe("home-activity-stats", () => {
@@ -66,5 +67,40 @@ describe("home-activity-stats", () => {
     expect(result.byWorkspace.w2.activeCount).toBe(1);
     expect(result.today.map((t) => t.id)).toEqual(["i3", "i1"]);
     expect(result.today[0]?.workspaceName).toBe("Sydney Weekends");
+  });
+
+  it("keeps visited items in home activity stats", async () => {
+    const query = {} as Record<string, unknown> & {
+      then: (resolve: (value: unknown) => unknown) => Promise<unknown>;
+    };
+    query.select = vi.fn(() => query);
+    query.in = vi.fn(() => query);
+    query.is = vi.fn(() => query);
+    query.eq = vi.fn(() => query);
+    query.then = (resolve) =>
+      Promise.resolve({
+        data: [
+          {
+            id: "visited-1",
+            workspace_id: "w1",
+            title: "Visited place",
+            due_at: null,
+            planned_start_at: null,
+            plan_status: "VISITED",
+            category_label: null,
+            estimated_duration_min: null,
+          },
+        ],
+        error: null,
+      }).then(resolve);
+
+    const result = await listHomeActivityStats(
+      { from: vi.fn(() => query) } as never,
+      [{ id: "w1", name: "Weekend" }],
+    );
+
+    expect(result.activities).toHaveLength(1);
+    expect(result.activities[0]?.planStatus).toBe("VISITED");
+    expect(query.eq).not.toHaveBeenCalledWith("status", "ACTIVE");
   });
 });

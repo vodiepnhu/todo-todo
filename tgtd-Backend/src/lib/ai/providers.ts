@@ -12,7 +12,8 @@ export type LlmProvider =
   | "gemini"
   | "ollama"
   | "custom"
-  | "shopaikey";
+  | "shopaikey"
+  | "nvidia";
 
 
 export type LlmModelOption = {
@@ -22,23 +23,11 @@ export type LlmModelOption = {
   tier?: "free" | "paid" | "local";
 };
 
-/** Curated model lists shown in Settings. User can still type a custom id. */
+/** Provider model lists shown in Settings. OpenRouter stays empty because its catalog changes. */
 export const LLM_MODELS: Record<LlmProvider, LlmModelOption[]> = {
-  openrouter: [
-    { id: "google/gemma-4-31b-it:free", label: "Gemma 4 31B (free)", tier: "free" },
-    {
-      id: "nvidia/nemotron-3-ultra-550b-a55b:free",
-      label: "Nemotron 3 Ultra (free)",
-      tier: "free",
-    },
-    { id: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B (free)", tier: "free" },
-    { id: "qwen/qwen-2.5-72b-instruct:free", label: "Qwen 2.5 72B (free)", tier: "free" },
-    { id: "deepseek/deepseek-chat-v3-0324:free", label: "DeepSeek V3 (free)", tier: "free" },
-    { id: "openai/gpt-4o-mini", label: "GPT-4o mini (via OpenRouter)", tier: "paid" },
-    { id: "openai/gpt-4o", label: "GPT-4o (via OpenRouter)", tier: "paid" },
-    { id: "anthropic/claude-sonnet-4.5", label: "Claude Sonnet 4.5 (via OR)", tier: "paid" },
-    { id: "google/gemini-2.0-flash-001", label: "Gemini 2.0 Flash (via OR)", tier: "paid" },
-    { id: "google/gemini-2.5-pro-preview", label: "Gemini 2.5 Pro (via OR)", tier: "paid" },
+  openrouter: [],
+  nvidia: [
+    { id: "google/gemma-4-31b-it", label: "Gemma 4 31B (NVIDIA)", tier: "paid" },
   ],
   openai: [
     { id: "gpt-4o-mini", label: "GPT-4o mini", tier: "paid" },
@@ -99,10 +88,18 @@ export const LLM_PROVIDERS: {
   {
     id: "openrouter",
     label: "OpenRouter",
-    defaultModel: "google/gemma-4-31b-it:free",
+    defaultModel: "",
     defaultBaseUrl: "https://openrouter.ai/api/v1",
     needsKey: true,
     hint: "One key for many models (OpenAI-compatible)",
+  },
+  {
+    id: "nvidia",
+    label: "NVIDIA NIM",
+    defaultModel: "google/gemma-4-31b-it",
+    defaultBaseUrl: "https://integrate.api.nvidia.com/v1",
+    needsKey: true,
+    hint: "NVIDIA Integrate API (OpenAI-compatible)",
   },
   {
     id: "openai",
@@ -183,6 +180,7 @@ export async function chatCompletionJson(
     case "openrouter":
     case "openai":
     case "shopaikey":
+    case "nvidia":
     case "custom":
     default:
       result = await callOpenAiCompatible(config, messages);
@@ -202,7 +200,9 @@ async function callOpenAiCompatible(
       ? "https://api.openai.com/v1"
       : config.provider === "shopaikey"
         ? "https://api.shopaikey.com/v1"
-        : "https://openrouter.ai/api/v1");
+        : config.provider === "nvidia"
+          ? "https://integrate.api.nvidia.com/v1"
+          : "https://openrouter.ai/api/v1");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -220,7 +220,9 @@ async function callOpenAiCompatible(
     body: JSON.stringify({
       model: config.model,
       messages,
-      response_format: { type: "json_object" },
+      ...(config.provider === "nvidia"
+        ? {}
+        : { response_format: { type: "json_object" } }),
       ...(config.provider === "openrouter" ? { usage: { include: true } } : {}),
     }),
     signal: AbortSignal.timeout(45_000),

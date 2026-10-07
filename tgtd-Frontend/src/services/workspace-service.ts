@@ -135,12 +135,21 @@ export async function setSharingEnabled(
   return data as Workspace;
 }
 
+export type InvitePermissions = {
+  canAdd: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+};
+
 export async function createInvite(
   supabase: SupabaseClient,
   workspaceId: string,
   userId: string,
-  email?: string,
+  email: string,
+  permissions: InvitePermissions,
 ) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) throw new Error("Invite email required");
   const { data: ws, error: wsErr } = await supabase
     .from("workspaces")
     .select("sharing_enabled")
@@ -156,13 +165,73 @@ export async function createInvite(
     .insert({
       workspace_id: workspaceId,
       created_by: userId,
-      email: email ?? null,
+      email: normalizedEmail,
       role: "MEMBER",
+      can_add: permissions.canAdd,
+      can_edit: permissions.canEdit,
+      can_delete: permissions.canDelete,
     })
     .select("*")
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function createViewLink(
+  supabase: SupabaseClient,
+  workspaceId: string,
+) {
+  const { data, error } = await supabase.rpc("create_workspace_view_link", {
+    ws: workspaceId,
+  });
+  if (error) throwQueryError(error);
+  return { token: data as string };
+}
+
+export type ViewLinkPreview = {
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  expires_at: string | null;
+};
+
+export type ViewLinkItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  subtype: string;
+  status: string;
+  due_at: string | null;
+  planned_start_at: string | null;
+  time_precision: string;
+  estimated_duration_min: number | null;
+  repeat_mode: string;
+  category: string | null;
+  category_label: string | null;
+  priority: number | null;
+};
+
+export async function getViewLinkPreview(
+  supabase: SupabaseClient,
+  token: string,
+) {
+  const { data, error } = await supabase.rpc("preview_workspace_view_link", {
+    view_token: token,
+  });
+  if (error) throwQueryError(error);
+  return (Array.isArray(data) ? data[0] : data) as ViewLinkPreview | null;
+}
+
+export async function listViewLinkItems(
+  supabase: SupabaseClient,
+  token: string,
+) {
+  const { data, error } = await supabase.rpc("list_workspace_view_items", {
+    view_token: token,
+  });
+  if (error) throwQueryError(error);
+  return (data ?? []) as ViewLinkItem[];
 }
 
 export async function acceptInvite(

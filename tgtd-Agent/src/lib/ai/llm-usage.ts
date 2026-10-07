@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+
 export type CostSource = "provider" | "estimate" | "unknown";
 
 export type LlmUsage = {
@@ -19,17 +21,73 @@ export type LlmUsageTotals = {
   costSource: CostSource;
 };
 
-/** Optional recorder — bound by server ALS wrapper; no-op on client. */
-let recorder: ((usage: LlmUsage) => void) | null = null;
+type UsageStore = {
+  calls: LlmUsage[];
+  maxCalls?: number;
+  maxTotalTokens?: number;
+  maxCostUsd?: number;
+};
 
-export function bindLlmUsageRecorder(
-  next: ((usage: LlmUsage) => void) | null,
-): void {
-  recorder = next;
+export type LlmUsageLimits = Pick<
+  UsageStore,
+  "maxCalls" | "maxTotalTokens" | "maxCostUsd"
+>;
+
+export const DEFAULT_LLM_USAGE_LIMITS: LlmUsageLimits = {
+  maxCalls: 4,
+  maxTotalTokens: 16_000,
+  maxCostUsd: 0.5,
+};
+
+const usageStore = new AsyncLocalStorage<UsageStore>();
+
+export class LlmBudgetExceededError extends Error {
+  constructor(message = "LLM call budget exceeded") {
+    super(message);
+    this.name = "LlmBudgetExceededError";
+  }
 }
 
 export function recordLlmUsage(usage: LlmUsage): void {
-  recorder?.(usage);
+  const store = usageStore.getStore();
+  if (!store) return;
+  store.calls.push(usage);
+  if (store.maxCalls != null && store.calls.length > store.maxCalls) {
+    throw new LlmBudgetExceededError();
+  }
+  if (
+    store.maxTotalTokens != null &&
+    store.calls.reduce((sum, call) => sum + call.totalTokens, 0) >
+      store.maxTotalTokens
+  ) {
+    throw new LlmBudgetExceededError("LLM token budget exceeded");
+  }
+  if (
+    store.maxCostUsd != null &&
+    store.calls.every((call) => call.costUsd != null) &&
+    store.calls.reduce((sum, call) => sum + (call.costUsd ?? 0), 0) >
+      store.maxCostUsd
+  ) {
+    throw new LlmBudgetExceededError("LLM cost budget exceeded");
+  }
+}
+
+export async function runWithLlmUsageStore<T>(
+  fn: () => Promise<T>,
+  limits: LlmUsageLimits = {},
+): Promise<{ result: T; usage: LlmUsageTotals }> {
+  return usageStore.run({ calls: [], ...limits }, async () => {
+    try {
+      const result = await fn();
+      return { result, usage: aggregateUsages(usageStore.getStore()?.calls ?? []) };
+    } catch (e) {
+      const usage = aggregateUsages(usageStore.getStore()?.calls ?? []);
+      if (e && typeof e === "object") {
+        (e as { llmUsage?: LlmUsageTotals }).llmUsage = usage;
+      }
+      throw e;
+    }
+  });
 }
 
 /** USD per 1M tokens — rough public list prices for estimate fallback. */

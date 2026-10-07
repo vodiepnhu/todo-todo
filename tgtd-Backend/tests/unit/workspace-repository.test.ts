@@ -29,6 +29,9 @@ const row = {
   joined_at: "2026-01-01T00:00:00Z",
   last_seen_at: null,
   archived_at: null,
+  can_add: true,
+  can_edit: false,
+  can_delete: true,
   workspaces: workspace,
 };
 
@@ -77,6 +80,9 @@ describe("workspace repository", () => {
           joined_at: row.joined_at,
           last_seen_at: null,
           archived_at: null,
+          can_add: true,
+          can_edit: false,
+          can_delete: true,
         },
         workspace,
       } satisfies WorkspaceMembership,
@@ -99,6 +105,9 @@ describe("workspace repository", () => {
         joined_at: row.joined_at,
         last_seen_at: null,
         archived_at: null,
+        can_add: true,
+        can_edit: false,
+        can_delete: true,
       },
       workspace,
     });

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PlanStatus } from "@/types/database";
 
 export type HomeActivityNext = {
   id: string;
@@ -22,6 +23,17 @@ export type HomeTodayItem = {
 export type HomeActivityStats = {
   byWorkspace: Record<string, HomeWorkspaceStat>;
   today: HomeTodayItem[];
+  activities: HomeActivityItem[];
+};
+
+export type HomeActivityItem = {
+  id: string;
+  title: string;
+  workspaceName: string;
+  at: string | null;
+  planStatus: PlanStatus | null;
+  categoryLabel: string | null;
+  estimatedDurationMin: number | null;
 };
 
 export type HomeActivityRow = {
@@ -30,6 +42,9 @@ export type HomeActivityRow = {
   title: string;
   due_at: string | null;
   planned_start_at: string | null;
+  plan_status?: PlanStatus | null;
+  category_label?: string | null;
+  estimated_duration_min?: number | null;
 };
 
 /** Calendar YYYY-MM-DD in a timezone. */
@@ -60,6 +75,7 @@ export function aggregateHomeActivityStats(
   const todayKey = dateKeyInTimeZone(now, timeZone);
   const byWorkspace: Record<string, HomeWorkspaceStat> = {};
   const todayCandidates: HomeTodayItem[] = [];
+  const activities: HomeActivityItem[] = [];
 
   for (const row of rows) {
     const ws = row.workspace_id;
@@ -67,6 +83,15 @@ export function aggregateHomeActivityStats(
     slot.activeCount += 1;
 
     const at = activityAt(row);
+    activities.push({
+      id: row.id,
+      title: row.title,
+      workspaceName: workspaceNames[ws] ?? "Project",
+      at,
+      planStatus: row.plan_status ?? null,
+      categoryLabel: row.category_label ?? null,
+      estimatedDurationMin: row.estimated_duration_min ?? null,
+    });
     if (at) {
       const atDate = new Date(at);
       if (!Number.isNaN(atDate.getTime())) {
@@ -94,10 +119,17 @@ export function aggregateHomeActivityStats(
   todayCandidates.sort(
     (a, b) => new Date(a.at).getTime() - new Date(b.at).getTime(),
   );
+  activities.sort((a, b) => {
+    if (!a.at && !b.at) return a.title.localeCompare(b.title);
+    if (!a.at) return 1;
+    if (!b.at) return -1;
+    return new Date(a.at).getTime() - new Date(b.at).getTime();
+  });
 
   return {
     byWorkspace,
     today: todayCandidates.slice(0, todayLimit),
+    activities,
   };
 }
 
@@ -107,7 +139,7 @@ export async function listHomeActivityStats(
   now = new Date(),
 ): Promise<HomeActivityStats> {
   if (workspaces.length === 0) {
-    return { byWorkspace: {}, today: [] };
+    return { byWorkspace: {}, today: [], activities: [] };
   }
 
   const ids = workspaces.map((w) => w.id);
@@ -115,10 +147,11 @@ export async function listHomeActivityStats(
 
   const { data, error } = await supabase
     .from("items")
-    .select("id, workspace_id, title, due_at, planned_start_at")
+    .select(
+      "id, workspace_id, title, due_at, planned_start_at, plan_status, category_label, estimated_duration_min",
+    )
     .in("workspace_id", ids)
-    .is("deleted_at", null)
-    .eq("status", "ACTIVE");
+    .is("deleted_at", null);
 
   if (error) throw error;
 

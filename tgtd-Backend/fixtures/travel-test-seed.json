@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "formDefaults": {
+    "description": "Seeded sightseeing activity with complete plan-form data.",
+    "priority": 3,
+    "status": "ACTIVE",
+    "planStatus": "PLANNING",
+    "repeatMode": "ONE_OFF",
+    "timePrecision": "EXACT",
+    "sourceText": "Travel test seed",
+    "travel": {
+      "from": null,
+      "to": null,
+      "transportMode": "public_transport",
+      "estimatedDurationMin": 45,
+      "departureTime": "09:00",
+      "arrivalTime": "09:45",
+      "notes": "Check transport and opening hours before leaving."
+    },
+    "experience": {
+      "estimatedDurationMin": 90,
+      "recommendedStartTime": "09:00",
+      "recommendedEndTime": "12:00",
+      "bestTime": "morning",
+      "flexibility": "flexible"
+    },
+    "activities": ["Explore the main highlights", "Take photos"],
+    "foodToTry": ["Try a local specialty"],
+    "preparations": ["Check opening hours", "Bring water and a phone charger"],
+    "todos": [
+      {
+        "task": "Check route and opening hours",
+        "status": "pending",
+        "priority": "medium",
+        "note": "Confirm before departure."
+      }
+    ],
+    "costs": [
+      {
+        "category": "Tickets and transport",
+        "estimatedAmount": 35,
+        "actualAmount": null,
+        "currency": "AUD",
+        "note": "Update after booking."
+      }
+    ],
+    "notes": [
+      {
+        "type": "general",
+        "content": "Seed record for UI and planner testing."
+      },
+      {
+        "type": "weather",
+        "content": "Check the forecast before outdoor activities."
+      }
+    ],
+    "tags": ["travel-test", "sightseeing"]
+  },
+  "projects": [
+    {
+      "key": "sydney",
+      "name": "Sydney",
+      "description": "Iconic Sydney landmarks, beaches, harbour views, and culture.",
+      "color": "#0f766e",
+      "tags": ["Sydney", "Australia", "landmarks"],
+      "travelFrom": "Sydney CBD",
+      "formDefaults": {
+        "travel": { "from": "Sydney CBD" },
+        "foodToTry": ["Try a Sydney cafe or seafood stop"],
+        "preparations": ["Check weather and transport alerts", "Bring sunscreen"],
+        "notes": [{ "type": "general", "content": "Use Opal or contactless transport where practical." }]
+      },
+      "activities": [
+        { "key": "opera-house", "title": "Visit Sydney Opera House", "category": "ENTERTAINMENT", "dayOffset": 1, "hour": 9, "estimatedDurationMin": 150, "bestTime": "morning", "place": { "name": "Sydney Opera House", "location": "Bennelong Point, Sydney NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+Opera+House" } },
+        { "key": "harbour-bridge", "title": "Walk across Sydney Harbour Bridge", "category": "TRAVEL", "dayOffset": 3, "hour": 7, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Sydney Harbour Bridge", "location": "Sydney Harbour Bridge, Sydney NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+Harbour+Bridge" } },
+        { "key": "royal-botanic", "title": "Explore Royal Botanic Garden Sydney", "category": "NATURE", "dayOffset": 5, "hour": 10, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Royal Botanic Garden Sydney", "location": "Mrs Macquaries Rd, Sydney NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Royal+Botanic+Garden+Sydney" } },
+        { "key": "bondi-coogee", "title": "Walk the Bondi to Coogee Coastal Track", "category": "HEALTH_FITNESS", "dayOffset": 7, "hour": 6, "estimatedDurationMin": 180, "bestTime": "morning", "place": { "name": "Bondi to Coogee Coastal Walk", "location": "Bondi Beach, Sydney NSW 2026", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Bondi+to+Coogee+Coastal+Walk" } },
+        { "key": "bondi-beach", "title": "Spend an afternoon at Bondi Beach", "category": "NATURE", "dayOffset": 9, "hour": 14, "estimatedDurationMin": 180, "bestTime": "afternoon", "place": { "name": "Bondi Beach", "location": "Bondi Beach NSW 2026", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Bondi+Beach" } },
+        { "key": "taronga-zoo", "title": "Visit Taronga Zoo Sydney", "category": "ENTERTAINMENT", "dayOffset": 12, "hour": 9, "estimatedDurationMin": 240, "bestTime": "morning", "place": { "name": "Taronga Zoo Sydney", "location": "Bradleys Head Rd, Mosman NSW 2088", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Taronga+Zoo+Sydney" } },
+        { "key": "the-rocks", "title": "Explore The Rocks historic precinct", "category": "TRAVEL", "dayOffset": 14, "hour": 11, "estimatedDurationMin": 150, "bestTime": "afternoon", "place": { "name": "The Rocks", "location": "The Rocks NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The+Rocks+Sydney" } },
+        { "key": "barangaroo", "title": "Sunset walk at Barangaroo Reserve", "category": "SOCIAL", "dayOffset": 16, "hour": 17, "estimatedDurationMin": 90, "bestTime": "sunset", "place": { "name": "Barangaroo Reserve", "location": "Hickson Rd, Barangaroo NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Barangaroo+Reserve" } },
+        { "key": "art-gallery", "title": "See Australian art at the Art Gallery of NSW", "category": "HOBBY", "dayOffset": 18, "hour": 13, "estimatedDurationMin": 150, "bestTime": "afternoon", "place": { "name": "Art Gallery of New South Wales", "location": "Art Gallery Rd, Sydney NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Art+Gallery+of+New+South+Wales" } },
+        { "key": "mca", "title": "Visit the Museum of Contemporary Art Australia", "category": "WORK_STUDY", "dayOffset": 20, "hour": 10, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Museum of Contemporary Art Australia", "location": "140 George St, The Rocks NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Museum+of+Contemporary+Art+Australia" } },
+        { "key": "manly", "title": "Catch the ferry to Manly Beach", "category": "TRAVEL", "dayOffset": 23, "hour": 8, "estimatedDurationMin": 240, "bestTime": "morning", "place": { "name": "Manly Beach", "location": "Manly NSW 2095", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Manly+Beach" } },
+        { "key": "watsons-bay", "title": "See the harbour at Watsons Bay", "category": "NATURE", "dayOffset": 26, "hour": 15, "estimatedDurationMin": 150, "bestTime": "sunset", "place": { "name": "Watsons Bay", "location": "Watsons Bay NSW 2030", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Watsons+Bay+Sydney" } },
+        { "key": "fish-market", "title": "Visit Sydney Fish Market", "category": "FOOD", "dayOffset": 29, "hour": 11, "estimatedDurationMin": 120, "bestTime": "afternoon", "place": { "name": "Sydney Fish Market", "location": "25-35 Bank St, Sydney NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+Fish+Market" } },
+        { "key": "luna-park", "title": "Ride the Ferris wheel at Luna Park Sydney", "category": "ENTERTAINMENT", "dayOffset": 32, "hour": 18, "estimatedDurationMin": 150, "bestTime": "evening", "place": { "name": "Luna Park Sydney", "location": "1 Olympic Dr, Milsons Point NSW 2061", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Luna+Park+Sydney" } },
+        { "key": "blue-mountains", "title": "Day trip to the Blue Mountains Three Sisters", "category": "OTHER", "dayOffset": 36, "hour": 6, "estimatedDurationMin": 600, "bestTime": "morning", "place": { "name": "Three Sisters, Blue Mountains", "location": "Echo Point Rd, Katoomba NSW 2780", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Three+Sisters+Blue+Mountains" } }
+      ]
+    },
+    {
+      "key": "bowral",
+      "name": "Bowral",
+      "description": "Southern Highlands gardens, heritage villages, food, and nature.",
+      "color": "#b45309",
+      "tags": ["Bowral", "Southern Highlands", "day trips"],
+      "travelFrom": "Bowral town centre",
+      "formDefaults": {
+        "travel": { "from": "Bowral town centre", "transportMode": "driving" },
+        "foodToTry": ["Try a Southern Highlands bakery or winery tasting"],
+        "preparations": ["Check rural opening hours", "Bring a jacket and walking shoes"],
+        "notes": [{ "type": "weather", "content": "Southern Highlands weather can change quickly." }]
+      },
+      "activities": [
+        { "key": "bradman", "title": "Visit the Bradman Museum and International Cricket Hall of Fame", "category": "ENTERTAINMENT", "dayOffset": 2, "hour": 10, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Bradman Museum", "location": "St Jude St, Bowral NSW 2576", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Bradman+Museum+Bowral" } },
+        { "key": "corbett-gardens", "title": "Walk through Corbett Gardens", "category": "NATURE", "dayOffset": 4, "hour": 9, "estimatedDurationMin": 90, "bestTime": "morning", "place": { "name": "Corbett Gardens", "location": "Wingecarribee St, Bowral NSW 2576", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Corbett+Gardens+Bowral" } },
+        { "key": "berrima", "title": "Explore historic Berrima village", "category": "TRAVEL", "dayOffset": 6, "hour": 10, "estimatedDurationMin": 180, "bestTime": "morning", "place": { "name": "Berrima Historic Village", "location": "Berrima NSW 2577", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Berrima+Historic+Village" } },
+        { "key": "bendooley", "title": "Lunch and book browsing at Bendooley Estate", "category": "FOOD", "dayOffset": 8, "hour": 11, "estimatedDurationMin": 180, "bestTime": "afternoon", "place": { "name": "Bendooley Estate", "location": "3020 Old Hume Hwy, Berrima NSW 2577", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Bendooley+Estate" } },
+        { "key": "mount-gibraltar", "title": "Look out from Mount Gibraltar Reserve", "category": "NATURE", "dayOffset": 11, "hour": 8, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Mount Gibraltar Reserve", "location": "Bowral NSW 2576", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Mount+Gibraltar+Reserve+Bowral" } },
+        { "key": "fitzroy-falls", "title": "See Fitzroy Falls in Morton National Park", "category": "NATURE", "dayOffset": 13, "hour": 7, "estimatedDurationMin": 240, "bestTime": "morning", "place": { "name": "Fitzroy Falls", "location": "Fitzroy Falls NSW 2577", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Fitzroy+Falls" } },
+        { "key": "lake-alexandra", "title": "Picnic beside Lake Alexandra", "category": "SOCIAL", "dayOffset": 15, "hour": 12, "estimatedDurationMin": 120, "bestTime": "afternoon", "place": { "name": "Lake Alexandra Reserve", "location": "Mittagong NSW 2575", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Lake+Alexandra+Mittagong" } },
+        { "key": "red-cow", "title": "Tour Red Cow Farm Garden", "category": "HOBBY", "dayOffset": 17, "hour": 10, "estimatedDurationMin": 180, "bestTime": "morning", "place": { "name": "Red Cow Farm Garden", "location": "Joadja NSW 2575", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red+Cow+Farm+Garden" } },
+        { "key": "dirty-janes", "title": "Browse vintage finds at Dirty Janes Bowral", "category": "SHOPPING", "dayOffset": 19, "hour": 10, "estimatedDurationMin": 150, "bestTime": "morning", "place": { "name": "Dirty Janes Bowral", "location": "13 Banyette St, Bowral NSW 2576", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Dirty+Janes+Bowral" } },
+        { "key": "joadja", "title": "Explore Joadja Historic Town", "category": "OTHER", "dayOffset": 22, "hour": 9, "estimatedDurationMin": 210, "bestTime": "morning", "place": { "name": "Joadja Historic Town", "location": "Joadja NSW 2575", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Joadja+Historic+Town" } },
+        { "key": "centennial", "title": "Taste local wine at Centennial Vineyards", "category": "FOOD", "dayOffset": 25, "hour": 11, "estimatedDurationMin": 150, "bestTime": "afternoon", "place": { "name": "Centennial Vineyards", "location": "Cnr Hospital Rd and Balmoral Rd, Bowral NSW 2576", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Centennial+Vineyards+Bowral" } },
+        { "key": "sturt-gallery", "title": "See craft exhibitions at Sturt Gallery", "category": "WORK_STUDY", "dayOffset": 28, "hour": 10, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Sturt Gallery", "location": "Waverley Parade, Mittagong NSW 2575", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sturt+Gallery+Mittagong" } },
+        { "key": "bong-bong", "title": "Watch a race day at Bong Bong Race Club", "category": "ENTERTAINMENT", "dayOffset": 31, "hour": 12, "estimatedDurationMin": 240, "bestTime": "afternoon", "place": { "name": "Bong Bong Race Club", "location": "Kangaloon Rd, Bowral NSW 2576", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Bong+Bong+Race+Club" } },
+        { "key": "southern-highlands", "title": "Drive the Southern Highlands food and garden loop", "category": "TRAVEL", "dayOffset": 35, "hour": 8, "estimatedDurationMin": 420, "bestTime": "morning", "place": { "name": "Southern Highlands", "location": "Bowral NSW 2576", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Southern+Highlands+NSW" } },
+        { "key": "mittagong-lookout", "title": "Photograph the view from Mittagong Lookout", "category": "PERSONAL", "dayOffset": 39, "hour": 16, "estimatedDurationMin": 90, "bestTime": "sunset", "place": { "name": "Mittagong Lookout", "location": "Mittagong NSW 2575", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Mittagong+Lookout" } }
+      ]
+    },
+    {
+      "key": "taipei",
+      "name": "Taipei",
+      "description": "Taipei temples, markets, mountains, museums, and food streets.",
+      "color": "#be123c",
+      "tags": ["Taipei", "Taiwan", "food"],
+      "travelFrom": "Taipei Main Station",
+      "formDefaults": {
+        "travel": { "from": "Taipei Main Station", "transportMode": "metro" },
+        "foodToTry": ["Try a night-market snack and a local tea"],
+        "preparations": ["Load an EasyCard", "Carry an umbrella and comfortable shoes"],
+        "notes": [{ "type": "general", "content": "Use MRT and walking for the central Taipei itinerary." }]
+      },
+      "activities": [
+        { "key": "taipei-101", "title": "See Taipei from Taipei 101 Observatory", "category": "TRAVEL", "dayOffset": 1, "hour": 9, "estimatedDurationMin": 150, "bestTime": "morning", "place": { "name": "Taipei 101", "location": "No. 7, Section 5, Xinyi Rd, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Taipei+101" } },
+        { "key": "cks-memorial", "title": "Visit Chiang Kai-shek Memorial Hall", "category": "ENTERTAINMENT", "dayOffset": 3, "hour": 8, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Chiang Kai-shek Memorial Hall", "location": "No. 21, Zhongshan S Rd, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Chiang+Kai-shek+Memorial+Hall" } },
+        { "key": "national-palace", "title": "Explore the National Palace Museum", "category": "HOBBY", "dayOffset": 5, "hour": 9, "estimatedDurationMin": 210, "bestTime": "morning", "place": { "name": "National Palace Museum", "location": "No. 221, Section 2, Zhishan Rd, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=National+Palace+Museum+Taipei" } },
+        { "key": "longshan", "title": "See Longshan Temple and Bopiliao Historic Block", "category": "OTHER", "dayOffset": 7, "hour": 8, "estimatedDurationMin": 150, "bestTime": "morning", "place": { "name": "Lungshan Temple", "location": "No. 211, Guangzhou St, Wanhua District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Lungshan+Temple" } },
+        { "key": "ximending", "title": "Walk and eat through Ximending", "category": "FOOD", "dayOffset": 9, "hour": 17, "estimatedDurationMin": 180, "bestTime": "evening", "place": { "name": "Ximending", "location": "Wanhua District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Ximending" } },
+        { "key": "shilin", "title": "Try street food at Shilin Night Market", "category": "SHOPPING", "dayOffset": 12, "hour": 18, "estimatedDurationMin": 180, "bestTime": "evening", "place": { "name": "Shilin Night Market", "location": "Jihe Rd, Shilin District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Shilin+Night+Market" } },
+        { "key": "elephant-mountain", "title": "Hike Elephant Mountain for the skyline view", "category": "HEALTH_FITNESS", "dayOffset": 14, "hour": 6, "estimatedDurationMin": 150, "bestTime": "morning", "place": { "name": "Elephant Mountain Trail", "location": "Xinyi District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Elephant+Mountain+Trail+Taipei" } },
+        { "key": "beitou", "title": "Relax in Beitou and visit the Hot Spring Museum", "category": "SERVICE", "dayOffset": 16, "hour": 10, "estimatedDurationMin": 210, "bestTime": "morning", "place": { "name": "Beitou Hot Spring Museum", "location": "No. 2, Zhongshan Rd, Beitou District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Beitou+Hot+Spring+Museum" } },
+        { "key": "maokong", "title": "Ride Maokong Gondola and drink tea", "category": "NATURE", "dayOffset": 19, "hour": 9, "estimatedDurationMin": 240, "bestTime": "morning", "place": { "name": "Maokong Gondola", "location": "Wenshan District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Maokong+Gondola" } },
+        { "key": "huashan", "title": "Explore Huashan 1914 Creative Park", "category": "WORK_STUDY", "dayOffset": 22, "hour": 13, "estimatedDurationMin": 150, "bestTime": "afternoon", "place": { "name": "Huashan 1914 Creative Park", "location": "No. 1, Section 1, Bade Rd, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Huashan+1914+Creative+Park" } },
+        { "key": "dadaocheng", "title": "Walk the historic streets of Dadaocheng", "category": "TRAVEL", "dayOffset": 24, "hour": 15, "estimatedDurationMin": 150, "bestTime": "sunset", "place": { "name": "Dadaocheng Wharf", "location": "Datong District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Dadaocheng+Wharf" } },
+        { "key": "raohe", "title": "Eat and browse at Raohe Street Night Market", "category": "SOCIAL", "dayOffset": 27, "hour": 18, "estimatedDurationMin": 180, "bestTime": "evening", "place": { "name": "Raohe Street Night Market", "location": "Raohe St, Songshan District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Raohe+Street+Night+Market" } },
+        { "key": "yangmingshan", "title": "Explore Yangmingshan National Park", "category": "NATURE", "dayOffset": 30, "hour": 7, "estimatedDurationMin": 300, "bestTime": "morning", "place": { "name": "Yangmingshan National Park", "location": "Beitou District, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Yangmingshan+National+Park" } },
+        { "key": "taipei-zoo", "title": "Spend a day at Taipei Zoo", "category": "ENTERTAINMENT", "dayOffset": 34, "hour": 9, "estimatedDurationMin": 300, "bestTime": "morning", "place": { "name": "Taipei Zoo", "location": "No. 30, Section 2, Xinguang Rd, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Taipei+Zoo" } },
+        { "key": "ntu", "title": "Walk the historic campus of National Taiwan University", "category": "PERSONAL", "dayOffset": 38, "hour": 10, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "National Taiwan University", "location": "No. 1, Section 4, Roosevelt Rd, Taipei", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=National+Taiwan+University" } }
+      ]
+    },
+    {
+      "key": "taichung",
+      "name": "TaiChung",
+      "description": "Taichung theatres, wetlands, markets, art, and day-trip highlights.",
+      "color": "#0369a1",
+      "tags": ["TaiChung", "Taiwan", "day trips"],
+      "travelFrom": "Taichung Station",
+      "formDefaults": {
+        "travel": { "from": "Taichung Station", "transportMode": "public_transport" },
+        "foodToTry": ["Try Taichung sun cakes and a night-market snack"],
+        "preparations": ["Check bus times", "Bring a hat and comfortable shoes"],
+        "notes": [{ "type": "general", "content": "Plan extra travel time for wetlands and mountain routes." }]
+      },
+      "activities": [
+        { "key": "national-theatre", "title": "Tour National Taichung Theater", "category": "ENTERTAINMENT", "dayOffset": 1, "hour": 10, "estimatedDurationMin": 150, "bestTime": "morning", "place": { "name": "National Taichung Theater", "location": "No. 101, Section 2, Huilai Rd, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=National+Taichung+Theater" } },
+        { "key": "rainbow-village", "title": "Photograph Rainbow Village", "category": "HOBBY", "dayOffset": 3, "hour": 9, "estimatedDurationMin": 90, "bestTime": "morning", "place": { "name": "Rainbow Village", "location": "No. 56, Chun'an Rd, Nantun District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Rainbow+Village+Taichung" } },
+        { "key": "gaomei", "title": "Watch sunset at Gaomei Wetlands", "category": "NATURE", "dayOffset": 5, "hour": 16, "estimatedDurationMin": 180, "bestTime": "sunset", "place": { "name": "Gaomei Wetlands", "location": "Qingshui District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Gaomei+Wetlands" } },
+        { "key": "fengjia", "title": "Eat through Fengjia Night Market", "category": "FOOD", "dayOffset": 7, "hour": 18, "estimatedDurationMin": 180, "bestTime": "evening", "place": { "name": "Fengjia Night Market", "location": "Wenhua Rd, Xitun District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Fengjia+Night+Market" } },
+        { "key": "calligraphy-greenway", "title": "Walk Calligraphy Greenway", "category": "HEALTH_FITNESS", "dayOffset": 9, "hour": 8, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Calligraphy Greenway", "location": "West District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Calligraphy+Greenway+Taichung" } },
+        { "key": "miyahara", "title": "Try desserts at Miyahara", "category": "SHOPPING", "dayOffset": 11, "hour": 11, "estimatedDurationMin": 120, "bestTime": "afternoon", "place": { "name": "Miyahara", "location": "No. 72, Zhongshan Rd, Central District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Miyahara+Taichung" } },
+        { "key": "audit-village", "title": "Browse independent shops at Audit Village", "category": "SOCIAL", "dayOffset": 14, "hour": 13, "estimatedDurationMin": 120, "bestTime": "afternoon", "place": { "name": "Audit Village", "location": "No. 368, Section 1, Meicun Rd, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Audit+Village+Taichung" } },
+        { "key": "fine-arts", "title": "Visit National Taiwan Museum of Fine Arts", "category": "WORK_STUDY", "dayOffset": 17, "hour": 10, "estimatedDurationMin": 180, "bestTime": "morning", "place": { "name": "National Taiwan Museum of Fine Arts", "location": "No. 2, Section 1, Wu-Chang W St, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=National+Taiwan+Museum+of+Fine+Arts" } },
+        { "key": "taichung-park", "title": "Relax around Taichung Park", "category": "PERSONAL", "dayOffset": 20, "hour": 15, "estimatedDurationMin": 120, "bestTime": "afternoon", "place": { "name": "Taichung Park", "location": "No. 65, Section 1, Shuangshi Rd, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Taichung+Park" } },
+        { "key": "dakeng", "title": "Hike a Dakeng Trail", "category": "HEALTH_FITNESS", "dayOffset": 23, "hour": 6, "estimatedDurationMin": 240, "bestTime": "morning", "place": { "name": "Dakeng Scenic Area", "location": "Beitun District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Dakeng+Trails+Taichung" } },
+        { "key": "carton-king", "title": "Explore Carton King Creative Park", "category": "HOBBY", "dayOffset": 26, "hour": 10, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Carton King Creative Park", "location": "Beitun District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Carton+King+Creative+Park+Taichung" } },
+        { "key": "paochueh", "title": "See the giant Buddha at Paochueh Temple", "category": "OTHER", "dayOffset": 29, "hour": 9, "estimatedDurationMin": 90, "bestTime": "morning", "place": { "name": "Paochueh Temple", "location": "No. 100, Section 1, Jianxing Rd, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Paochueh+Temple+Taichung" } },
+        { "key": "earthquake-museum", "title": "Learn at 921 Earthquake Museum of Taiwan", "category": "SERVICE", "dayOffset": 32, "hour": 10, "estimatedDurationMin": 180, "bestTime": "morning", "place": { "name": "921 Earthquake Museum of Taiwan", "location": "No. 192, Xinsheng Rd, Wufeng District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=921+Earthquake+Museum+of+Taiwan" } },
+        { "key": "tunghai", "title": "Walk Tunghai University campus", "category": "TRAVEL", "dayOffset": 35, "hour": 8, "estimatedDurationMin": 150, "bestTime": "morning", "place": { "name": "Tunghai University", "location": "No. 1727, Section 4, Taiwan Boulevard, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Tunghai+University+Taichung" } },
+        { "key": "zhongshe", "title": "See the seasonal flowers at Zhongshe Flower Market", "category": "NATURE", "dayOffset": 39, "hour": 9, "estimatedDurationMin": 180, "bestTime": "morning", "place": { "name": "Zhongshe Flower Market", "location": "Houli District, Taichung", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Zhongshe+Flower+Market" } }
+      ]
+    },
+    {
+      "key": "bangkok",
+      "name": "Bangkok",
+      "description": "Bangkok temples, markets, parks, river views, and neighbourhoods.",
+      "color": "#c2410c",
+      "tags": ["Bangkok", "Thailand", "street food"],
+      "travelFrom": "Bangkok city centre",
+      "formDefaults": {
+        "travel": { "from": "Bangkok city centre", "transportMode": "public_transport" },
+        "foodToTry": ["Try street food, mango sticky rice, or Thai tea"],
+        "preparations": ["Carry cash and a water bottle", "Check heat and rain forecast"],
+        "notes": [{ "type": "warning", "content": "Avoid the hottest midday hours and dress respectfully at temples." }]
+      },
+      "activities": [
+        { "key": "grand-palace", "title": "Visit the Grand Palace and Wat Phra Kaew", "category": "TRAVEL", "dayOffset": 1, "hour": 8, "estimatedDurationMin": 180, "bestTime": "morning", "place": { "name": "The Grand Palace", "location": "Na Phra Lan Rd, Bangkok 10200", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Grand+Palace+Bangkok" } },
+        { "key": "wat-pho", "title": "See the Reclining Buddha at Wat Pho", "category": "OTHER", "dayOffset": 3, "hour": 9, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Wat Pho", "location": "2 Sanam Chai Rd, Bangkok 10200", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Wat+Pho+Bangkok" } },
+        { "key": "wat-arun", "title": "Watch sunset at Wat Arun", "category": "NATURE", "dayOffset": 5, "hour": 16, "estimatedDurationMin": 180, "bestTime": "sunset", "place": { "name": "Wat Arun", "location": "158 Thanon Wang Doem, Bangkok 10600", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Wat+Arun+Bangkok" } },
+        { "key": "chatuchak", "title": "Browse Chatuchak Weekend Market", "category": "SHOPPING", "dayOffset": 7, "hour": 9, "estimatedDurationMin": 240, "bestTime": "morning", "place": { "name": "Chatuchak Weekend Market", "location": "Kamphaeng Phet 3 Rd, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Chatuchak+Weekend+Market" } },
+        { "key": "jim-thompson", "title": "Tour Jim Thompson House Museum", "category": "HOBBY", "dayOffset": 10, "hour": 10, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Jim Thompson House Museum", "location": "6 Soi Kasemsan 2, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Jim+Thompson+House+Museum" } },
+        { "key": "yaowarat", "title": "Eat through Yaowarat Road Chinatown", "category": "FOOD", "dayOffset": 12, "hour": 18, "estimatedDurationMin": 180, "bestTime": "evening", "place": { "name": "Yaowarat Road", "location": "Yaowarat, Bangkok 10100", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Yaowarat+Road+Bangkok" } },
+        { "key": "erawan", "title": "Visit Erawan Shrine", "category": "SERVICE", "dayOffset": 15, "hour": 8, "estimatedDurationMin": 90, "bestTime": "morning", "place": { "name": "Erawan Shrine", "location": "Ratchaprasong, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Erawan+Shrine+Bangkok" } },
+        { "key": "lumpini", "title": "Walk and rest at Lumpini Park", "category": "HEALTH_FITNESS", "dayOffset": 17, "hour": 6, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Lumphini Park", "location": "Rama IV Rd, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Lumphini+Park+Bangkok" } },
+        { "key": "mahanakhon", "title": "See Bangkok from Mahanakhon SkyWalk", "category": "ENTERTAINMENT", "dayOffset": 20, "hour": 17, "estimatedDurationMin": 150, "bestTime": "sunset", "place": { "name": "King Power Mahanakhon SkyWalk", "location": "114 Naradhiwas Rajanagarindra Rd, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Mahanakhon+SkyWalk" } },
+        { "key": "iconsiam", "title": "Explore ICONSIAM riverfront", "category": "SOCIAL", "dayOffset": 22, "hour": 15, "estimatedDurationMin": 180, "bestTime": "afternoon", "place": { "name": "ICONSIAM", "location": "299 Charoen Nakhon Rd, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=ICONSIAM+Bangkok" } },
+        { "key": "golden-mount", "title": "Climb the Golden Mount at Wat Saket", "category": "NATURE", "dayOffset": 25, "hour": 8, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Wat Saket Golden Mount", "location": "344 Thanon Chakkraphatdi Phong, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Wat+Saket+Golden+Mount" } },
+        { "key": "bacc", "title": "Visit Bangkok Art and Culture Centre", "category": "WORK_STUDY", "dayOffset": 28, "hour": 13, "estimatedDurationMin": 150, "bestTime": "afternoon", "place": { "name": "Bangkok Art and Culture Centre", "location": "939 Rama I Rd, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Bangkok+Art+and+Culture+Centre" } },
+        { "key": "asiatique", "title": "Walk the riverfront at Asiatique", "category": "TRAVEL", "dayOffset": 31, "hour": 17, "estimatedDurationMin": 180, "bestTime": "evening", "place": { "name": "Asiatique The Riverfront", "location": "2194 Charoen Krung Rd, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Asiatique+The+Riverfront" } },
+        { "key": "ayutthaya", "title": "Take a day trip to Ayutthaya Historical Park", "category": "OTHER", "dayOffset": 34, "hour": 6, "estimatedDurationMin": 600, "bestTime": "morning", "place": { "name": "Ayutthaya Historical Park", "location": "Phra Nakhon Si Ayutthaya, Thailand", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Ayutthaya+Historical+Park" } },
+        { "key": "talad-noi", "title": "Photograph street art in Talat Noi", "category": "PERSONAL", "dayOffset": 38, "hour": 9, "estimatedDurationMin": 150, "bestTime": "morning", "place": { "name": "Talat Noi", "location": "Samphanthawong, Bangkok", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Talat+Noi+Bangkok" } }
+      ]
+    },
+    {
+      "key": "personal",
+      "name": "Personal",
+      "description": "Personal planning, learning, wellbeing, and local experiences.",
+      "color": "#7c3aed",
+      "tags": ["Personal", "life admin", "wellbeing"],
+      "travelFrom": "Home",
+      "formDefaults": {
+        "travel": { "from": "Home", "transportMode": "driving" },
+        "foodToTry": ["Prepare or try one healthy meal"],
+        "preparations": ["Add the plan to the calendar", "Set a reminder"],
+        "notes": [{ "type": "personal", "content": "Personal seed record for form and workflow testing." }]
+      },
+      "activities": [
+        { "key": "passport", "title": "Renew passport and check travel documents", "category": "ADMIN", "dayOffset": 2, "hour": 9, "estimatedDurationMin": 90, "bestTime": "morning", "place": { "name": "Australian Passport Office Sydney", "location": "26 Lee St, Sydney NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Australian+Passport+Office+Sydney" } },
+        { "key": "health-check", "title": "Book an annual health check", "category": "HEALTH_FITNESS", "dayOffset": 4, "hour": 10, "estimatedDurationMin": 60, "bestTime": "morning", "place": { "name": "Local medical centre", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=medical+centre+Sydney" } },
+        { "key": "language-practice", "title": "Practice Mandarin conversation", "category": "WORK_STUDY", "dayOffset": 6, "hour": 19, "estimatedDurationMin": 60, "bestTime": "evening", "place": { "name": "Taiwanese Cultural Centre Sydney", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Taiwanese+Cultural+Centre+Sydney" } },
+        { "key": "bookshop", "title": "Browse a bookshop and choose a travel guide", "category": "SHOPPING", "dayOffset": 8, "hour": 11, "estimatedDurationMin": 90, "bestTime": "morning", "place": { "name": "Kinokuniya Sydney", "location": "The Galeries, 500 George St, Sydney NSW 2000", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Kinokuniya+Sydney" } },
+        { "key": "meal-prep", "title": "Prepare healthy meals for the week", "category": "FOOD", "dayOffset": 10, "hour": 16, "estimatedDurationMin": 120, "bestTime": "afternoon", "place": { "name": "Home kitchen", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+NSW" } },
+        { "key": "photo-backup", "title": "Back up and organise travel photos", "category": "SERVICE", "dayOffset": 13, "hour": 20, "estimatedDurationMin": 90, "bestTime": "evening", "place": { "name": "Personal workspace", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+NSW" } },
+        { "key": "family-call", "title": "Call family and plan the next visit", "category": "SOCIAL", "dayOffset": 16, "hour": 18, "estimatedDurationMin": 60, "bestTime": "evening", "place": { "name": "Personal workspace", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+NSW" } },
+        { "key": "coastal-run", "title": "Run at Centennial Park", "category": "NATURE", "dayOffset": 18, "hour": 7, "estimatedDurationMin": 75, "bestTime": "morning", "place": { "name": "Centennial Parklands", "location": "Grand Dr, Centennial Park NSW 2021", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Centennial+Parklands+Sydney" } },
+        { "key": "museum-notes", "title": "Review notes from a museum visit", "category": "HOBBY", "dayOffset": 21, "hour": 15, "estimatedDurationMin": 60, "bestTime": "afternoon", "place": { "name": "Australian Museum", "location": "1 William St, Sydney NSW 2010", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Australian+Museum+Sydney" } },
+        { "key": "budget-review", "title": "Review monthly travel budget", "category": "PERSONAL", "dayOffset": 24, "hour": 19, "estimatedDurationMin": 45, "bestTime": "evening", "place": { "name": "Personal workspace", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+NSW" } },
+        { "key": "market-errand", "title": "Buy fresh produce at a local market", "category": "ERRAND", "dayOffset": 27, "hour": 8, "estimatedDurationMin": 90, "bestTime": "morning", "place": { "name": "Carriageworks Farmers Market", "location": "245 Wilson St, Eveleigh NSW 2015", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Carriageworks+Farmers+Market" } },
+        { "key": "clean-home", "title": "Reset and organise the home office", "category": "OTHER", "dayOffset": 30, "hour": 10, "estimatedDurationMin": 120, "bestTime": "morning", "place": { "name": "Home office", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+NSW" } },
+        { "key": "gallery-date", "title": "Visit a gallery with a friend", "category": "ENTERTAINMENT", "dayOffset": 33, "hour": 14, "estimatedDurationMin": 150, "bestTime": "afternoon", "place": { "name": "White Rabbit Gallery", "location": "30 Balfour St, Chippendale NSW 2008", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=White+Rabbit+Gallery+Sydney" } },
+        { "key": "weekend-plan", "title": "Plan the next weekend itinerary", "category": "TRAVEL", "dayOffset": 36, "hour": 17, "estimatedDurationMin": 60, "bestTime": "evening", "place": { "name": "Sydney visitor planning desk", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+NSW" } },
+        { "key": "reflect", "title": "Write a personal travel reflection", "category": "WORK_STUDY", "dayOffset": 40, "hour": 20, "estimatedDurationMin": 45, "bestTime": "evening", "place": { "name": "Personal workspace", "location": "Sydney NSW", "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sydney+NSW" } }
+      ]
+    }
+  ]
+}

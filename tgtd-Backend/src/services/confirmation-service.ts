@@ -15,7 +15,14 @@ import { persistPlan } from "./plan-persist-service";
 import { safeMapsRedirect } from "@togo-todo/agent";
 
 export function isConfirmationKeyword(value: string) {
-  return /^\s*confirm\s*$/i.test(value);
+  const normalized = value.trim().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return normalized === "confirm" || normalized === "xac nhan";
+}
+
+export function formatConfirmationReply(value: string) {
+  return value.trim().normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase() === "xac nhan"
+    ? "Đã lưu. Kế hoạch đang chờ đã được xác nhận."
+    : "Saved. Your pending plan was confirmed.";
 }
 
 export async function createPendingAction(
@@ -247,8 +254,11 @@ export async function advanceConfirmation(
     .eq("before_json", JSON.stringify(claim))
     .select("*")
     .maybeSingle();
-  if (doneErr) throw doneErr;
-  if (!done) throw new Error("Pending action was already confirmed");
+  if (doneErr || !done) {
+    throw new Error("Execution outcome uncertain; pending action requires reconciliation", {
+      cause: doneErr ?? new Error("Pending action finalization returned no row"),
+    });
+  }
 
   return { pending: done as PendingAction, executed };
 }

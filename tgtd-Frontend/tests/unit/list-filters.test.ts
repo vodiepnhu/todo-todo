@@ -100,12 +100,18 @@ describe("list-filters", () => {
       }),
       item({ id: "b", title: "visited", status: "ACTIVE" }),
       item({ id: "c", title: "archived", status: "ARCHIVED" }),
+      item({
+        id: "s",
+        title: "skipped",
+        status: "ARCHIVED",
+        plan_status: "SKIPPED",
+      }),
     ];
     const visited = new Set(["b"]);
 
     expect(
       filterListItems(items, "All", visited, now).map((i) => i.id),
-    ).toEqual(["a", "b"]);
+    ).toEqual(["a", "b", "s"]);
     expect(
       filterListItems(items, "Upcoming", visited, now).map((i) => i.id),
     ).toEqual(["a"]);

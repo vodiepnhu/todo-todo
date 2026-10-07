@@ -1,4 +1,5 @@
 export type AgentName =
+  | "language"
   | "ingest"
   | "policy"
   | "places"

@@ -3,6 +3,7 @@ import {
   parseRagMetaFilters,
   reciprocalRankFusion,
 } from "@/lib/rag/hybrid";
+import { buildRagSearchQuery } from "@/services/rag-service";
 
 describe("reciprocalRankFusion", () => {
   it("boosts items appearing in multiple lists", () => {
@@ -31,5 +32,22 @@ describe("parseRagMetaFilters", () => {
     expect(parseRagMetaFilters("todo buy milk")).toMatchObject({
       itemType: null,
     });
+  });
+});
+
+describe("buildRagSearchQuery", () => {
+  it("keeps current request and newest chat context", () => {
+    const chat = [
+      "User: old unrelated request",
+      "Planner: old response",
+      "User: Draft: Bondi Beach",
+      "Planner: Would you like to schedule it?",
+    ].join("\n");
+
+    const query = buildRagSearchQuery("change it to Saturday", chat, 70);
+
+    expect(query).toContain("change it to Saturday");
+    expect(query).toContain("Would you like to schedule it?");
+    expect(query).not.toContain("old unrelated request");
   });
 });

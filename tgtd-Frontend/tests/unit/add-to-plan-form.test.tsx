@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { AddToPlanForm } from "@/components/plans/add-to-plan-form";
+import { LocaleProvider } from "@/lib/i18n";
 import { emptyPlan } from "@/lib/plans/plan-schema";
 
 afterEach(() => cleanup());
@@ -86,5 +87,26 @@ describe("AddToPlanForm", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /Save Plan/i }));
     expect(onSave).toHaveBeenCalled();
+  });
+
+  it("shows one UI language at a time", () => {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: { getItem: () => "vi", setItem: vi.fn() },
+    });
+    render(
+      <LocaleProvider>
+        <AddToPlanForm
+          value={emptyPlan()}
+          onChange={() => {}}
+          onCancel={() => {}}
+          onSave={() => {}}
+        />
+      </LocaleProvider>,
+    );
+
+    expect(screen.getByRole("heading", { name: "Đi đâu" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Where · Đi đâu" })).toBeNull();
+    expect(screen.queryByText("Categories (Phân loại)")).toBeNull();
   });
 });

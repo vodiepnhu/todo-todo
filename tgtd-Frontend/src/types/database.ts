@@ -170,6 +170,9 @@ export interface WorkspaceMember {
   joined_at: string;
   last_seen_at: string | null;
   archived_at: string | null;
+  can_add: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
 }
 
 export interface Item {

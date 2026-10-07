@@ -204,7 +204,13 @@ function deferred() {
   return { promise, resolve };
 }
 
-function racingClient(row: Record<string, unknown>, options?: { beforeMembership?: () => Promise<void> }) {
+function racingClient(
+  row: Record<string, unknown>,
+  options?: {
+    beforeMembership?: () => Promise<void>;
+    failExecutedUpdate?: boolean;
+  },
+) {
   const filters: Array<(value: Record<string, unknown>) => boolean> = [];
   let table = "";
   let patch: Record<string, unknown> | null = null;
@@ -232,6 +238,9 @@ function racingClient(row: Record<string, unknown>, options?: { beforeMembership
     },
     async maybeSingle() {
       const match = filters.every((filter) => filter(row));
+      if (table === "pending_actions" && patch?.state === "EXECUTED" && options?.failExecutedUpdate) {
+        return { data: null, error: new Error("finalize failed") };
+      }
       const result = table === "workspace_members"
         ? (await options?.beforeMembership?.(), { id: "member-1" })
         : table === "pending_actions" && match
@@ -360,5 +369,17 @@ describe("confirmation claim", () => {
     expect(row.before_json).toMatchObject({ __confirmation_claim: expect.any(String) });
     await expect(advanceConfirmation(client, row.id, "user-1")).rejects.toThrow("already confirmed");
     expect(persistPlan).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports uncertain outcome when final EXECUTED transition fails", async () => {
+    const row = planRow();
+    const client = racingClient(row, { failExecutedUpdate: true });
+
+    await expect(advanceConfirmation(client, row.id, "user-1")).rejects.toThrow(
+      /Execution outcome uncertain.*reconciliation/i,
+    );
+    expect(persistPlan).toHaveBeenCalledTimes(1);
+    expect(row.before_json).toMatchObject({ __confirmation_claim: expect.any(String) });
+    expect(row.state).toBe("AWAITING_CONFIRM_2");
   });
 });

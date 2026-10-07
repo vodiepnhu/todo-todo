@@ -25,6 +25,9 @@ type Settings = {
   baseUrl: string | null;
   hasApiKey: boolean;
   apiKeyDisplay: string | null;
+  keysByProvider?: Partial<
+    Record<LlmProvider, { hasApiKey: boolean; apiKeyDisplay: string | null }>
+  >;
   encryptionReady: boolean;
 };
 
@@ -71,13 +74,21 @@ export function LlmSettingsCard() {
 
   const meta = providers.find((p) => p.id === provider);
   const models = useMemo(() => meta?.models ?? [], [meta]);
+  const selectedKey =
+    settings?.keysByProvider?.[provider] ??
+    (settings?.provider === provider
+      ? {
+          hasApiKey: settings.hasApiKey,
+          apiKeyDisplay: settings.apiKeyDisplay,
+        }
+      : { hasApiKey: false, apiKeyDisplay: null });
 
   function onProviderChange(id: LlmProvider) {
     setProvider(id);
     const p = providers.find((x) => x.id === id);
     if (p) {
       setModel(p.defaultModel);
-      setModelSelect(p.defaultModel);
+      setModelSelect(p.defaultModel || CUSTOM_MODEL_VALUE);
       setBaseUrl(p.defaultBaseUrl ?? "");
     }
     setApiKeyInput("");
@@ -123,7 +134,10 @@ export function LlmSettingsCard() {
   async function removeKey() {
     setSaving(true);
     try {
-      const res = await fetch("/api/settings/llm", { method: "DELETE" });
+      const res = await fetch(
+        `/api/settings/llm?provider=${encodeURIComponent(provider)}`,
+        { method: "DELETE" },
+      );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed");
       setSettings(json.settings);
@@ -195,6 +209,7 @@ export function LlmSettingsCard() {
       </select>
 
       {(modelSelect === CUSTOM_MODEL_VALUE ||
+        models.length === 0 ||
         provider === "custom" ||
         provider === "ollama") && (
         <Input
@@ -217,7 +232,8 @@ export function LlmSettingsCard() {
         provider === "custom" ||
         provider === "openrouter" ||
         provider === "openai" ||
-        provider === "shopaikey") && (
+        provider === "shopaikey" ||
+        provider === "nvidia") && (
         <>
           <label className="block text-xs font-medium text-muted">
             Base URL{" "}
@@ -265,9 +281,9 @@ export function LlmSettingsCard() {
         <div className="space-y-2 rounded-xl border border-border bg-primary-soft/50 p-3">
           <p className="text-xs text-muted">
             Stored key:{" "}
-            {settings?.hasApiKey ? (
+            {selectedKey.hasApiKey ? (
               <span className="font-mono text-foreground">
-                {settings.apiKeyDisplay}
+                {selectedKey.apiKeyDisplay}
               </span>
             ) : (
               <span className="text-muted">none</span>
@@ -281,9 +297,9 @@ export function LlmSettingsCard() {
                 type="button"
                 onClick={() => setShowKeyField(true)}
               >
-                {settings?.hasApiKey ? "Replace key" : "Add API key"}
+                {selectedKey.hasApiKey ? "Replace key" : "Add API key"}
               </Button>
-              {settings?.hasApiKey && (
+              {selectedKey.hasApiKey && (
                 <Button
                   size="sm"
                   variant="ghost"

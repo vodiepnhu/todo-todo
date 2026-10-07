@@ -5,12 +5,15 @@ import { createClient } from "@/lib/supabase/client";
 import { Card, Badge } from "@/components/ui/card";
 import type { Item } from "@/types/database";
 import { formatDistanceToNow } from "date-fns";
+import { useLocale } from "@/lib/i18n";
 
 export function HomePageClient({ workspaceId }: { workspaceId: string }) {
   const [activities, setActivities] = useState<Item[]>([]);
   const [recent, setRecent] = useState<{ summary: string; created_at: string }[]>(
     [],
   );
+  const { locale } = useLocale();
+  const vi = locale === "vi";
 
   async function load() {
     const supabase = createClient();
@@ -42,8 +45,9 @@ export function HomePageClient({ workspaceId }: { workspaceId: string }) {
   }, [workspaceId]);
 
   const hour = new Date().getHours();
-  const greet =
-    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const greet = vi
+    ? hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối"
+    : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const overdue = activities.filter(
     (t) => t.due_at && new Date(t.due_at) < new Date(),
   ).length;
@@ -52,22 +56,21 @@ export function HomePageClient({ workspaceId }: { workspaceId: string }) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-foreground">{greet}</h2>
-        <p className="text-sm text-muted">Today at a glance</p>
+        <p className="text-sm text-muted">{vi ? "Tổng quan hôm nay" : "Today at a glance"}</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Badge>{activities.length} active</Badge>
+        <Badge>{activities.length} {vi ? "đang thực hiện" : "active"}</Badge>
         {overdue > 0 && (
-          <Badge className="bg-rose-100 text-rose-700">{overdue} overdue</Badge>
+          <Badge className="bg-rose-100 text-rose-700">{overdue} {vi ? "quá hạn" : "overdue"}</Badge>
         )}
       </div>
       <section className="space-y-2">
         <h3 className="text-sm font-medium uppercase tracking-wide text-muted">
-          Next activities
+          {vi ? "Hoạt động tiếp theo" : "Next activities"}
         </h3>
         {activities.length === 0 ? (
           <Card className="text-sm text-muted">
-            Nothing yet. Add something or tell Planner: &quot;Remind us to book
-            the hotel before Friday.&quot;
+            {vi ? "Chưa có gì. Thêm hoạt động hoặc nói với Planner: “Nhắc chúng ta đặt khách sạn trước thứ Sáu.”" : <>Nothing yet. Add something or tell Planner: &quot;Remind us to book the hotel before Friday.&quot;</>}
           </Card>
         ) : (
           activities.map((t) => (
@@ -80,7 +83,7 @@ export function HomePageClient({ workspaceId }: { workspaceId: string }) {
                     ? new Date(t.due_at).toLocaleString()
                     : t.planned_start_at
                       ? new Date(t.planned_start_at).toLocaleString()
-                      : "No date"}
+                      : (vi ? "Chưa có ngày" : "No date")}
                   {t.estimated_duration_min
                     ? ` · ~${t.estimated_duration_min}m`
                     : ""}
@@ -92,7 +95,7 @@ export function HomePageClient({ workspaceId }: { workspaceId: string }) {
       </section>
       <section className="space-y-2">
         <h3 className="text-sm font-medium uppercase tracking-wide text-muted">
-          Recent
+          {vi ? "Gần đây" : "Recent"}
         </h3>
         {recent.map((r, i) => (
           <p key={i} className="text-sm text-muted">

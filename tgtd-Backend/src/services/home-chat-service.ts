@@ -24,6 +24,27 @@ export async function listHomeMessages(
   return (data ?? []) as HomeMessage[];
 }
 
+export async function listRecentHomeMessages(
+  supabase: SupabaseClient,
+  userId: string,
+  limit = 20,
+  excludeMessageId?: string,
+) {
+  const { data, error } = await supabase
+    .from("home_messages")
+    .select("*")
+    .eq("profile_id", userId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(limit + (excludeMessageId ? 1 : 0));
+  if (error) throwQueryError(error);
+
+  return (data ?? [])
+    .filter((message) => message.id !== excludeMessageId)
+    .slice(0, limit)
+    .reverse() as HomeMessage[];
+}
+
 export async function clearHomeMessages(
   supabase: SupabaseClient,
   input: {

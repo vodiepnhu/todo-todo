@@ -10,13 +10,16 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
   createInvite,
+  createViewLink,
   deleteProject,
   setSharingEnabled,
   updateProjectMetadata,
 } from "@/services/workspace-service";
+import type { InvitePermissions } from "@/services/workspace-service";
 import { ProjectAppearancePicker } from "@/components/workspace/project-appearance-picker";
 import { normalizeHex } from "@/lib/project-appearance";
 import { paths } from "@/lib/paths";
+import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 
 export function SettingsClient({
   workspaceId,
@@ -26,7 +29,15 @@ export function SettingsClient({
   userId: string;
 }) {
   const router = useRouter();
+  const { dictionary, locale } = useLocale();
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [viewUrl, setViewUrl] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePermissions, setInvitePermissions] = useState<InvitePermissions>({
+    canAdd: true,
+    canEdit: true,
+    canDelete: true,
+  });
   const [members, setMembers] = useState<
     { role: string; profiles: { display_name: string | null } | null }[]
   >([]);
@@ -72,13 +83,35 @@ export function SettingsClient({
     setBusy(true);
     try {
       const supabase = createClient();
-      const data = await createInvite(supabase, workspaceId, userId);
+      const data = await createInvite(
+        supabase,
+        workspaceId,
+        userId,
+        inviteEmail,
+        invitePermissions,
+      );
       const url = `${window.location.origin}/join/${data.token}`;
       setInviteUrl(url);
       await navigator.clipboard.writeText(url);
       toast.success("Invite link copied");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Invite failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCreateViewLink() {
+    setBusy(true);
+    try {
+      const supabase = createClient();
+      const data = await createViewLink(supabase, workspaceId);
+      const url = `${window.location.origin}/view/${data.token}`;
+      setViewUrl(url);
+      await navigator.clipboard.writeText(url);
+      toast.success("View-only link copied");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "View link failed");
     } finally {
       setBusy(false);
     }
@@ -96,7 +129,10 @@ export function SettingsClient({
       const supabase = createClient();
       await setSharingEnabled(supabase, workspaceId, next);
       setSharingEnabledState(next);
-      if (!next) setInviteUrl(null);
+      if (!next) {
+        setInviteUrl(null);
+        setViewUrl(null);
+      }
       toast.success(next ? "Sharing enabled" : "Sharing disabled");
       await reload();
     } catch (e) {
@@ -192,38 +228,41 @@ export function SettingsClient({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Settings</h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-2xl font-semibold">{dictionary.nav.settings}</h2>
+        <LanguageSwitcher />
+      </div>
       <Card className="space-y-2">
-        <p className="text-sm font-medium">Personal</p>
+        <p className="text-sm font-medium">{dictionary.settings.personal}</p>
         <p className="text-xs text-muted">
-          Profile, LLM keys, and Agent Ops live on your personal page.
+          {dictionary.settings.personalDescription}
         </p>
         <Link
           href={paths.account()}
           className="inline-flex h-8 items-center rounded-lg border border-border bg-surface px-3 text-xs font-medium hover:bg-primary-soft/60"
         >
-          Open Personal →
+          {dictionary.settings.openPersonal}
         </Link>
       </Card>
       <Card className="space-y-3">
-        <p className="text-sm font-medium">This project</p>
+        <p className="text-sm font-medium">{dictionary.settings.project}</p>
         <p className="text-xs text-muted">
-          Edit name, description, and appearance. Save to rename.
+          {dictionary.settings.projectDescription}
         </p>
         <Input
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
-          placeholder="Name"
+          placeholder={dictionary.settings.name}
         />
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description"
+          placeholder={dictionary.settings.description}
         />
         <Input
           value={tagsText}
           onChange={(e) => setTagsText(e.target.value)}
-          placeholder="Tags (comma-separated)"
+          placeholder={dictionary.settings.tags}
         />
         <ProjectAppearancePicker
           name={projectName}
@@ -233,15 +272,15 @@ export function SettingsClient({
           onColorChange={setColor}
         />
         <Button onClick={() => void saveProjectMetadata()} disabled={busy}>
-          Save / rename project
+          {dictionary.settings.saveProject}
         </Button>
       </Card>
       <Card className="space-y-3">
-        <p className="text-sm font-medium">Sharing</p>
+        <p className="text-sm font-medium">{dictionary.settings.sharing}</p>
         <p className="text-xs text-muted">
           {sharingEnabled
-            ? "This project is shared. Invite others with a link."
-            : "This project is private. Enable sharing to invite others."}
+            ? dictionary.settings.sharedDescription
+            : dictionary.settings.privateDescription}
         </p>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -249,42 +288,77 @@ export function SettingsClient({
             disabled={busy || !sharingEnabled}
             onClick={() => void handleToggleSharing(false)}
           >
-            Private
+            {dictionary.settings.private}
           </Button>
           <Button
             variant={sharingEnabled ? "default" : "outline"}
             disabled={busy || sharingEnabled}
             onClick={() => void handleToggleSharing(true)}
           >
-            Shared
+            {dictionary.settings.shared}
           </Button>
         </div>
         {sharingEnabled && (
           <>
-            <p className="text-sm font-medium">Members</p>
+            <p className="text-sm font-medium">{dictionary.settings.members}</p>
             {members.map((m, i) => (
               <p key={i} className="text-sm text-muted">
                 {m.profiles?.display_name ?? "Member"} · {m.role}
               </p>
             ))}
-            <Button onClick={handleCreateInvite} disabled={busy}>
-              Create invite link
+            <Input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder={dictionary.settings.accountEmail}
+              autoComplete="email"
+            />
+            <div className="flex flex-wrap gap-4 text-sm text-muted">
+              {([
+                ["canAdd", locale === "vi" ? "Thêm" : "Add"],
+                ["canEdit", locale === "vi" ? "Sửa" : "Edit"],
+                ["canDelete", locale === "vi" ? "Xóa" : "Delete"],
+              ] as const).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={invitePermissions[key]}
+                    onChange={(e) =>
+                      setInvitePermissions((current) => ({
+                        ...current,
+                        [key]: e.target.checked,
+                      }))
+                    }
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <Button onClick={() => void handleCreateInvite()} disabled={busy || !inviteEmail.trim()}>
+              {dictionary.settings.createInvite}
             </Button>
             {inviteUrl && (
               <p className="break-all text-xs text-primary">{inviteUrl}</p>
             )}
+            <div className="border-t border-border pt-3">
+              <p className="text-xs text-muted">{dictionary.settings.viewLinkDescription}</p>
+              <Button variant="outline" onClick={() => void handleCreateViewLink()} disabled={busy}>
+                {dictionary.settings.createViewLink}
+              </Button>
+              {viewUrl && <p className="break-all text-xs text-primary">{viewUrl}</p>}
+            </div>
           </>
         )}
       </Card>
       <Card className="space-y-3">
-        <p className="text-sm font-medium">Search</p>
+        <p className="text-sm font-medium">{dictionary.settings.search}</p>
         <div className="flex gap-2">
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search items…"
+            placeholder={dictionary.settings.searchItems}
           />
-          <Button onClick={runSearch}>Search</Button>
+          <Button onClick={runSearch}>{dictionary.settings.search}</Button>
         </div>
         {searchResults && (
           <pre className="whitespace-pre-wrap text-xs text-muted">
@@ -293,15 +367,14 @@ export function SettingsClient({
         )}
       </Card>
       <Card className="space-y-3 border-rose-200">
-        <p className="text-sm font-medium text-rose-700">Danger zone</p>
+        <p className="text-sm font-medium text-rose-700">{dictionary.settings.dangerZone}</p>
         <p className="text-xs text-muted">
-          Permanently delete this project and all of its data. Owner only.
-          Type the project name to confirm.
+          {dictionary.settings.deleteDescription}
         </p>
         <Input
           value={deleteConfirm}
           onChange={(e) => setDeleteConfirm(e.target.value)}
-          placeholder={projectName || "Project name"}
+          placeholder={projectName || dictionary.settings.projectName}
           disabled={busy}
         />
         <Button
@@ -309,11 +382,11 @@ export function SettingsClient({
           disabled={busy || deleteConfirm.trim() !== projectName.trim()}
           onClick={() => void handleDeleteProject()}
         >
-          Delete project
+          {dictionary.settings.deleteProject}
         </Button>
       </Card>
       <Button variant="outline" onClick={logout}>
-        Sign out
+        {dictionary.settings.signOut}
       </Button>
     </div>
   );

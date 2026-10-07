@@ -4,8 +4,26 @@ import {
   ExtractBodySchema,
   extractPlanFromChat,
 } from "@togo-todo/agent";
+import {
+  DEFAULT_LLM_USAGE_LIMITS,
+  runWithLlmUsage,
+  type LlmUsageTotals,
+} from "@togo-todo/agent";
+import { createDbAgentTrace } from "@togo-todo/backend";
+
+function usageEndFields(t: LlmUsageTotals) {
+  return {
+    llmCalls: t.llmCalls,
+    promptTokens: t.promptTokens,
+    completionTokens: t.completionTokens,
+    totalTokens: t.totalTokens,
+    costUsd: t.costUsd,
+    costSource: t.costSource,
+  };
+}
 
 export async function POST(request: Request) {
+  const started = Date.now();
   try {
     const supabase = await createClient();
     const {
@@ -26,14 +44,62 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const result = await extractPlanFromChat({
-      userId: user.id,
-      text: body.text,
-      timezone: body.timezone,
-      lookupMaps: body.lookupMaps,
+    const trace = await createDbAgentTrace(supabase, {
+      profileId: user.id,
+      workspaceId: body.workspaceId,
+      scope: "project",
+      message: body.text,
     });
+    let usage: LlmUsageTotals = {
+      llmCalls: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      costUsd: null,
+      costSource: "unknown",
+    };
 
-    return NextResponse.json(result);
+    try {
+      const wrapped = await runWithLlmUsage(() =>
+        extractPlanFromChat({
+          userId: user.id,
+          text: body.text,
+          timezone: body.timezone,
+          lookupMaps: body.lookupMaps,
+        }),
+        DEFAULT_LLM_USAGE_LIMITS,
+      );
+      const result = wrapped.result;
+      usage = wrapped.usage;
+      await trace?.end({
+        intent: "EXTRACT_PLAN",
+        ok: true,
+        totalMs: Date.now() - started,
+        model: result.model,
+        mocked: result.mocked,
+        provider: result.provider,
+        ...usageEndFields(usage),
+      });
+      return NextResponse.json(result);
+    } catch (extractError) {
+      const partial =
+        extractError &&
+        typeof extractError === "object" &&
+        "llmUsage" in extractError
+          ? (extractError as { llmUsage: LlmUsageTotals }).llmUsage
+          : usage;
+      await trace?.end({
+        intent: "EXTRACT_PLAN",
+        ok: false,
+        error:
+          extractError instanceof Error
+            ? extractError.message
+            : "extract failed",
+        totalMs: Date.now() - started,
+        ...usageEndFields(partial),
+      });
+      throw extractError;
+    }
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Extract failed" },

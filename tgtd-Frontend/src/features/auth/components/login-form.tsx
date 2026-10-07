@@ -7,13 +7,16 @@ import { createClient } from "@/server/supabase/client";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
+import { GoogleAuthButton } from "./google-auth-button";
 import { isLocalDemoEnabled, resolveLoginEmail, safeNextPath } from "../domain/login";
+import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 
 export function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const next = safeNextPath(search.get("next"));
   const demoEnabled = isLocalDemoEnabled();
+  const { dictionary } = useLocale();
   const [identifier, setIdentifier] = useState(demoEnabled ? "demo" : "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(search.get("error") ? "Authentication failed" : null);
@@ -44,42 +47,53 @@ export function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-[radial-gradient(ellipse_at_top,_#ddeee9_0%,_#f2f7f5_50%)] px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-[radial-gradient(ellipse_at_top,_#e0f2fe_0%,_#f5f9fd_60%)] px-4">
       <Card className="w-full max-w-md space-y-4 p-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
-          <p className="text-sm text-muted">Sign in to your shared space</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">{dictionary.auth.welcomeBack}</h1>
+              <p className="text-sm text-muted">{dictionary.auth.signInSpace}</p>
+            </div>
+            <LanguageSwitcher />
+          </div>
         </div>
         <form onSubmit={onSubmit} className="space-y-3">
           <Input
             type="text"
             inputMode="email"
             autoComplete="username"
-            placeholder={demoEnabled ? "Email or demo" : "Email"}
+            placeholder={demoEnabled ? dictionary.auth.emailOrDemo : dictionary.auth.email}
             value={identifier}
             onChange={(event) => setIdentifier(event.target.value)}
             required
           />
           <Input
             type="password"
-            placeholder="Password"
+            placeholder={dictionary.auth.password}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
             required
           />
+          <div className="text-right">
+            <Link className="text-sm text-primary underline" href="/forgot-password">
+              {dictionary.auth.forgotPassword}
+            </Link>
+          </div>
           {error && <p className="text-sm text-danger">Unable to sign in. Check your credentials.</p>}
           <Button className="w-full" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? dictionary.auth.signingIn : dictionary.auth.signIn}
           </Button>
         </form>
+        <GoogleAuthButton />
         {demoEnabled && (
           <p className="text-center text-xs text-muted">
             Local demo: <code>demo</code> / <code>123456</code>
           </p>
         )}
         <p className="text-center text-sm text-muted">
-          No account? <Link className="text-primary underline" href="/signup">Sign up</Link>
+          {dictionary.auth.noAccount} <Link className="text-primary underline" href="/signup">{dictionary.auth.signUp}</Link>
         </p>
       </Card>
     </div>

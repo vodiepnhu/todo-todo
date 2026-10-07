@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Togo - Mobile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #FAF7F2;
+            --fg: #1C3832;
+            --muted: #64827A;
+            --primary: #0E625B;
+            --primary-soft: #E7F0EC;
+            --cta: #DF6951;
+            --cta-hover: #C95740;
+            --surface: #FFFFFF;
+            --border: #E3DED6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #e5e5e5;
+            color: var(--fg);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 40px;
+            flex-wrap: wrap;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Fraunces', serif;
+            color: var(--fg);
+        }
+
+        /* Mobile Device Frame */
+        .device {
+            width: 375px;
+            height: 812px;
+            background: var(--bg);
+            border-radius: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+            border: 8px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-bar {
+            height: 44px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: transparent;
+            z-index: 10;
+        }
+
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 90px; /* space for bottom nav */
+        }
+        
+        /* Hide scrollbar */
+        .scroll-area::-webkit-scrollbar {
+            display: none;
+        }
+
+        .icon-svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 84px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 20px; /* Safe area */
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--muted);
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-fab {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background: var(--cta);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(-10px);
+            box-shadow: 0 4px 12px rgba(223, 105, 81, 0.3);
+        }
+
+        /* Screen 1: Home */
+        .home-header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-soft);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .home-hero {
+            padding: 10px 20px 30px;
+        }
+
+        .home-hero h1 {
+            font-size: 28px;
+            line-height: 1.1;
+        }
+
+        .trip-stack {
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .trip-card {
+            background-color: var(--surface);
+            border: 1px solid rgba(227, 222, 214, 0.8);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(28, 56, 50, 0.03);
+        }
+
+        .trip-accent {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-planning {
+            background-color: #f0fdfa;
+            border: 1px solid #bbf7d0;
+            color: #115e59;
+        }
+
+        /* Screen 2: Trip Detail */
+        .detail-header {
+            padding: 20px;
+            background: linear-gradient(to bottom, rgba(15, 118, 110, 0.08), transparent);
+        }
+        
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 20px;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--muted);
+            position: relative;
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .activities {
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .activity-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-soft);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Device 1: Home -->
+<div class="device">
+    <div class="status-bar">
+        <span>9:41</span>
+        <div style="display: flex; gap: 4px;">
+            <span>LTE</span>
+            <span>100%</span>
+        </div>
+    </div>
+
+    <div class="scroll-area">
+        <div class="home-header">
+            <div style="font-weight: 500;">Good morning, Nhu 👋</div>
+            <div class="user-avatar">N</div>
+        </div>
+
+        <div class="home-hero">
+            <div style="color: var(--primary); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Your Next Adventure</div>
+            <h1>Where are we going next?</h1>
+        </div>
+
+        <div class="trip-stack">
+            <!-- Trip 1 -->
+            <div class="trip-card">
+                <div class="trip-accent" style="background-color: #0f766e;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div style="font-size: 40px; line-height: 1;">✈️</div>
+                    <span class="badge badge-planning">Planning</span>
+                </div>
+                <h3 style="font-size: 20px; margin-bottom: 4px;">Tokyo in Spring</h3>
+                <div style="font-size: 13px; color: var(--muted); margin-bottom: 12px;">Tokyo, Japan &middot; 12-20 Mar</div>
+                <div style="font-size: 12px; color: var(--muted); background: var(--bg); padding: 8px 12px; border-radius: 8px;">Next: TeamLab Borderless</div>
+            </div>
+
+            <!-- Trip 2 -->
+            <div class="trip-card">
+                <div class="trip-accent" style="background-color: #10b981;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div style="font-size: 40px; line-height: 1;">🌴</div>
+                    <span class="badge badge-planning">Planning</span>
+                </div>
+                <h3 style="font-size: 20px; margin-bottom: 4px;">Bali Retreat</h3>
+                <div style="font-size: 13px; color: var(--muted);">Bali, Indonesia &middot; Apr 2025</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active">
+            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+            Overview
+        </div>
+        <div class="nav-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            AI ✨
+        </div>
+        <div class="nav-fab">
+            <svg class="icon-svg" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </div>
+        <div class="nav-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            Activities
+        </div>
+        <div class="nav-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Settings
+        </div>
+    </div>
+</div>
+
+<!-- Device 2: Trip Detail -->
+<div class="device">
+    <div class="status-bar">
+        <span>9:41</span>
+        <div style="display: flex; gap: 4px;">
+            <span>LTE</span>
+            <span>100%</span>
+        </div>
+    </div>
+
+    <div class="scroll-area">
+        <div class="detail-header">
+            <div class="back-btn">
+                <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                All Trips
+            </div>
+            <div style="font-size: 48px; margin-bottom: 8px; line-height: 1;">🇯🇵</div>
+            <h1 style="font-size: 24px; margin-bottom: 4px;">Tokyo in Spring</h1>
+            <div style="font-size: 13px; color: var(--muted);">12 activities &middot; 3 places &middot; Planning</div>
+        </div>
+
+        <div class="tab-bar">
+            <div class="tab active">Overview</div>
+            <div class="tab">Activities</div>
+            <div class="tab">Budget</div>
+        </div>
+
+        <div class="activities">
+            <!-- Activity 1 -->
+            <div class="activity-card">
+                <div class="activity-icon">
+                    <svg class="icon-svg" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </div>
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px;">TeamLab Borderless</div>
+                        <div style="font-size: 12px; font-weight: 600;">10:30</div>
+                    </div>
+                    <div style="font-size: 13px; color: var(--muted); margin-bottom: 6px;">Azabudai Hills</div>
+                    <div style="display: flex; gap: 6px;">
+                        <span style="font-size: 10px; background: var(--bg); padding: 2px 8px; border-radius: 6px; color: var(--muted);">2hr</span>
+                        <span style="font-size: 10px; background: var(--bg); padding: 2px 8px; border-radius: 6px; color: var(--muted);">Indoor</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity 2 -->
+            <div class="activity-card">
+                <div class="activity-icon">
+                    <svg class="icon-svg" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </div>
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px;">Lunch at Tsujihan</div>
+                        <div style="font-size: 12px; font-weight: 600;">13:00</div>
+                    </div>
+                    <div style="font-size: 13px; color: var(--muted); margin-bottom: 6px;">Nihonbashi</div>
+                    <div style="display: flex; gap: 6px;">
+                        <span style="font-size: 10px; background: var(--bg); padding: 2px 8px; border-radius: 6px; color: var(--muted);">1hr</span>
+                        <span style="font-size: 10px; background: var(--bg); padding: 2px 8px; border-radius: 6px; color: var(--muted);">Food</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+            Overview
+        </div>
+        <div class="nav-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            AI ✨
+        </div>
+        <div class="nav-fab">
+            <svg class="icon-svg" style="width: 24px; height: 24px;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </div>
+        <div class="nav-item active">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            Activities
+        </div>
+        <div class="nav-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Settings
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
