@@ -22,8 +22,19 @@ import {
 } from "@/lib/chat/planner-stream";
 import { useLocale } from "@/lib/i18n";
 import { splitChatContent } from "@/lib/chat/chat-content";
+import { projectCardBackground } from "@/lib/home-projects";
+import { normalizeHex } from "@/lib/project-appearance";
 
 type LocalMessage = HomeMessage & { pending?: boolean };
+
+function withAlpha(hex: string, alpha: number): string {
+  const raw = hex.replace("#", "");
+  if (raw.length !== 6) return `rgba(15, 118, 110, ${alpha})`;
+  const r = parseInt(raw.slice(0, 2), 16);
+  const g = parseInt(raw.slice(2, 4), 16);
+  const b = parseInt(raw.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 export function HomeChatClient({
   userId,
@@ -34,11 +45,15 @@ export function HomeChatClient({
   userId: string;
   settingsHref: string | null;
   onAdd?: () => void;
-  projects?: Array<{ id: string; name: string }>;
+  projects?: Array<{ id: string; name: string; color?: string | null }>;
 }) {
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [text, setText] = useState("");
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
+  const [draftContinuation, setDraftContinuation] = useState<{
+    pendingId: string;
+    workspaceId: string;
+  } | null>(null);
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -46,8 +61,21 @@ export function HomeChatClient({
     () => new Set(),
   );
   const [progressSteps, setProgressSteps] = useState<PlannerProgressEvent[]>([]);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [showLatest, setShowLatest] = useState(false);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const shouldStickToBottomRef = useRef(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const plannerAbortRef = useRef<AbortController | null>(null);
   const { dictionary, locale } = useLocale();
+  const vi = locale === "vi";
+  const selectedProject = projects.find((project) => project.id === selectedWorkspaceId);
+  const selectedProjectColor = normalizeHex(selectedProject?.color);
+  const projectFrameStyle = selectedProjectColor
+    ? {
+        borderColor: withAlpha(selectedProjectColor, 0.32),
+        background: projectCardBackground(selectedProjectColor),
+      }
+    : undefined;
 
   async function load() {
     try {
@@ -55,7 +83,7 @@ export function HomeChatClient({
       setMessages(await listHomeMessages(supabase, userId));
     } catch (e) {
       toast.error(
-        `Could not load home chat: ${e instanceof Error ? e.message : "error"}`,
+        `${vi ? "Không thể tải chat trang chủ" : "Could not load home chat"}: ${e instanceof Error ? e.message : (vi ? "lỗi" : "error")}`,
       );
     }
   }
@@ -65,16 +93,48 @@ export function HomeChatClient({
   }, [userId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, status]);
+    const element = messagesRef.current;
+    if (!element || !shouldStickToBottomRef.current) return;
+    element.scrollTop = element.scrollHeight;
+  }, [messages, progressSteps, status]);
+
+  function handleMessagesScroll() {
+    const element = messagesRef.current;
+    if (!element) return;
+    const nearBottom =
+      element.scrollHeight - element.scrollTop - element.clientHeight <= 72;
+    shouldStickToBottomRef.current = nearBottom;
+    setShowLatest(!nearBottom);
+  }
+
+  function scrollToLatest() {
+    const element = messagesRef.current;
+    if (!element) return;
+    shouldStickToBottomRef.current = true;
+    element.scrollTop = element.scrollHeight;
+    setShowLatest(false);
+  }
+
+  function stopPlanner() {
+    plannerAbortRef.current?.abort();
+    setSending(false);
+    setProgressSteps([]);
+    setStatus(vi ? "Đã dừng Planner" : "Planner stopped");
+  }
 
   async function send(askPlanner = true) {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    const addMode = /^\/add\b/i.test(trimmed);
-    const plannerText = addMode ? trimmed.replace(/^\/add\s*/i, "") : trimmed;
-    const outbound = addMode
+    const explicitAdd = /^\/add\b/i.test(trimmed);
+    const continuingDraft = Boolean(
+      draftContinuation?.pendingId &&
+        draftContinuation.workspaceId &&
+        draftContinuation.workspaceId === selectedWorkspaceId,
+    );
+    const addMode = explicitAdd || continuingDraft;
+    const plannerText = explicitAdd ? trimmed.replace(/^\/add\s*/i, "") : trimmed;
+    const outbound = explicitAdd
       ? `/add ${plannerText}`.trim()
       : askPlanner
         ? `@Planner ${plannerText}`
@@ -92,13 +152,18 @@ export function HomeChatClient({
       pending: true,
     };
 
+    shouldStickToBottomRef.current = true;
+    setShowLatest(false);
     setMessages((prev) => [...prev, optimistic]);
     setText("");
+    setDraftContinuation(null);
     setSending(true);
     setProgressSteps(
       askPlanner ? [{ step: "understand", status: "active" }] : [],
     );
-    setStatus(askPlanner ? "Planner is thinking across projects…" : "Sending…");
+    setStatus(askPlanner ? (vi ? "Planner đang xem xét các dự án…" : "Planner is thinking across projects…") : (vi ? "Đang gửi…" : "Sending…"));
+    const abortController = new AbortController();
+    plannerAbortRef.current = abortController;
 
     try {
       const res = await fetch("/api/ai/home", {
@@ -111,6 +176,7 @@ export function HomeChatClient({
           workspaceId: selectedWorkspaceId || undefined,
           stream: askPlanner,
         }),
+        signal: abortController.signal,
       });
       const json = (askPlanner
         ? await consumePlannerStream(res, (event) =>
@@ -122,11 +188,12 @@ export function HomeChatClient({
       };
       if (!res.ok) throw new Error(json.error || `Send failed (${res.status})`);
       if (json.pendingId) {
-        toast.message("Draft ready — tap Confirm in the chat bubble");
+        toast.message(vi ? "Bản nháp đã sẵn sàng — bấm Xác nhận trong tin nhắn." : "Draft ready — tap Confirm in the chat bubble");
       }
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to send");
+      if (abortController.signal.aborted) return;
+      toast.error(e instanceof Error ? e.message : (vi ? "Gửi thất bại" : "Failed to send"));
       try {
         const supabase = createClient();
         await insertHomeMessage(supabase, {
@@ -138,15 +205,18 @@ export function HomeChatClient({
       }
       await load();
     } finally {
+      if (plannerAbortRef.current === abortController) {
+        plannerAbortRef.current = null;
+      }
       setSending(false);
-      setStatus(null);
+      setStatus(abortController.signal.aborted ? (vi ? "Đã dừng Planner" : "Planner stopped") : null);
       setProgressSteps([]);
     }
   }
 
   async function confirmPendingFromMessage(pendingId: string) {
     setConfirmingId(pendingId);
-    setStatus("Confirming…");
+    setStatus(vi ? "Đang xác nhận…" : "Confirming…");
     try {
       const res = await fetch("/api/confirm", {
         method: "POST",
@@ -155,15 +225,15 @@ export function HomeChatClient({
       });
       const json = await res.json();
       if (!res.ok) {
-        toast.error(json.error || "Confirm failed");
+        toast.error(json.error || (vi ? "Xác nhận thất bại" : "Confirm failed"));
         return;
       }
       if (json.pending?.state === "EXECUTED") {
         setConfirmedPendingIds((prev) => new Set(prev).add(pendingId));
-        toast.success("Saved");
+        toast.success(vi ? "Đã lưu" : "Saved");
         window.dispatchEvent(new Event("planner:refresh"));
       } else {
-        toast.error("Confirm did not complete");
+        toast.error(vi ? "Xác nhận chưa hoàn tất" : "Confirm did not complete");
       }
       await load();
     } finally {
@@ -173,15 +243,21 @@ export function HomeChatClient({
   }
 
   return (
-    <div className="flex h-[calc(100dvh-6rem)] flex-col gap-3">
+    <div
+      data-testid="home-chat-frame"
+      className="flex h-[calc(100dvh-6rem)] flex-col gap-3 rounded-[26px] border border-transparent transition-colors duration-200"
+      style={projectFrameStyle}
+    >
       {/* AI Planner Box matching mockup */}
-      <div className="neu-card p-4.5">
+      <div className="neu-card p-4.5" style={projectFrameStyle}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <span className="text-2xl" aria-hidden>✨</span>
             <div>
-              <h2 className="font-heading text-lg font-bold text-foreground">
-                {locale === "vi" ? "Hỏi" : "Ask"}
+              <h2 className="font-heading text-xl font-bold text-foreground">
+                {selectedProject
+                  ? `${dictionary.home.askingInWishlist} "${selectedProject.name}"`
+                  : dictionary.home.askingAcrossWishlists}
               </h2>
               <p className="text-xs text-muted font-medium mt-0.5">
                 {locale === "vi"
@@ -191,15 +267,19 @@ export function HomeChatClient({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <label className="sr-only" htmlFor="home-chat-scope">Chat scope</label>
+            <label className="sr-only" htmlFor="home-chat-scope">{vi ? "Phạm vi chat" : "Chat scope"}</label>
             <select
               id="home-chat-scope"
-              aria-label="Chat scope"
+              aria-label={vi ? "Phạm vi chat" : "Chat scope"}
               value={selectedWorkspaceId}
-              onChange={(event) => setSelectedWorkspaceId(event.target.value)}
+              onChange={(event) => {
+                setSelectedWorkspaceId(event.target.value);
+                setDraftContinuation(null);
+              }}
               className="max-w-40 rounded-full border border-white/90 bg-white/90 px-3 py-1.5 text-xs font-bold text-foreground shadow-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/25"
+              style={selectedProjectColor ? { borderColor: selectedProjectColor } : undefined}
             >
-              <option value="">All projects</option>
+              <option value="">{vi ? "Tất cả dự án" : "All projects"}</option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id}>{project.name}</option>
               ))}
@@ -211,7 +291,7 @@ export function HomeChatClient({
               className="rounded-full shadow-xs"
             >
               <Plus className="h-4 w-4" aria-hidden />
-              Add
+              {vi ? "Thêm" : "Add"}
             </Button>
             <ChatHistoryMenu
               home
@@ -241,7 +321,7 @@ export function HomeChatClient({
           })}
         </div>
         <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-xs font-semibold text-foreground">
-          <span className="shrink-0 text-primary" aria-hidden>Tip</span>
+          <span className="shrink-0 text-primary" aria-hidden>{vi ? "Gợi ý" : "Tip"}</span>
           <p>
             {selectedWorkspaceId
               ? locale === "vi"
@@ -255,7 +335,14 @@ export function HomeChatClient({
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="neu-inset flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={messagesRef}
+          data-testid="home-chat-messages"
+          onScroll={handleMessagesScroll}
+          className="neu-inset h-full space-y-3 overflow-y-auto p-4"
+          style={projectFrameStyle}
+        >
         {messages.length === 0 && !status && (
           <p className="text-[13px] text-muted">
             {dictionary.home.todaySummary}
@@ -270,7 +357,7 @@ export function HomeChatClient({
           const isConfirmable =
             Boolean(m.linked_entity_id && !isConfirmed);
           const isConfirming =
-            status === "Confirming…" && confirmingId === m.linked_entity_id;
+            status === (vi ? "Đang xác nhận…" : "Confirming…") && confirmingId === m.linked_entity_id;
 
           return (
             <div
@@ -292,6 +379,15 @@ export function HomeChatClient({
                   onConfirm={() =>
                     m.linked_entity_id && confirmPendingFromMessage(m.linked_entity_id)
                   }
+                  onMoreInfo={() => {
+                    if (m.linked_entity_id && selectedWorkspaceId) {
+                      setDraftContinuation({
+                        pendingId: m.linked_entity_id,
+                        workspaceId: selectedWorkspaceId,
+                      });
+                    }
+                    textareaRef.current?.focus();
+                  }}
                 />
               ) : (
                 <p className="whitespace-pre-wrap">
@@ -316,20 +412,31 @@ export function HomeChatClient({
           );
         })}
         {sending && progressSteps.length > 0 && (
-          <PlannerProgress steps={progressSteps} />
+          <PlannerProgress steps={progressSteps} onStop={stopPlanner} />
         )}
         {status && !sending && (
           <p className="text-xs italic text-muted" aria-live="polite">
             {status}
           </p>
         )}
-        <div ref={bottomRef} />
+        </div>
+        {showLatest && (
+          <button
+            type="button"
+            aria-label={vi ? "Tin mới nhất" : "Latest messages"}
+            onClick={scrollToLatest}
+            className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-white/90 bg-white/95 px-3 py-1.5 text-xs font-bold text-primary shadow-[0_4px_14px_rgba(15,118,110,0.2)] transition hover:-translate-y-0.5"
+          >
+            {vi ? "Tin mới nhất ↓" : "Latest messages ↓"}
+          </button>
+        )}
       </div>
 
       {/* Composer Card */}
-      <div className="neu-card space-y-2.5 p-3.5">
+      <div className="neu-card space-y-2.5 p-3.5" style={projectFrameStyle}>
         <ChatModelBar settingsHref={settingsHref} />
         <Textarea
+          ref={textareaRef}
           placeholder={locale === "vi" ? "Hỏi AI xem đi đâu, làm gì…" : "Ask AI where to go and what to do…"}
           value={text}
           className="text-[13px] leading-5"

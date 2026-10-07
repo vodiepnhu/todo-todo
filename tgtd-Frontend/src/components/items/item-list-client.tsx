@@ -23,7 +23,7 @@ import { useWorkspaceAccess } from "@/components/workspace/workspace-layout-clie
 import { useLocale } from "@/lib/i18n";
 import { ActivityIcon } from "@/components/items/activity-icon";
 
-const FILTERS: ListFilter[] = ["All", "Upcoming", "Visited"];
+const FILTERS: ListFilter[] = ["All", "Upcoming", "Visited", "Skipped"];
 
 function formatItemWhen(iso: string | null): string | null {
   if (!iso) return null;
@@ -146,12 +146,12 @@ export function ItemListClient({
         expectedVersion: payload.version,
         userId: user?.id ?? null,
       });
-      toast.success("Saved");
+      toast.success(vi ? "Đã lưu" : "Saved");
       window.dispatchEvent(new Event("planner:refresh"));
       await load();
       setFormMode("view");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(e instanceof Error ? e.message : (vi ? "Lưu thất bại" : "Save failed"));
       if (
         e instanceof Error &&
         e.message.includes("changed elsewhere")
@@ -174,7 +174,7 @@ export function ItemListClient({
             onClick={() => setFilter(f)}
             data-testid={`list-filter-${f.toLowerCase()}`}
           >
-            {vi ? ({ All: "Tất cả", Upcoming: "Sắp tới", Visited: "Đã thực hiện" }[f] ?? f) : f}
+            {vi ? ({ All: "Tất cả", Upcoming: "Sắp tới", Visited: "Đã thực hiện", Skipped: "Đã bỏ qua" }[f] ?? f) : f}
           </Button>
         ))}
       </div>

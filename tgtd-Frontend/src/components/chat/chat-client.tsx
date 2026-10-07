@@ -48,7 +48,10 @@ export function ChatClient({
   const [confirmedPendingIds, setConfirmedPendingIds] = useState<Set<string>>(
     () => new Set(),
   );
-  const { dictionary } = useLocale();
+  const { dictionary, locale } = useLocale();
+  const vi = locale === "vi";
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const plannerAbortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const timeZone = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
@@ -77,13 +80,13 @@ export function ChatClient({
         error?: string;
       };
       if (!res.ok) {
-        toast.error(`Could not load chat: ${json.error || res.statusText}`);
+        toast.error(`${vi ? "Không thể tải chat" : "Could not load chat"}: ${json.error || res.statusText}`);
         return;
       }
       setMessages(json.messages ?? []);
     } catch (e) {
       toast.error(
-        `Could not load chat: ${e instanceof Error ? e.message : "network error"}`,
+        `${vi ? "Không thể tải chat" : "Could not load chat"}: ${e instanceof Error ? e.message : (vi ? "lỗi mạng" : "network error")}`,
       );
     }
   }
@@ -143,6 +146,13 @@ export function ChatClient({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, status]);
 
+  function stopPlanner() {
+    plannerAbortRef.current?.abort();
+    setSending(false);
+    setProgressSteps([]);
+    setStatus(vi ? "Đã dừng Planner" : "Planner stopped");
+  }
+
   async function send(askPlanner = false) {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -171,6 +181,8 @@ export function ChatClient({
       askPlanner ? [{ step: "understand", status: "active" }] : [],
     );
     setStatus(askPlanner ? dictionary.chat.sending : dictionary.chat.sending);
+    const abortController = new AbortController();
+    plannerAbortRef.current = abortController;
 
     try {
       const res = await fetch("/api/ai/planner", {
@@ -183,6 +195,7 @@ export function ChatClient({
           mode: "ask",
           stream: askPlanner,
         }),
+        signal: abortController.signal,
       });
       const json = (askPlanner
         ? await consumePlannerStream(res, (event) =>
@@ -221,11 +234,15 @@ export function ChatClient({
 
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to send");
+      if (abortController.signal.aborted) return;
+      toast.error(e instanceof Error ? e.message : (vi ? "Gửi thất bại" : "Failed to send"));
       await load();
     } finally {
+      if (plannerAbortRef.current === abortController) {
+        plannerAbortRef.current = null;
+      }
       setSending(false);
-      setStatus(null);
+      setStatus(abortController.signal.aborted ? (vi ? "Đã dừng Planner" : "Planner stopped") : null);
       setProgressSteps([]);
     }
   }
@@ -241,17 +258,17 @@ export function ChatClient({
       });
       const json = await res.json();
       if (!res.ok) {
-        toast.error(json.error || "Confirm failed");
+        toast.error(json.error || (vi ? "Xác nhận thất bại" : "Confirm failed"));
         return;
       }
       if (json.pending?.state === "EXECUTED") {
         setConfirmedPendingIds((current) =>
           new Set(current).add(pendingId),
         );
-        toast.success("Saved");
+        toast.success(vi ? "Đã lưu" : "Saved");
         window.dispatchEvent(new Event("planner:refresh"));
       } else {
-        toast.error("Confirm did not complete");
+        toast.error(vi ? "Xác nhận chưa hoàn tất" : "Confirm did not complete");
       }
       await load();
     } finally {
@@ -322,6 +339,7 @@ export function ChatClient({
                         m.linked_entity_id &&
                         confirmPendingFromMessage(m.linked_entity_id)
                       }
+                      onMoreInfo={() => textareaRef.current?.focus()}
                     />
                   ) : (
                     <p className="whitespace-pre-wrap leading-relaxed">
@@ -357,7 +375,7 @@ export function ChatClient({
           </div>
         ))}
         {sending && progressSteps.length > 0 && (
-          <PlannerProgress steps={progressSteps} />
+          <PlannerProgress steps={progressSteps} onStop={stopPlanner} />
         )}
         {status && !sending && (
           <p className="text-xs italic text-muted" aria-live="polite">
@@ -369,6 +387,7 @@ export function ChatClient({
       <Card className="space-y-2 p-3">
         <ChatModelBar settingsHref={paths.accountLlm()} />
         <Textarea
+          ref={textareaRef}
           placeholder={dictionary.chat.plannerPlaceholder}
           value={text}
           onChange={(e) => setText(e.target.value)}

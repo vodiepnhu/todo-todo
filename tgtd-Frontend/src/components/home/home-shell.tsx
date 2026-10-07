@@ -800,7 +800,7 @@ export function HomeShell({
             <HomeChatClient
               userId={userId}
               settingsHref={paths.accountLlm()}
-              projects={allProjects.map((project) => ({ id: project.id, name: project.name }))}
+              projects={allProjects.map((project) => ({ id: project.id, name: project.name, color: project.color }))}
               onAdd={() => setAddActivityOpen(true)}
             />
             <HomePlacesSection

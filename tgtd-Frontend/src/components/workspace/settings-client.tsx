@@ -93,9 +93,9 @@ export function SettingsClient({
       const url = `${window.location.origin}/join/${data.token}`;
       setInviteUrl(url);
       await navigator.clipboard.writeText(url);
-      toast.success("Invite link copied");
+      toast.success(locale === "vi" ? "Đã sao chép liên kết mời" : "Invite link copied");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Invite failed");
+      toast.error(e instanceof Error ? e.message : (locale === "vi" ? "Tạo lời mời thất bại" : "Invite failed"));
     } finally {
       setBusy(false);
     }
@@ -109,9 +109,9 @@ export function SettingsClient({
       const url = `${window.location.origin}/view/${data.token}`;
       setViewUrl(url);
       await navigator.clipboard.writeText(url);
-      toast.success("View-only link copied");
+      toast.success(locale === "vi" ? "Đã sao chép link chỉ xem" : "View-only link copied");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "View link failed");
+      toast.error(e instanceof Error ? e.message : (locale === "vi" ? "Tạo link chỉ xem thất bại" : "View link failed"));
     } finally {
       setBusy(false);
     }
@@ -120,7 +120,7 @@ export function SettingsClient({
   async function handleToggleSharing(next: boolean) {
     if (!next) {
       const ok = window.confirm(
-        "Members lose access; history stays in this project. Continue?",
+        locale === "vi" ? "Thành viên sẽ mất quyền truy cập, lịch sử vẫn giữ trong dự án. Tiếp tục?" : "Members lose access; history stays in this project. Continue?",
       );
       if (!ok) return;
     }
@@ -133,10 +133,10 @@ export function SettingsClient({
         setInviteUrl(null);
         setViewUrl(null);
       }
-      toast.success(next ? "Sharing enabled" : "Sharing disabled");
+      toast.success(next ? (locale === "vi" ? "Đã bật chia sẻ" : "Sharing enabled") : (locale === "vi" ? "Đã tắt chia sẻ" : "Sharing disabled"));
       await reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update sharing");
+      toast.error(e instanceof Error ? e.message : (locale === "vi" ? "Không thể cập nhật chia sẻ" : "Could not update sharing"));
     } finally {
       setBusy(false);
     }
@@ -145,7 +145,7 @@ export function SettingsClient({
   async function saveProjectMetadata() {
     const name = projectName.trim();
     if (!name) {
-      toast.error("Project name required");
+      toast.error(locale === "vi" ? "Cần nhập tên dự án" : "Project name required");
       return;
     }
     const iconValue = icon.trim() || null;
@@ -154,7 +154,7 @@ export function SettingsClient({
     if (colorTrimmed) {
       colorValue = normalizeHex(colorTrimmed);
       if (!colorValue) {
-        toast.error("Invalid color — use #rrggbb");
+        toast.error(locale === "vi" ? "Màu không hợp lệ — dùng #rrggbb" : "Invalid color — use #rrggbb");
         return;
       }
     }
@@ -172,10 +172,10 @@ export function SettingsClient({
         icon: iconValue,
         color: colorValue,
       });
-      toast.success("Project details saved");
+      toast.success(locale === "vi" ? "Đã lưu thông tin dự án" : "Project details saved");
       await reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(e instanceof Error ? e.message : (locale === "vi" ? "Lưu thất bại" : "Save failed"));
     } finally {
       setBusy(false);
     }
@@ -183,22 +183,22 @@ export function SettingsClient({
 
   async function handleDeleteProject() {
     if (deleteConfirm.trim() !== projectName.trim()) {
-      toast.error("Type the exact project name to confirm delete");
+      toast.error(locale === "vi" ? "Nhập chính xác tên dự án để xác nhận xóa" : "Type the exact project name to confirm delete");
       return;
     }
     const ok = window.confirm(
-      `Delete project "${projectName}" permanently? All todos, togos, and chat in it will be removed.`,
+      locale === "vi" ? `Xóa vĩnh viễn dự án "${projectName}"? Toàn bộ việc, hoạt động và chat sẽ bị xóa.` : `Delete project "${projectName}" permanently? All todos, togos, and chat in it will be removed.`,
     );
     if (!ok) return;
     setBusy(true);
     try {
       const supabase = createClient();
       await deleteProject(supabase, workspaceId);
-      toast.success("Project deleted");
+      toast.success(locale === "vi" ? "Đã xóa dự án" : "Project deleted");
       router.push(paths.projects());
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not delete project");
+      toast.error(e instanceof Error ? e.message : (locale === "vi" ? "Không thể xóa dự án" : "Could not delete project"));
     } finally {
       setBusy(false);
     }
@@ -222,7 +222,7 @@ export function SettingsClient({
       .limit(10);
     setSearchResults(
       (data ?? []).map((i) => `${i.item_type}: ${i.title}`).join("\n") ||
-        "No results",
+        locale === "vi" ? "Không có kết quả" : "No results",
     );
   }
 
@@ -303,7 +303,7 @@ export function SettingsClient({
             <p className="text-sm font-medium">{dictionary.settings.members}</p>
             {members.map((m, i) => (
               <p key={i} className="text-sm text-muted">
-                {m.profiles?.display_name ?? "Member"} · {m.role}
+                {m.profiles?.display_name ?? (locale === "vi" ? "Thành viên" : "Member")} · {m.role}
               </p>
             ))}
             <Input

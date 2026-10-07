@@ -53,6 +53,7 @@ describe("PlanDraftCard", () => {
             saved: "Saved plan",
             saving: "Saving plan…",
             confirm: "Confirm plan",
+            moreInfo: "More info",
             title: "Plan draft",
             missing: "Missing information:",
             foodToTry: "Food to try:",
@@ -97,6 +98,7 @@ describe("PlanDraftCard", () => {
             saved: "Đã lưu kế hoạch",
             saving: "Đang lưu kế hoạch…",
             confirm: "Xác nhận kế hoạch",
+            moreInfo: "Thêm thông tin",
             title: "Bản nháp kế hoạch",
             missing: "Thông tin còn thiếu:",
             foodToTry: "Món ngon nên thử:",
@@ -154,5 +156,48 @@ describe("PlanDraftCard", () => {
     expect(screen.getByRole("link", { name: /Maps/ }).getAttribute("href")).toBe(
       "https://www.google.com/maps/search/?api=1&query=Sydney%20Opera%20House",
     );
+  });
+
+  it("offers more info without replacing confirm", () => {
+    const onMoreInfo = vi.fn();
+    useLocale.mockReturnValue({
+      locale: "vi",
+      dictionary: {
+        chat: {
+          planDraft: {
+            saved: "Đã lưu kế hoạch",
+            saving: "Đang lưu kế hoạch…",
+            confirm: "Xác nhận kế hoạch",
+            moreInfo: "Thêm thông tin",
+            title: "Bản nháp kế hoạch",
+            missing: "Thông tin còn thiếu:",
+            foodToTry: "Món ngon nên thử:",
+            category: "Danh mục",
+            tags: "Thẻ",
+            preparation: "Chuẩn bị",
+            activities: "Hoạt động",
+            travel: "Di chuyển",
+            experience: "Trải nghiệm",
+            todos: "Việc cần làm",
+            costs: "Chi phí",
+            notes: "Ghi chú",
+          },
+        },
+      },
+    });
+    render(
+      React.createElement(PlanDraftCard, {
+        rawContent: fullRawContent,
+        isConfirmable: true,
+        isConfirmed: false,
+        isConfirming: false,
+        onConfirm: vi.fn(),
+        onMoreInfo,
+      }),
+    );
+
+    screen.getByRole("button", { name: "Thêm thông tin" }).click();
+    expect(onMoreInfo).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "Xác nhận kế hoạch" })).toBeTruthy();
   });
 });

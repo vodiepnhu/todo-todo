@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { runIngestAgent, runPlannerOrchestrator } from "@togo-todo/agent";
+import {
+  runIngestAgent,
+  runPlannerOrchestrator,
+  translateTextToEnglish,
+} from "@togo-todo/agent";
 import {
   advanceConfirmation,
   createPendingAction,
@@ -219,6 +223,7 @@ export async function POST(request: Request) {
                   includeChat: Boolean(workspaceId),
                   recentChat,
                   limit: 20,
+                  translate: (text) => translateTextToEnglish(user.id, text),
                 }),
               searchPlace,
               safeMapsUrl: safeMapsRedirect,

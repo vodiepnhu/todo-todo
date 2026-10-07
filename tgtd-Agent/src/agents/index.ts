@@ -1,5 +1,6 @@
 export { runIngestAgent } from "./ingest-agent";
 export { detectLanguage, runLanguageAgent } from "./language-agent";
+export { translateTextToEnglish } from "../lib/ai/translate";
 export { runPlannerOrchestrator } from "./orchestrator";
 export { buildMutationDraft } from "./mutation-agent";
 export {

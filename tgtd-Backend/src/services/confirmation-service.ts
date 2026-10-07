@@ -7,7 +7,10 @@ import {
   upsertItemEmbedding,
   buildItemChunkText,
 } from "@togo-todo/ai-rag";
-import { validatePendingPayload } from "@togo-todo/agent";
+import {
+  translateTextToEnglish,
+  validatePendingPayload,
+} from "@togo-todo/agent";
 import { recordAgentEvent } from "../lib/agentops/agentops";
 import { createProject } from "./workspace-service";
 import { PlanSchema } from "../lib/plans/plan-schema";
@@ -269,6 +272,7 @@ async function executePending(
   userId: string,
   onWrite: () => void,
 ): Promise<Item | null> {
+  const translate = (text: string) => translateTextToEnglish(userId, text);
   const payload = pending.payload_json;
   let item: Item | null = null;
   let summary = "";
@@ -344,6 +348,7 @@ async function executePending(
             .join(", "),
           notes: plan.notes.map((n) => n.content),
         }),
+        { translate },
       );
     } else {
       onWrite();
@@ -383,7 +388,7 @@ async function executePending(
       await upsertItemEmbedding(supabase, item, {
         projectName: wsMeta?.name,
         tags: (wsMeta?.tags as string[] | null) ?? [],
-      });
+      }, undefined, { translate });
 
       if (payload.placeQuery || payload.googleMapsUrl) {
         const { data: place } = await supabase
@@ -442,7 +447,7 @@ async function executePending(
     await upsertItemEmbedding(supabase, item, {
       projectName: wsMeta?.name,
       tags: (wsMeta?.tags as string[] | null) ?? [],
-    });
+    }, undefined, { translate });
   } else if (pending.action_type === "DELETE") {
     const id = payload.id as string;
     onWrite();
@@ -491,7 +496,7 @@ async function executePending(
           .single();
         targetId = created?.id;
         item = created as Item;
-        if (item) await upsertItemEmbedding(supabase, item);
+        if (item) await upsertItemEmbedding(supabase, item, undefined, undefined, { translate });
       }
     }
     if (!targetId) throw new Error("No item for event");

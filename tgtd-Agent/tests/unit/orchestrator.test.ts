@@ -969,6 +969,83 @@ describe("runPlannerOrchestrator", () => {
     expect(result.aiContent).toContain("pending:p1");
   });
 
+  it("merges cost questions into an active plan draft", async () => {
+    const createPending = vi.fn().mockResolvedValue({ id: "new-plan" });
+    const updatePendingPlan = vi.fn().mockResolvedValue({ id: "p1" });
+    const extractPlan = vi.fn().mockResolvedValue({
+      draft: planOf({
+        placeName: "Budapest",
+        costs: [
+          {
+            category: "Food",
+            estimatedAmount: 120,
+            actualAmount: null,
+            currency: "AUD",
+            note: "2 days",
+          },
+          {
+            category: "Tram travel",
+            estimatedAmount: 20,
+            actualAmount: null,
+            currency: "AUD",
+            note: "2-day estimate",
+          },
+        ],
+      }),
+      extracted: [],
+      suggestions: [],
+      missing: [],
+    });
+
+    const result = await runPlannerOrchestrator({
+      workspaceId: "w",
+      scope: "project",
+      userId: "u",
+      message: "How about the cost, give me some estimation for eating and tram travel for 2 days",
+      recentChat: "Planner: Draft: Budapest\n[Confirm] pending:p1",
+      deps: {
+        ingest: async () => ({
+          request: ingestOf({ intent: "HELP", reply: "I can help." }),
+          model: "mock",
+          mocked: false,
+          latencyMs: 1,
+        }),
+        listItems: async () => [],
+        createPending,
+        extractPlan,
+        extractMapsUrl: () => undefined,
+        findActivePlanPending: vi.fn().mockResolvedValue({
+          id: "p1",
+          workspace_id: "w",
+          action_type: "CREATE",
+          payload_json: { schema: "plan", plan: planOf({ placeName: "Budapest" }) },
+          state: "AWAITING_CONFIRM_2",
+          expires_at: "2099-01-01T00:00:00.000Z",
+        }),
+        updatePendingPlan,
+      },
+    });
+
+    expect(result.pendingId).toBe("p1");
+    expect(createPending).not.toHaveBeenCalled();
+    expect(updatePendingPlan).toHaveBeenCalledWith(
+      "p1",
+      "w",
+      "u",
+      expect.objectContaining({
+        plan: expect.objectContaining({
+          placeName: "Budapest",
+          costs: expect.arrayContaining([
+            expect.objectContaining({ category: "Food", estimatedAmount: 120 }),
+            expect.objectContaining({ category: "Tram travel", estimatedAmount: 20 }),
+          ]),
+        }),
+      }),
+    );
+    expect(result.aiContent).toContain("Costs:");
+    expect(result.aiContent).toContain("pending:p1");
+  });
+
   it("routes UPDATE_ITEM correction to active project draft before saved-item mutation", async () => {
     const createPending = vi.fn().mockResolvedValue({ id: "wrong-item" });
     const updatePendingPlan = vi.fn().mockResolvedValue({ id: "p1" });

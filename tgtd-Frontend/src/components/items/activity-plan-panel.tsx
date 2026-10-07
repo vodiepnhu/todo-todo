@@ -85,7 +85,7 @@ export function ActivityPlanPanel({
         if (!cancelled) setPlan(draft);
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : "Could not load plan");
+          toast.error(e instanceof Error ? e.message : (vi ? "Không thể tải kế hoạch" : "Could not load plan"));
           setPlan({ ...emptyPlan(), placeName: item.title });
         }
       } finally {
@@ -95,7 +95,7 @@ export function ActivityPlanPanel({
     return () => {
       cancelled = true;
     };
-  }, [item.id, item.title]);
+  }, [item.id, item.title, vi]);
 
   function enableEdit() {
     if (!canEdit) return;
@@ -118,7 +118,7 @@ export function ActivityPlanPanel({
   async function submit() {
     const parsed = PlanSchema.safeParse(plan);
     if (!parsed.success) {
-      toast.error("Place name required");
+      toast.error(vi ? "Cần nhập tên địa điểm" : "Place name required");
       return;
     }
     setBusy(true);
@@ -142,7 +142,7 @@ export function ActivityPlanPanel({
 
     const parsed = PlanSchema.safeParse(nextPlan);
     if (!parsed.success) {
-      toast.error("Place name required");
+      toast.error(vi ? "Cần nhập tên địa điểm" : "Place name required");
       return;
     }
     setBusy(true);
@@ -153,7 +153,7 @@ export function ActivityPlanPanel({
         plan: parsed.data,
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Status update failed");
+      toast.error(e instanceof Error ? e.message : (vi ? "Cập nhật trạng thái thất bại" : "Status update failed"));
       try {
         const supabase = createClient();
         setPlan(await loadPlanDraft(supabase, item.id));

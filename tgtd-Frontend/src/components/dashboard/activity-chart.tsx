@@ -10,8 +10,11 @@ import {
 } from "recharts";
 import type { AuditLog } from "@/types/database";
 import { format } from "date-fns";
+import { useLocale } from "@/lib/i18n";
 
 export function ActivityChart({ audits }: { audits: AuditLog[] }) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const buckets = new Map<string, number>();
   for (const a of audits) {
     const key = format(new Date(a.created_at), "MMM d");
@@ -23,7 +26,7 @@ export function ActivityChart({ audits }: { audits: AuditLog[] }) {
   }));
 
   if (data.length === 0) {
-    return <p className="text-sm text-muted">No activity in this range.</p>;
+    return <p className="text-sm text-muted">{vi ? "Chưa có hoạt động trong khoảng này." : "No activity in this range."}</p>;
   }
 
   return (

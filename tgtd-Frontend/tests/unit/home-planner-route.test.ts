@@ -53,6 +53,7 @@ vi.mock("@togo-todo/agent", () => ({
   })),
   safeMapsRedirect: vi.fn(),
   searchPlace: vi.fn(),
+  translateTextToEnglish: vi.fn(async (text: string) => text),
 }));
 
 vi.mock("@togo-todo/ai-rag", () => ({

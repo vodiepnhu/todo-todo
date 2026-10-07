@@ -29,11 +29,12 @@ import {
 import { paths } from "@/lib/paths";
 import { cn } from "@/lib/utils";
 import { categoryPalette } from "@/lib/category-colors";
+import { useLocale } from "@/lib/i18n";
 
-function formatWhen(iso: string | null): string | null {
+function formatWhen(iso: string | null, locale: "en" | "vi"): string | null {
   if (!iso) return null;
   try {
-    return new Intl.DateTimeFormat("en-AU", {
+    return new Intl.DateTimeFormat(locale === "vi" ? "vi-VN" : "en-AU", {
       timeZone: "Australia/Sydney",
       weekday: "short",
       day: "numeric",
@@ -52,11 +53,15 @@ function isOverdue(item: Item): boolean {
   return Number.isFinite(due) && due < Date.now();
 }
 
-function rangeLabel(range: DashRange): string {
-  return range === "all" ? "all time" : `last ${range} days`;
+function rangeLabel(range: DashRange, vi: boolean): string {
+  return range === "all"
+    ? vi ? "toàn bộ thời gian" : "all time"
+    : vi ? `${range} ngày qua` : `last ${range} days`;
 }
 
 export function DashboardClient({ workspaceId }: { workspaceId: string }) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const [items, setItems] = useState<Item[]>([]);
   const [events, setEvents] = useState<ItemEvent[]>([]);
   const [costs, setCosts] = useState<PlanCost[]>([]);
@@ -122,16 +127,16 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.24em] text-primary/70">
-              Project pulse
+              {vi ? "Nhịp dự án" : "Project pulse"}
             </p>
             <h2 className="mt-1 font-heading text-3xl font-black tracking-tight text-foreground">
-              Dashboard
+              {vi ? "Tổng quan" : "Dashboard"}
             </h2>
             <p className="mt-2 max-w-xl text-sm font-medium text-muted">
-              See what needs attention today, what is next, and how your plan is moving.
+              {vi ? "Xem việc cần chú ý hôm nay, lịch sắp tới và tiến độ kế hoạch." : "See what needs attention today, what is next, and how your plan is moving."}
             </p>
           </div>
-          <div className="flex gap-1.5 rounded-2xl bg-primary-soft/70 p-1" aria-label="Dashboard range">
+          <div className="flex gap-1.5 rounded-2xl bg-primary-soft/70 p-1" aria-label={vi ? "Khoảng thời gian tổng quan" : "Dashboard range"}>
             {(["7", "30", "90", "all"] as const).map((value) => (
               <button
                 key={value}
@@ -143,7 +148,7 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
                     : "text-muted hover:bg-white/70 hover:text-foreground"
                 }`}
               >
-                {value === "all" ? "All" : `${value}d`}
+                {value === "all" ? (vi ? "Tất cả" : "All") : `${value}${vi ? " ngày" : "d"}`}
               </button>
             ))}
           </div>
@@ -151,35 +156,35 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
       </header>
 
       {loading ? (
-        <p className="text-sm font-medium text-muted">Loading dashboard…</p>
+        <p className="text-sm font-medium text-muted">{vi ? "Đang tải tổng quan…" : "Loading dashboard…"}</p>
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
-              label="Up next"
+              label={vi ? "Sắp tới" : "Up next"}
               value={String(progress.upcoming)}
-              detail={overdue ? `${overdue} overdue` : "Nothing overdue"}
+              detail={overdue ? `${overdue} ${vi ? "quá hạn" : "overdue"}` : (vi ? "Không có việc quá hạn" : "Nothing overdue")}
               icon={<CalendarClock className="h-5 w-5" aria-hidden />}
               tone="sky"
             />
             <MetricCard
-              label="Visited"
+              label={vi ? "Đã ghé" : "Visited"}
               value={`${progress.visited}/${progress.total}`}
-              detail={`${visitedPercent}% of your plan`}
+              detail={`${visitedPercent}% ${vi ? "kế hoạch" : "of your plan"}`}
               icon={<CheckCircle2 className="h-5 w-5" aria-hidden />}
               tone="emerald"
             />
             <MetricCard
-              label="Today"
+              label={vi ? "Hôm nay" : "Today"}
               value={String(todayItems.length)}
-              detail={todayItems.length ? "Keep the day moving" : "Clear calendar"}
+              detail={todayItems.length ? (vi ? "Tiếp tục lịch hôm nay" : "Keep the day moving") : (vi ? "Lịch đang trống" : "Clear calendar")}
               icon={<ListChecks className="h-5 w-5" aria-hidden />}
               tone="amber"
             />
             <MetricCard
-              label="Activity"
+              label={vi ? "Hoạt động" : "Activity"}
               value={String(periodEvents)}
-              detail={`events ${rangeLabel(range)}`}
+              detail={`${vi ? "sự kiện" : "events"} ${rangeLabel(range, vi)}`}
               icon={<Sparkles className="h-5 w-5" aria-hidden />}
               tone="violet"
             />
@@ -187,19 +192,19 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
 
           <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
             <TrackCard
-              title="Today"
-              subtitle="Your next decisions live here."
+              title={vi ? "Hôm nay" : "Today"}
+              subtitle={vi ? "Các quyết định tiếp theo nằm ở đây." : "Your next decisions live here."}
               action={
                 <Link
                   href={paths.projectLists(workspaceId)}
                   className="inline-flex items-center gap-1 text-xs font-black text-primary hover:underline"
                 >
-                  Open list <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                  {vi ? "Mở danh sách" : "Open list"} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
                 </Link>
               }
             >
               {todayItems.length === 0 ? (
-                <EmptyState icon={<Sparkles className="h-5 w-5" aria-hidden />} text="No plans for today." />
+                <EmptyState icon={<Sparkles className="h-5 w-5" aria-hidden />} text={vi ? "Hôm nay chưa có kế hoạch." : "No plans for today."} />
               ) : (
                 <div className="space-y-2.5">
                   {todayItems.slice(0, 5).map((item) => (
@@ -209,23 +214,23 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
               )}
             </TrackCard>
 
-            <TrackCard title="Plan progress" subtitle="A simple read on your whole plan.">
+            <TrackCard title={vi ? "Tiến độ kế hoạch" : "Plan progress"} subtitle={vi ? "Tóm tắt nhanh toàn bộ kế hoạch." : "A simple read on your whole plan."}>
               <div className="flex items-end justify-between gap-3">
                 <div>
                   <p className="text-4xl font-black tracking-tight text-foreground">{visitedPercent}%</p>
-                  <p className="mt-1 text-xs font-bold text-muted">visited or completed</p>
+                  <p className="mt-1 text-xs font-bold text-muted">{vi ? "đã ghé hoặc hoàn tất" : "visited or completed"}</p>
                 </div>
                 <p className="text-right text-xs font-bold text-muted">
-                  {progress.visited} done<br />of {progress.total} activities
+                  {progress.visited} {vi ? "xong" : "done"}<br />{vi ? "trên tổng số" : "of"} {progress.total} {vi ? "hoạt động" : "activities"}
                 </p>
               </div>
               <div className="mt-4 h-3 overflow-hidden rounded-full bg-primary-soft" aria-label={`${visitedPercent}% visited`}>
                 <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${visitedPercent}%` }} />
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2">
-                <ProgressStat label="Upcoming" value={progress.upcoming} tone="sky" />
-                <ProgressStat label="Visited" value={progress.visited} tone="emerald" />
-                <ProgressStat label="Skipped" value={progress.skipped} tone="amber" />
+                <ProgressStat label={vi ? "Sắp tới" : "Upcoming"} value={progress.upcoming} tone="sky" />
+                <ProgressStat label={vi ? "Đã ghé" : "Visited"} value={progress.visited} tone="emerald" />
+                <ProgressStat label={vi ? "Bỏ qua" : "Skipped"} value={progress.skipped} tone="amber" />
               </div>
             </TrackCard>
           </div>
@@ -233,15 +238,15 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
           <section className="space-y-3">
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70">Shape of your plan</p>
-                <h3 className="mt-1 font-heading text-xl font-black tracking-tight">By category</h3>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70">{vi ? "Cấu trúc kế hoạch" : "Shape of your plan"}</p>
+                <h3 className="mt-1 font-heading text-xl font-black tracking-tight">{vi ? "Theo danh mục" : "By category"}</h3>
               </div>
               <Link href={paths.projectLists(workspaceId)} className="text-xs font-black text-primary hover:underline">
-                See all activities
+                {vi ? "Xem mọi hoạt động" : "See all activities"}
               </Link>
             </div>
             {categories.length === 0 ? (
-              <Card className="border-dashed p-6 text-sm font-medium text-muted">Add an activity to see categories.</Card>
+              <Card className="border-dashed p-6 text-sm font-medium text-muted">{vi ? "Thêm hoạt động để xem danh mục." : "Add an activity to see categories."}</Card>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {categories.map((category) => (
@@ -260,9 +265,9 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
           </section>
 
           <div className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
-            <TrackCard title="Next up" subtitle="Upcoming activities, sorted by time.">
+            <TrackCard title={vi ? "Sắp tới" : "Next up"} subtitle={vi ? "Hoạt động sắp tới, sắp theo thời gian." : "Upcoming activities, sorted by time."}>
               {nextItems.length === 0 ? (
-                <EmptyState icon={<CheckCircle2 className="h-5 w-5" aria-hidden />} text="Your plan is clear." />
+                <EmptyState icon={<CheckCircle2 className="h-5 w-5" aria-hidden />} text={vi ? "Kế hoạch đang trống." : "Your plan is clear."} />
               ) : (
                 <div className="space-y-2.5">
                   {nextItems.map((item) => (
@@ -272,11 +277,11 @@ export function DashboardClient({ workspaceId }: { workspaceId: string }) {
               )}
             </TrackCard>
 
-            <TrackCard title="Quick insights" subtitle={`Useful context for ${rangeLabel(range)}.`}>
+            <TrackCard title={vi ? "Tóm tắt nhanh" : "Quick insights"} subtitle={`${vi ? "Thông tin hữu ích cho" : "Useful context for"} ${rangeLabel(range, vi)}.`}>
               <div className="space-y-3">
-                <InsightRow label="Estimated cost" value={formatCost(estimatedCost)} />
-                <InsightRow label="Overdue" value={String(overdue)} alert={overdue > 0} />
-                <InsightRow label="Skipped" value={String(progress.skipped)} />
+                <InsightRow label={vi ? "Chi phí ước tính" : "Estimated cost"} value={formatCost(estimatedCost)} />
+                <InsightRow label={vi ? "Quá hạn" : "Overdue"} value={String(overdue)} alert={overdue > 0} />
+                <InsightRow label={vi ? "Bỏ qua" : "Skipped"} value={String(progress.skipped)} />
               </div>
             </TrackCard>
           </div>
@@ -354,7 +359,9 @@ function TrackCard({
 }
 
 function ActivityRow({ item, compact = false }: { item: Item; compact?: boolean }) {
-  const time = formatWhen(item.due_at ?? item.planned_start_at);
+  const { locale } = useLocale();
+  const vi = locale === "vi";
+  const time = formatWhen(item.due_at ?? item.planned_start_at, locale);
   const overdue = isOverdue(item);
   const palette = categoryPalette(item.category_label ?? item.category ?? "");
   return (
@@ -366,7 +373,7 @@ function ActivityRow({ item, compact = false }: { item: Item; compact?: boolean 
         <p className="truncate text-sm font-black text-foreground">{item.title}</p>
         <p className={`mt-1 flex items-center gap-1 text-xs font-bold ${overdue ? "text-rose-600" : "text-muted"}`}>
           {overdue ? <CircleAlert className="h-3.5 w-3.5" aria-hidden /> : <Clock3 className="h-3.5 w-3.5" aria-hidden />}
-          {overdue ? "Overdue" : time ?? "No time set"}
+          {overdue ? (vi ? "Quá hạn" : "Overdue") : time ?? (vi ? "Chưa đặt giờ" : "No time set")}
         </p>
       </div>
       {item.category_label ? <span className={cn("hidden rounded-full border px-2.5 py-1 text-[10px] font-black sm:inline-flex", palette.badge)}>{item.category_label}</span> : null}

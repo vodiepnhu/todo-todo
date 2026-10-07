@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import type { HomeMessage, WorkspaceMessage } from "@/types/database";
 import { dayKeyLocal, groupMessagesByDay } from "@/lib/chat/chat-history";
 import { toast } from "sonner";
+import { useLocale } from "@/lib/i18n";
 
 type PendingOption = { id: string; label: string };
 type ChatMsg = WorkspaceMessage | HomeMessage;
@@ -24,6 +25,8 @@ export function ChatHistoryMenu({
   messages: ChatMsg[];
   onCleared: () => void;
 }) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<"main" | "day" | "pending">("main");
   const [busy, setBusy] = useState(false);
@@ -80,7 +83,7 @@ export function ChatHistoryMenu({
             ...body,
             ...(body.mode === "day" ? { timeZone } : {}),
           };
-      if (!payload) throw new Error("Unsupported clear mode");
+      if (!payload) throw new Error(vi ? "Chế độ xóa không được hỗ trợ" : "Unsupported clear mode");
 
       const res = await fetch(url, {
         method: "POST",
@@ -91,15 +94,15 @@ export function ChatHistoryMenu({
         deleted?: number;
         error?: string;
       };
-      if (!res.ok) throw new Error(json.error || "Clear failed");
+      if (!res.ok) throw new Error(json.error || (vi ? "Xóa thất bại" : "Clear failed"));
       toast.success(
-        json.deleted ? `Cleared ${json.deleted} messages` : "Nothing to clear",
+        json.deleted ? `${vi ? "Đã xóa" : "Cleared"} ${json.deleted} ${vi ? "tin nhắn" : "messages"}` : (vi ? "Không có gì để xóa" : "Nothing to clear"),
       );
       setOpen(false);
       setPanel("main");
       onCleared();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Clear failed");
+      toast.error(e instanceof Error ? e.message : (vi ? "Xóa thất bại" : "Clear failed"));
     } finally {
       setBusy(false);
     }
@@ -118,7 +121,7 @@ export function ChatHistoryMenu({
         }}
       >
         <Trash2 className="h-3.5 w-3.5" aria-hidden />
-        Clear chat
+        {vi ? "Xóa chat" : "Clear chat"}
       </Button>
       {open && (
         <Card className="absolute right-0 z-20 mt-1 w-64 space-y-1 p-2 shadow-lg">
@@ -133,8 +136,8 @@ export function ChatHistoryMenu({
                   if (
                     !window.confirm(
                       home
-                        ? "Delete all home chat messages? Projects stay."
-                        : "Soft-delete all chat messages in this workspace? Plans stay.",
+                        ? (vi ? "Xóa toàn bộ tin nhắn chat trang chủ? Dự án vẫn giữ nguyên." : "Delete all home chat messages? Projects stay.")
+                        : (vi ? "Xóa mềm toàn bộ tin nhắn trong dự án này? Kế hoạch vẫn giữ nguyên." : "Soft-delete all chat messages in this workspace? Plans stay."),
                     )
                   ) {
                     return;
@@ -142,7 +145,7 @@ export function ChatHistoryMenu({
                   void clear({ mode: "all" });
                 }}
               >
-                Delete all chat
+                {vi ? "Xóa toàn bộ chat" : "Delete all chat"}
               </Button>
               <Button
                 size="sm"
@@ -151,7 +154,7 @@ export function ChatHistoryMenu({
                 disabled={busy || days.length === 0}
                 onClick={() => setPanel("day")}
               >
-                Delete by day…
+                {vi ? "Xóa theo ngày…" : "Delete by day…"}
               </Button>
               {!home && (
                 <Button
@@ -161,7 +164,7 @@ export function ChatHistoryMenu({
                   disabled={busy || pendingOptions.length === 0}
                   onClick={() => setPanel("pending")}
                 >
-                  Delete by confirmed task…
+                  {vi ? "Xóa theo việc đã xác nhận…" : "Delete by confirmed task…"}
                 </Button>
               )}
               <Button
@@ -170,13 +173,13 @@ export function ChatHistoryMenu({
                 className="w-full"
                 onClick={() => setOpen(false)}
               >
-                Close
+                {vi ? "Đóng" : "Close"}
               </Button>
             </>
           )}
           {panel === "day" && (
             <>
-              <p className="px-1 text-xs font-medium text-muted">Pick a day</p>
+              <p className="px-1 text-xs font-medium text-muted">{vi ? "Chọn ngày" : "Pick a day"}</p>
               {days.map((dayKey) => (
                 <Button
                   key={dayKey}
@@ -187,7 +190,7 @@ export function ChatHistoryMenu({
                   onClick={() => {
                     if (
                       !window.confirm(
-                        `Soft-delete chat for ${dayKey}? Plans stay.`,
+                        vi ? `Xóa mềm chat ngày ${dayKey}? Kế hoạch vẫn giữ nguyên.` : `Soft-delete chat for ${dayKey}? Plans stay.`,
                       )
                     ) {
                       return;
@@ -197,7 +200,7 @@ export function ChatHistoryMenu({
                 >
                   {dayKey}
                   {dayKey === dayKeyLocal(new Date().toISOString(), timeZone)
-                    ? " (today)"
+                    ? vi ? " (hôm nay)" : " (today)"
                     : ""}
                 </Button>
               ))}
@@ -207,14 +210,14 @@ export function ChatHistoryMenu({
                 className="w-full"
                 onClick={() => setPanel("main")}
               >
-                Back
+                {vi ? "Quay lại" : "Back"}
               </Button>
             </>
           )}
           {panel === "pending" && (
             <>
               <p className="px-1 text-xs font-medium text-muted">
-                Chat thread for task (keeps the plan)
+                {vi ? "Luồng chat của việc này (giữ lại kế hoạch)" : "Chat thread for task (keeps the plan)"}
               </p>
               {pendingOptions.map((p) => (
                 <Button
@@ -226,7 +229,7 @@ export function ChatHistoryMenu({
                   onClick={() => {
                     if (
                       !window.confirm(
-                        "Soft-delete chat for this task thread? The saved plan stays.",
+                        vi ? "Xóa mềm luồng chat của việc này? Kế hoạch đã lưu vẫn giữ nguyên." : "Soft-delete chat for this task thread? The saved plan stays.",
                       )
                     ) {
                       return;
@@ -243,7 +246,7 @@ export function ChatHistoryMenu({
                 className="w-full"
                 onClick={() => setPanel("main")}
               >
-                Back
+                {vi ? "Quay lại" : "Back"}
               </Button>
             </>
           )}

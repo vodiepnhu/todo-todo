@@ -9,8 +9,11 @@ import {
   historyCategory,
   type HistoryEvent,
 } from "@/lib/history-filters";
+import { useLocale } from "@/lib/i18n";
 
 export function HistoryClient({ workspaceId }: { workspaceId: string }) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const [events, setEvents] = useState<HistoryEvent[]>([]);
   const [filter, setFilter] = useState<string>("ALL");
 
@@ -54,7 +57,7 @@ export function HistoryClient({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">History</h3>
+      <h3 className="text-lg font-semibold">{vi ? "Lịch sử" : "History"}</h3>
       <div className="flex flex-wrap gap-2">
         {["ALL", ...categories].map((f) => (
           <button
@@ -65,20 +68,20 @@ export function HistoryClient({ workspaceId }: { workspaceId: string }) {
               filter === f ? "bg-cta text-white" : "bg-primary-soft"
             }`}
           >
-            {f === "ALL" ? "All" : f}
+            {f === "ALL" ? (vi ? "Tất cả" : "All") : f}
           </button>
         ))}
       </div>
       {filtered.length === 0 ? (
         <Card className="text-sm text-muted">
-          No activity history yet.
+          {vi ? "Chưa có lịch sử hoạt động." : "No activity history yet."}
         </Card>
       ) : (
         filtered.map((e) => (
           <Card key={e.id} className="flex items-center justify-between gap-2">
             <div>
               <p className="font-medium">
-                {(e.items as { title?: string } | null)?.title ?? "Item"}
+                {(e.items as { title?: string } | null)?.title ?? (vi ? "Mục" : "Item")}
               </p>
               <p className="text-xs text-muted">
                 {new Date(e.occurred_at).toLocaleString()}

@@ -1,31 +1,9 @@
 "use client";
 
-import {
-  Check,
-  type LucideIcon,
-  Brain,
-  MessagesSquare,
-  MapPinned,
-  WandSparkles,
-  ShieldCheck,
-  Crown,
-} from "lucide-react";
 import type { PlannerProgressEvent } from "@/lib/chat/planner-stream";
-import { cn } from "@/lib/utils";
-import { useLocale, type Dictionary } from "@/lib/i18n";
+import { useLocale } from "@/lib/i18n";
 
-const STEPS: Array<{
-  step: PlannerProgressEvent["step"];
-  key: keyof Dictionary["chat"]["progress"];
-  icon: LucideIcon;
-}> = [
-  { step: "understand", key: "understand", icon: Brain },
-  { step: "context", key: "context", icon: MessagesSquare },
-  { step: "places", key: "places", icon: MapPinned },
-  { step: "draft", key: "draft", icon: WandSparkles },
-  { step: "check", key: "check", icon: ShieldCheck },
-  { step: "save", key: "save", icon: Crown },
-];
+const TOTAL_STEPS = 6;
 
 const FUNNY_STEP_EMOJIS: Record<PlannerProgressEvent["step"], string> = {
   understand: "🔮", // Đọc vị ý tưởng
@@ -39,90 +17,91 @@ const FUNNY_STEP_EMOJIS: Record<PlannerProgressEvent["step"], string> = {
 
 export function PlannerProgress({
   steps,
+  onStop,
 }: {
   steps: PlannerProgressEvent[];
+  onStop?: () => void;
 }) {
   const { dictionary } = useLocale();
-  const state = new Map(steps.map((event) => [event.step, event.status]));
-  const active = steps.find((event) => event.status === "active")?.step;
-  const activeIndex = STEPS.findIndex((s) => s.step === active);
-  const activeStepObj = STEPS[activeIndex >= 0 ? activeIndex : 0];
-  const activeEmoji = active ? FUNNY_STEP_EMOJIS[active] : "🧭";
-
+  const activeEvent = steps.find((event) => event.status === "active");
+  const active = activeEvent?.step;
   const doneCount = steps.filter((s) => s.status === "done").length;
-  const railProgressPct = Math.min(
+
+  const stepOrder: Array<PlannerProgressEvent["step"]> = [
+    "understand",
+    "context",
+    "places",
+    "draft",
+    "check",
+    "save",
+  ];
+  const activeIndex = active ? stepOrder.indexOf(active) : -1;
+  const currentStepNum = activeIndex >= 0 ? activeIndex + 1 : doneCount;
+
+  // Tỷ lệ hoàn thành (tối thiểu 15% khi bắt đầu để thấy dải màu tiến trình)
+  const progressPct = Math.min(
     100,
-    Math.max(8, (((activeIndex >= 0 ? activeIndex : doneCount) + 0.5) / STEPS.length) * 100),
+    Math.max(15, (currentStepNum / TOTAL_STEPS) * 100),
   );
+
+  const activeEmoji = active ? FUNNY_STEP_EMOJIS[active] : "🧭";
 
   return (
     <div
-      className="neu-card overflow-hidden p-3.5 transition-all duration-200"
+      data-testid="planner-progress"
+      className="neu-card overflow-hidden rounded-2xl p-3 transition-all duration-300"
       role="status"
       aria-live="polite"
     >
-      {/* Top row: Animated funny emoji + active step quote + counter */}
-      <div className="mb-2.5 flex items-center justify-between gap-2 px-1">
+      {/* Hàng trên: Mascot/Icon nhảy nhảy ("cái nhảy nhảy") + Title + Phần trăm tiến trình */}
+      <div className="mb-2 flex items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xl motion-safe:animate-bounce" aria-hidden="true">
+          <span
+            data-testid="planner-bouncing-indicator"
+            className="text-lg leading-none motion-safe:animate-bounce select-none inline-block drop-shadow-xs"
+            aria-hidden="true"
+          >
             {activeEmoji}
           </span>
-          <div className="min-w-0">
-            <span className="text-[10px] font-black uppercase tracking-wider text-primary">
-              {dictionary.chat.progress.title}
-            </span>
-            <p className="truncate text-xs font-extrabold text-foreground">
-              {active ? dictionary.chat.progress[activeStepObj.key] : "..."}
-            </p>
-          </div>
+          <span className="text-xs font-black uppercase tracking-wider text-primary truncate">
+            {dictionary.chat.progress.title}
+          </span>
         </div>
-        <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-[11px] font-extrabold text-primary shrink-0 shadow-2xs">
-          {activeIndex >= 0 ? `${activeIndex + 1} / ${STEPS.length}` : `${doneCount} / ${STEPS.length}`}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            data-testid="planner-progress-percent"
+            className="rounded-full bg-primary-soft px-2.5 py-0.5 text-[11px] font-extrabold text-primary shadow-2xs tabular-nums"
+          >
+            {Math.round(progressPct)}%
+          </span>
+          {active && onStop ? (
+            <button
+              type="button"
+              onClick={onStop}
+              className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+            >
+              {dictionary.chat.progress.stop}
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      {/* Stepper Rail (Compact Flight Track) */}
-      <div className="neu-inset relative flex items-center justify-between px-3 py-2">
-        {/* Rail background bar */}
-        <div className="absolute inset-x-6 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200" />
-        {/* Progress highlight bar */}
+      {/* Thanh tiến trình tô màu ("tô màu thành tiến trình") - Tinh gọn, không icon & chữ rườm rà */}
+      <div
+        className="neu-inset relative h-2.5 w-full overflow-hidden rounded-full bg-slate-200/80 p-0.5"
+        role="progressbar"
+        aria-valuenow={Math.round(progressPct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
         <div
-          className="absolute left-6 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gradient-to-r from-primary via-secondary to-cta transition-all duration-300"
-          style={{ width: `calc(${railProgressPct}% - 1.5rem)` }}
-        />
-
-        {STEPS.map(({ step, key }) => {
-          const status = state.get(step);
-          const isActive = active === step;
-          return (
-            <div
-              key={step}
-              aria-current={isActive ? "step" : undefined}
-              className="relative z-10 flex flex-col items-center"
-            >
-              <span
-                data-testid={`planner-icon-${step}`}
-                className={cn(
-                  "grid size-7 shrink-0 place-items-center rounded-full border text-xs transition-all duration-200",
-                  status === "done" && "border-mint bg-mint text-white shadow-xs",
-                  isActive &&
-                    "border-cta bg-cta text-white shadow-md ring-4 ring-cta/25 motion-safe:animate-bounce scale-110",
-                  !status && "border-slate-200 bg-white text-muted",
-                )}
-                aria-hidden="true"
-              >
-                {status === "done" ? (
-                  <Check className="size-3.5 stroke-[3]" />
-                ) : (
-                  <span>{FUNNY_STEP_EMOJIS[step]}</span>
-                )}
-              </span>
-              <span className="sr-only sm:not-sr-only sm:mt-1 sm:text-[9.5px] sm:font-bold sm:text-muted truncate max-w-[55px] text-center">
-                {dictionary.chat.progress[key]}
-              </span>
-            </div>
-          );
-        })}
+          data-testid="planner-progress-fill"
+          className="h-full rounded-full bg-gradient-to-r from-primary via-[#0ea5e9] to-cta transition-all duration-500 ease-out shadow-xs relative"
+          style={{ width: `${progressPct}%` }}
+        >
+          {/* Vệt sáng lấp lánh nhẹ nhàng khi đang chạy */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent motion-safe:animate-pulse" />
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import type { LlmProvider } from "@/lib/ai/providers";
+import { useLocale } from "@/lib/i18n";
 
 type ModelOption = { id: string; label: string; tier?: string };
 
@@ -34,6 +35,8 @@ type Settings = {
 const CUSTOM_MODEL_VALUE = "__custom__";
 
 export function LlmSettingsCard() {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const [providers, setProviders] = useState<ProviderMeta[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [provider, setProvider] = useState<LlmProvider>("openrouter");
@@ -50,7 +53,7 @@ export function LlmSettingsCard() {
       try {
         const res = await fetch("/api/settings/llm");
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Could not load settings");
+        if (!res.ok) throw new Error(json.error || (vi ? "Không thể tải cài đặt" : "Could not load settings"));
         setProviders(json.providers);
         setSettings(json.settings);
         setProvider(json.settings.provider);
@@ -65,12 +68,12 @@ export function LlmSettingsCard() {
         setError(null);
       } catch (e) {
         const message =
-          e instanceof Error ? e.message : "Could not load LLM settings";
+          e instanceof Error ? e.message : (vi ? "Không thể tải cài đặt LLM" : "Could not load LLM settings");
         setError(message);
         toast.error(message);
       }
     })();
-  }, []);
+  }, [vi]);
 
   const meta = providers.find((p) => p.id === provider);
   const models = useMemo(() => meta?.models ?? [], [meta]);
@@ -116,14 +119,14 @@ export function LlmSettingsCard() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Save failed");
+      if (!res.ok) throw new Error(json.error || (vi ? "Lưu thất bại" : "Save failed"));
       setSettings(json.settings);
       setApiKeyInput("");
       setShowKeyField(false);
       setError(null);
-      toast.success("LLM settings saved (key encrypted on server)");
+      toast.success(vi ? "Đã lưu cài đặt LLM (key được mã hóa trên server)" : "LLM settings saved (key encrypted on server)");
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Save failed";
+      const message = e instanceof Error ? e.message : (vi ? "Lưu thất bại" : "Save failed");
       setError(message);
       toast.error(message);
     } finally {
@@ -139,13 +142,13 @@ export function LlmSettingsCard() {
         { method: "DELETE" },
       );
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed");
+      if (!res.ok) throw new Error(json.error || (vi ? "Thao tác thất bại" : "Failed"));
       setSettings(json.settings);
       setApiKeyInput("");
       setError(null);
-      toast.success("API key removed");
+      toast.success(vi ? "Đã xóa API key" : "API key removed");
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed";
+      const message = e instanceof Error ? e.message : (vi ? "Thao tác thất bại" : "Failed");
       setError(message);
       toast.error(message);
     } finally {
@@ -159,17 +162,16 @@ export function LlmSettingsCard() {
   return (
     <Card className="space-y-3">
       <div>
-        <p className="text-sm font-medium">AI provider &amp; model</p>
+        <p className="text-sm font-medium">{vi ? "Nhà cung cấp AI và model" : "AI provider & model"}</p>
         <p className="text-xs text-muted">
-          Pick provider → model. Keys are encrypted (AES-256-GCM); UI only shows{" "}
+          {vi ? "Chọn nhà cung cấp → model. Key được mã hóa (AES-256-GCM); giao diện chỉ hiển thị " : "Pick provider → model. Keys are encrypted (AES-256-GCM); UI only shows "}
           {settings?.apiKeyDisplay ?? "••••xxxx"}.
         </p>
       </div>
 
       {!settings?.encryptionReady && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Set <code>APP_ENCRYPTION_SECRET</code> (≥16 chars) in server env before
-          saving keys.
+          {vi ? <>Thiết lập <code>APP_ENCRYPTION_SECRET</code> (≥16 ký tự) trong biến môi trường server trước khi lưu key.</> : <>Set <code>APP_ENCRYPTION_SECRET</code> (≥16 chars) in server env before saving keys.</>}
         </p>
       )}
 
@@ -179,7 +181,7 @@ export function LlmSettingsCard() {
         </p>
       )}
 
-      <label className="block text-xs font-medium text-muted">Provider</label>
+      <label className="block text-xs font-medium text-muted">{vi ? "Nhà cung cấp" : "Provider"}</label>
       <select
         className={selectClass}
         value={provider}
@@ -205,7 +207,7 @@ export function LlmSettingsCard() {
             {m.tier === "free" ? " · free" : m.tier === "local" ? " · local" : ""}
           </option>
         ))}
-        <option value={CUSTOM_MODEL_VALUE}>Other / custom model id…</option>
+        <option value={CUSTOM_MODEL_VALUE}>{vi ? "Model khác / tùy chỉnh…" : "Other / custom model id…"}</option>
       </select>
 
       {(modelSelect === CUSTOM_MODEL_VALUE ||
@@ -221,7 +223,7 @@ export function LlmSettingsCard() {
           placeholder={
             provider === "ollama"
               ? "e.g. llama3.2:latest"
-              : "Paste exact model id"
+              : (vi ? "Dán đúng model ID" : "Paste exact model id")
           }
         />
       )}
@@ -286,7 +288,7 @@ export function LlmSettingsCard() {
                 {selectedKey.apiKeyDisplay}
               </span>
             ) : (
-              <span className="text-muted">none</span>
+              <span className="text-muted">{vi ? "chưa có" : "none"}</span>
             )}
           </p>
           {!showKeyField ? (
@@ -297,7 +299,7 @@ export function LlmSettingsCard() {
                 type="button"
                 onClick={() => setShowKeyField(true)}
               >
-                {selectedKey.hasApiKey ? "Replace key" : "Add API key"}
+                {selectedKey.hasApiKey ? (vi ? "Thay key" : "Replace key") : (vi ? "Thêm API key" : "Add API key")}
               </Button>
               {selectedKey.hasApiKey && (
                 <Button
@@ -307,7 +309,7 @@ export function LlmSettingsCard() {
                   onClick={removeKey}
                   disabled={saving}
                 >
-                  Remove key
+                  {vi ? "Xóa key" : "Remove key"}
                 </Button>
               )}
             </div>
@@ -329,7 +331,7 @@ export function LlmSettingsCard() {
                   setApiKeyInput("");
                 }}
               >
-                Cancel
+                {vi ? "Hủy" : "Cancel"}
               </Button>
             </div>
           )}
@@ -337,7 +339,7 @@ export function LlmSettingsCard() {
       )}
 
       <Button onClick={save} disabled={saving || !model.trim()}>
-        {saving ? "Saving…" : "Save LLM settings"}
+        {saving ? (vi ? "Đang lưu…" : "Saving…") : (vi ? "Lưu cài đặt LLM" : "Save LLM settings")}
       </Button>
     </Card>
   );

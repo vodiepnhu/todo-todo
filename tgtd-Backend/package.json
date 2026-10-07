@@ -13,6 +13,7 @@
     "seed:demo": "node scripts/seed-demo.mjs",
     "seed:demo-data": "node scripts/seed-demo-data.mjs",
     "copy:demo-drafts": "node scripts/copy-demo-drafts.mjs",
+    "backfill:rag-english": "node scripts/backfill-rag-english.mjs",
     "test": "vitest run && node scripts/seed-demo.test.mjs && node scripts/copy-demo-drafts.test.mjs && node scripts/seed-demo-data.test.mjs"
   },
   "dependencies": {

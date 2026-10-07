@@ -77,8 +77,12 @@ function isPlanClarificationFollowUp(message: string, recentChat?: string): bool
     return false;
   }
   const current = message.trim();
-  return /^(?:yes|yeah|yep|y|correct|right|that's|that is)\b/i.test(current) ||
-    /\b(?:that's|that is|it is|correct|right)\b/i.test(current);
+  if (!current || matchesGreeting(current) || /^(?:no|nah|cancel|stop)\b/i.test(current)) {
+    return false;
+  }
+  return /^(?:yes|yeah|y|correct|right|that's|that is)\b/i.test(current) ||
+    /\b(?:that's|that is|it is|correct|right)\b/i.test(current) ||
+    /\b(?:add|also|include|change|update|remove|cost|costs|budget|price|expense|food|eat(?:ing)?|meal|restaurant|tram|transport|travel|fare|ticket|date|day|time|duration|hours?|minutes?|note|preparation|prepare|booking|weather|estimate|estimated|how about|what about|give me|for \d+ days?)\b/i.test(current);
 }
 
 function needsRetrievedContext(message: string, recentChat?: string): boolean {

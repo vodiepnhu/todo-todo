@@ -90,7 +90,7 @@ describe("list-filters", () => {
     ).toBe(false);
   });
 
-  it("filterListItems All / Upcoming / Visited", () => {
+  it("filterListItems supports All / Upcoming / Visited / Skipped", () => {
     const items = [
       item({
         id: "a",
@@ -118,10 +118,13 @@ describe("list-filters", () => {
     expect(
       filterListItems(items, "Visited", visited, now).map((i) => i.id),
     ).toEqual(["b"]);
+    expect(
+      filterListItems(items, "Skipped", visited, now).map((i) => i.id),
+    ).toEqual(["s"]);
   });
 
-  it("ListFilter union covers three tabs", () => {
-    const tabs: ListFilter[] = ["All", "Upcoming", "Visited"];
-    expect(tabs).toHaveLength(3);
+  it("ListFilter union covers four tabs", () => {
+    const tabs: ListFilter[] = ["All", "Upcoming", "Visited", "Skipped"];
+    expect(tabs).toHaveLength(4);
   });
 });

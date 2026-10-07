@@ -6,11 +6,21 @@ import {
   PASSWORD_REQUIREMENT_LABELS,
   type PasswordStrength,
 } from "@/lib/auth/password-policy";
+import { useLocale } from "@/lib/i18n";
 
 const STRENGTH_LABEL: Record<PasswordStrength, string> = {
   weak: "Weak",
   fair: "Fair",
   strong: "Strong",
+};
+
+const VI_REQUIREMENTS: Record<string, string> = {
+  minLength: "Ít nhất 8 ký tự",
+  hasLower: "Một chữ thường",
+  hasUpper: "Một chữ hoa",
+  hasDigit: "Một chữ số",
+  hasSymbol: "Một ký hiệu (!@#$%…)",
+  notCommon: "Không dùng mật khẩu phổ biến",
 };
 
 const STRENGTH_BAR: Record<PasswordStrength, string> = {
@@ -26,6 +36,8 @@ export function PasswordRequirements({
   password: string;
   className?: string;
 }) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const { checks, strength, ok } = evaluatePassword(password);
   const show = password.length > 0;
 
@@ -33,7 +45,7 @@ export function PasswordRequirements({
     return (
       <ul className={cn("space-y-1 text-xs text-muted", className)}>
         {PASSWORD_REQUIREMENT_LABELS.map((r) => (
-          <li key={r.key}>• {r.label}</li>
+          <li key={r.key}>• {vi ? VI_REQUIREMENTS[r.key] : r.label}</li>
         ))}
       </ul>
     );
@@ -43,7 +55,7 @@ export function PasswordRequirements({
     <div className={cn("space-y-2", className)}>
       <div className="space-y-1">
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-muted">Strength</span>
+          <span className="text-muted">{vi ? "Độ mạnh" : "Strength"}</span>
           <span
             className={cn(
               ok ? "text-primary" : "text-muted",
@@ -51,7 +63,7 @@ export function PasswordRequirements({
               strength === "fair" && "text-todo",
             )}
           >
-            {STRENGTH_LABEL[strength]}
+            {vi ? ({ weak: "Yếu", fair: "Khá", strong: "Mạnh" }[strength]) : STRENGTH_LABEL[strength]}
           </span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-primary-soft">
@@ -68,7 +80,7 @@ export function PasswordRequirements({
               key={r.key}
               className={cn(pass ? "text-primary" : "text-muted")}
             >
-              {pass ? "✓" : "○"} {r.label}
+              {pass ? "✓" : "○"} {vi ? VI_REQUIREMENTS[r.key] : r.label}
             </li>
           );
         })}

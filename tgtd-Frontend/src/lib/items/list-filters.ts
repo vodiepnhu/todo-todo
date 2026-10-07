@@ -1,7 +1,7 @@
 import type { Item } from "@/types/database";
 import { ymdInTz } from "@/lib/dashboard/aggregates";
 
-export type ListFilter = "All" | "Upcoming" | "Visited";
+export type ListFilter = "All" | "Upcoming" | "Visited" | "Skipped";
 
 function dateOnOrAfterSydneyToday(
   iso: string | null | undefined,
@@ -36,6 +36,7 @@ export function filterListItems(
     if (filter === "All") return true;
     if (filter === "Upcoming") return isUpcomingItem(item, now);
     if (filter === "Visited") return visited;
+    if (filter === "Skipped") return item.plan_status === "SKIPPED";
     return true;
   });
 }

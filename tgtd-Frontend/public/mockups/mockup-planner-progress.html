@@ -448,6 +448,14 @@
       50% { transform: rotate(15deg) scale(1.08); }
       100% { transform: rotate(0deg) scale(1); }
     }
+    @keyframes bounceSmooth {
+      0% { transform: translateY(0) scale(1); }
+      100% { transform: translateY(-7px) scale(1.1); }
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
 
     .comparison-table {
       width: 100%;
@@ -489,9 +497,46 @@
       </div>
     </div>
 
+    <!-- PHƯƠNG ÁN MỚI (THEO GÓP Ý CỦA BẠN): SIÊU TỐI GIẢN - BOUNCING + TÔ MÀU TIẾN TRÌNH -->
+    <div class="option-card" style="border: 2px solid var(--accent); background: linear-gradient(180deg, #FFFFFF, #FFF9F6);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <span class="badge-tag" style="background: #FFE8E2; color: #C2410C; border: 1px solid #FFC9BD;">
+          🎯 Phương Án Đang Áp Dụng: Bouncing + Tô Màu Tiến Trình (Không icon & chữ rườm rà)
+        </span>
+        <span style="font-size: 11px; font-weight: 800; color: #10B981; background: #D1FAE5; padding: 3px 8px; border-radius: 8px;">
+          ✓ Đã cập nhật vào code thực tế
+        </span>
+      </div>
+      <h2 class="option-title">Siêu Gọn — Chỉ cao ~44px, không icon rườm rà, không choán chỗ</h2>
+      <p class="option-desc">
+        Loại bỏ hoàn toàn dàn 6 icon tròn và các dòng chữ từng bước gây rối mắt. Thay vào đó chỉ giữ <strong>1 biểu tượng nhảy nhảy vui nhộn</strong> cạnh tiêu đề và <strong>thanh tiến trình dải màu mịn</strong> tự động tô màu theo từng chặng.
+      </p>
+
+      <!-- Live Component Demo -->
+      <div style="background: #FFFFFF; border-radius: 16px; padding: 12px 16px; box-shadow: -4px -4px 12px rgba(255,255,255,0.95), 4px 6px 14px rgba(147, 175, 212, 0.2); border: 1px solid rgba(226, 232, 240, 0.8);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="pnew-bounce" style="font-size: 19px; display: inline-block; animation: bounceSmooth 0.7s infinite alternate ease-in-out;">🔮</span>
+            <span style="font-size: 12px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase; color: var(--primary);">
+              PLANNER IS PLOTTING...
+            </span>
+          </div>
+          <span id="pnew-pct-badge" style="font-size: 11px; font-weight: 800; color: var(--primary); background: var(--primary-soft); padding: 2px 10px; border-radius: 20px;">
+            17%
+          </span>
+        </div>
+
+        <div style="background: #E2E8F0; height: 10px; border-radius: 10px; overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+          <div id="pnew-bar" style="height: 100%; border-radius: 10px; background: linear-gradient(90deg, #0284C7, #38BDF8, #FF6B4A); width: 17%; transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative;">
+            <div style="position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 1.5s infinite;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- PHƯƠNG ÁN 1: FLIGHT TRACK (Được đề xuất nhiều nhất) -->
     <div class="option-card">
-      <span class="badge-tag badge-1">⭐ Phương án 1 (Khuyên dùng): Tuyến Bay Bày Mưu (Flight Track)</span>
+      <span class="badge-tag badge-1">⭐ Phương án 1 (Cũ): Tuyến Bay Bày Mưu (Flight Track)</span>
       <h2 class="option-title">Thanh hành trình ngang thu nhỏ (Chỉ cao 56px)</h2>
       <p class="option-desc">
         Chiếc vali lướt qua 6 trạm dừng. Bước đang chạy sẽ phóng to, lắc lư vui nhộn kèm câu thoại hài hước. Siêu gọn trong khung chat, mắt nhìn theo dễ dàng không bị choán chỗ tin nhắn.
@@ -692,6 +737,12 @@
       document.querySelectorAll('.btn-step').forEach((btn, i) => {
         btn.classList.toggle('active', i === idx);
       });
+
+      // Update Phương Án Mới Siêu Gọn
+      const pctValue = Math.min(100, Math.max(17, Math.round(((idx + 1) / 6) * 100)));
+      document.getElementById('pnew-bounce').textContent = data.icon;
+      document.getElementById('pnew-pct-badge').textContent = `${pctValue}%`;
+      document.getElementById('pnew-bar').style.width = `${pctValue}%`;
 
       // Update PA 1
       document.getElementById('p1-mascot').textContent = data.icon;

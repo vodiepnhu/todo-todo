@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { ActionType, PendingAction } from "@/types/database";
 import { toast } from "sonner";
+import { useLocale } from "@/lib/i18n";
 
 type ConfirmContextValue = {
   startConfirm: (input: {
@@ -42,6 +43,8 @@ export function ConfirmProvider({
   userId: string;
   children: React.ReactNode;
 }) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [preview, setPreview] = useState<{ title: string; body: string } | null>(
     null,
@@ -95,17 +98,17 @@ export function ConfirmProvider({
         body: JSON.stringify({ pendingId: pending.id }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Confirm failed");
+      if (!res.ok) throw new Error(json.error || (vi ? "Xác nhận thất bại" : "Confirm failed"));
       if (json.pending?.state === "EXECUTED") {
-        toast.success("Saved");
+        toast.success(vi ? "Đã lưu" : "Saved");
         setPending(null);
         setPreview(null);
         window.dispatchEvent(new Event("planner:refresh"));
       } else {
-        throw new Error("Confirm did not complete");
+        throw new Error(vi ? "Xác nhận chưa hoàn tất" : "Confirm did not complete");
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      toast.error(e instanceof Error ? e.message : (vi ? "Thất bại" : "Failed"));
     } finally {
       setBusy(false);
     }
@@ -131,19 +134,19 @@ export function ConfirmProvider({
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center">
           <Card className="w-full max-w-md space-y-3 p-5">
             <p className="text-xs font-medium uppercase tracking-wide text-primary">
-              Confirm
+              {vi ? "Xác nhận" : "Confirm"}
             </p>
             <h2 className="text-lg font-semibold">{preview.title}</h2>
             <p className="whitespace-pre-wrap text-sm text-muted">
               {preview.body}
             </p>
-            <p className="text-xs text-muted">Nothing has been saved yet.</p>
+            <p className="text-xs text-muted">{vi ? "Chưa có gì được lưu." : "Nothing has been saved yet."}</p>
             <div className="flex gap-2">
               <Button className="flex-1" onClick={confirmOnce} disabled={busy}>
-                {busy ? "Saving…" : "Confirm"}
+                {busy ? (vi ? "Đang lưu…" : "Saving…") : (vi ? "Xác nhận" : "Confirm")}
               </Button>
               <Button variant="outline" onClick={cancel} disabled={busy}>
-                Cancel
+                {vi ? "Hủy" : "Cancel"}
               </Button>
             </div>
           </Card>

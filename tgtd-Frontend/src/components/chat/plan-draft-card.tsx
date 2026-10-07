@@ -218,12 +218,14 @@ function ConfirmAction({
   isConfirming,
   isConfirmable,
   onConfirm,
+  onMoreInfo,
 }: {
-  copy: { saved: string; saving: string; confirm: string };
+  copy: { saved: string; saving: string; confirm: string; moreInfo: string };
   isConfirmed: boolean;
   isConfirming: boolean;
   isConfirmable: boolean;
   onConfirm?: () => void;
+  onMoreInfo?: () => void;
 }) {
   if (isConfirmed) {
     return <div className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><CheckCircle2 className="h-4 w-4 text-emerald-600" />{copy.saved} ✓</div>;
@@ -232,7 +234,10 @@ function ConfirmAction({
     return <Button size="sm" disabled className="w-full rounded-xl bg-primary/80 text-white text-xs font-semibold"><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />{copy.saving}</Button>;
   }
   if (!isConfirmable) return null;
-  return <Button size="sm" className="w-full rounded-xl bg-cta text-white hover:bg-cta-hover shadow-xs text-xs font-semibold transition" onClick={onConfirm}><Check className="mr-1.5 h-3.5 w-3.5" />{copy.confirm}</Button>;
+  return <div className="grid grid-cols-2 gap-2">
+    <Button size="sm" variant="outline" className="rounded-xl border-primary/30 text-xs font-semibold" onClick={onMoreInfo}>{copy.moreInfo}</Button>
+    <Button size="sm" className="rounded-xl bg-cta text-white hover:bg-cta-hover shadow-xs text-xs font-semibold transition" onClick={onConfirm}><Check className="mr-1.5 h-3.5 w-3.5" />{copy.confirm}</Button>
+  </div>;
 }
 
 export function PlanDraftCard({
@@ -241,12 +246,14 @@ export function PlanDraftCard({
   isConfirmed,
   isConfirming,
   onConfirm,
+  onMoreInfo,
 }: {
   rawContent: string;
   isConfirmable: boolean;
   isConfirmed: boolean;
   isConfirming: boolean;
   onConfirm?: () => void;
+  onMoreInfo?: () => void;
 }) {
   const { dictionary } = useLocale();
   const copy = dictionary.chat.planDraft;
@@ -254,7 +261,7 @@ export function PlanDraftCard({
 
   if (!parsed.hasStructure) {
     const cleanContent = rawContent.replace(/\n*\[Confirm\]\s*pending:\S+/g, "").trim();
-    return <div className="space-y-2"><p className="whitespace-pre-wrap leading-relaxed text-foreground">{splitChatContent(cleanContent).map((segment, index) => segment.href ? <a key={`${index}-${segment.text}`} href={segment.href} target="_blank" rel="noreferrer" className="font-medium text-primary underline underline-offset-2 hover:text-cta">{segment.text}</a> : <span key={`${index}-${segment.text}`}>{segment.text}</span>)}</p><ConfirmAction copy={copy} isConfirmed={isConfirmed} isConfirming={isConfirming} isConfirmable={isConfirmable} onConfirm={onConfirm} /></div>;
+    return <div className="space-y-2"><p className="whitespace-pre-wrap leading-relaxed text-foreground">{splitChatContent(cleanContent).map((segment, index) => segment.href ? <a key={`${index}-${segment.text}`} href={segment.href} target="_blank" rel="noreferrer" className="font-medium text-primary underline underline-offset-2 hover:text-cta">{segment.text}</a> : <span key={`${index}-${segment.text}`}>{segment.text}</span>)}</p><ConfirmAction copy={copy} isConfirmed={isConfirmed} isConfirming={isConfirming} isConfirmable={isConfirmable} onConfirm={onConfirm} onMoreInfo={onMoreInfo} /></div>;
   }
 
   const renderList = (title: string, icon: string, values: string[]) => values.length ? (
@@ -279,7 +286,7 @@ export function PlanDraftCard({
       {renderList(copy.notes, "📝", parsed.notes)}
       {parsed.missing.length ? <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-2.5 text-xs text-amber-900"><div className="flex items-center gap-1.5 font-semibold text-amber-950"><AlertCircle className="h-3.5 w-3.5 text-amber-600" /><span>{copy.missing}</span></div><ul className="mt-1 list-inside list-disc space-y-0.5 text-[11px]">{parsed.missing.map((value, index) => <li key={`${value}-${index}`}>{value}</li>)}</ul></div> : null}
       {parsed.generalNotes.length ? <div className="space-y-1 border-t border-orange-100/70 pt-2 text-xs text-foreground/70">{parsed.generalNotes.map((note, index) => <p key={`${note}-${index}`}>{note}</p>)}</div> : null}
-      <ConfirmAction copy={copy} isConfirmed={isConfirmed} isConfirming={isConfirming} isConfirmable={isConfirmable} onConfirm={onConfirm} />
+      <ConfirmAction copy={copy} isConfirmed={isConfirmed} isConfirming={isConfirming} isConfirmable={isConfirmable} onConfirm={onConfirm} onMoreInfo={onMoreInfo} />
     </div>
   );
 }

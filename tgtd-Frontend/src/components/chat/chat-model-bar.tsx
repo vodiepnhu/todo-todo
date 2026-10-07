@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { LlmProvider } from "@/lib/ai/providers";
+import { useLocale } from "@/lib/i18n";
 
 type ModelOption = { id: string; label: string; tier?: string };
 
@@ -27,6 +28,8 @@ type ProviderMeta = {
  * - not configured: More settings only (no model change)
  */
 export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const [settings, setSettings] = useState<Settings | null>(null);
   const [providers, setProviders] = useState<ProviderMeta[]>([]);
   const [saving, setSaving] = useState(false);
@@ -66,11 +69,11 @@ export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) 
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Could not update model");
+      if (!res.ok) throw new Error(json.error || (vi ? "Không thể cập nhật model" : "Could not update model"));
       setSettings(json.settings);
-      toast.success(`Model: ${modelId}`);
+      toast.success(`${vi ? "Model" : "Model"}: ${modelId}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update model");
+      toast.error(e instanceof Error ? e.message : (vi ? "Không thể cập nhật model" : "Could not update model"));
     } finally {
       setSaving(false);
     }
@@ -81,16 +84,16 @@ export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) 
       href={settingsHref}
       className="shrink-0 text-xs font-medium text-primary underline-offset-2 hover:underline"
     >
-      More settings
+      {vi ? "Cài đặt thêm" : "More settings"}
     </Link>
   ) : (
-    <span className="text-xs text-muted">Open a project → Settings</span>
+    <span className="text-xs text-muted">{vi ? "Mở dự án → Cài đặt" : "Open a project → Settings"}</span>
   );
 
   if (!settings) {
     return (
       <div className="flex items-center justify-between gap-2 text-xs text-muted">
-        <span>Loading model…</span>
+        <span>{vi ? "Đang tải model…" : "Loading model…"}</span>
         {moreLink}
       </div>
     );
@@ -100,14 +103,14 @@ export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) 
     return (
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-primary-soft/50 px-2.5 py-2">
         <p className="text-xs text-muted">
-          Set up provider &amp; API key to choose a model.
+          {vi ? "Thiết lập nhà cung cấp và API key để chọn model." : "Set up provider &amp; API key to choose a model."}
         </p>
         {settingsHref ? (
           <Link
             href={settingsHref}
             className="rounded-lg bg-cta px-2.5 py-1 text-xs font-medium text-white hover:bg-cta-hover"
           >
-            More settings
+            {vi ? "Cài đặt thêm" : "More settings"}
           </Link>
         ) : (
           moreLink
@@ -122,7 +125,7 @@ export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <label className="sr-only" htmlFor="chat-model-select">
-        Model
+        {vi ? "Model" : "Model"}
       </label>
       <select
         id="chat-model-select"
@@ -136,7 +139,7 @@ export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) 
         }}
       >
         {!modelInList && (
-          <option value="__custom__">Custom: {settings.model}</option>
+          <option value="__custom__">{vi ? "Tùy chỉnh" : "Custom"}: {settings.model}</option>
         )}
         {models.map((m) => (
           <option key={m.id} value={m.id}>

@@ -77,7 +77,7 @@ export function QuickAddModal({
         fallbackDetail?: string;
         error?: string;
       };
-      if (!res.ok) throw new Error(json.error || "Extract failed");
+      if (!res.ok) throw new Error(json.error || (vi ? "Trích xuất thất bại" : "Extract failed"));
       setPlan(json.draft as PlanDraft);
       setPlanMissing((json.missing as string[]) ?? []);
       setPlanSuggested(true);
@@ -86,14 +86,14 @@ export function QuickAddModal({
         const reason = json.fallbackReason;
         toast.message(
           reason === "provider_error"
-              ? `LLM request failed (${json.fallbackDetail ?? "provider error"}); drafted with fallback model.`
+              ? (vi ? `LLM thất bại (${json.fallbackDetail ?? "lỗi nhà cung cấp"}); đã tạo bằng model dự phòng.` : `LLM request failed (${json.fallbackDetail ?? "provider error"}); drafted with fallback model.`)
             : reason === "invalid_response"
-              ? `LLM returned invalid plan data (${json.fallbackDetail ?? "schema mismatch"}); drafted with fallback model.`
-              : "No usable account LLM key; drafted with fallback model. Check Account > AI settings.",
+              ? (vi ? `LLM trả về dữ liệu kế hoạch không hợp lệ (${json.fallbackDetail ?? "sai schema"}); đã tạo bằng model dự phòng.` : `LLM returned invalid plan data (${json.fallbackDetail ?? "schema mismatch"}); drafted with fallback model.`)
+              : (vi ? "Không có LLM key khả dụng; đã tạo bằng model dự phòng. Kiểm tra Tài khoản > cài đặt AI." : "No usable account LLM key; drafted with fallback model. Check Account > AI settings."),
         );
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Extract failed");
+      toast.error(e instanceof Error ? e.message : (vi ? "Trích xuất thất bại" : "Extract failed"));
       setStep(fallback);
     } finally {
       setBusy(false);
@@ -108,7 +108,7 @@ export function QuickAddModal({
     };
     const parsed = PlanSchema.safeParse(cleaned);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message || "Place name required");
+      toast.error(parsed.error.issues[0]?.message || (vi ? "Cần nhập tên địa điểm" : "Place name required"));
       return;
     }
     setBusy(true);
@@ -138,15 +138,15 @@ export function QuickAddModal({
         body: JSON.stringify({ pendingId: pending.id }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Confirm failed");
+      if (!res.ok) throw new Error(json.error || (vi ? "Xác nhận thất bại" : "Confirm failed"));
       if (json.pending?.state !== "EXECUTED") {
-        throw new Error("Confirm did not complete");
+        throw new Error(vi ? "Xác nhận chưa hoàn tất" : "Confirm did not complete");
       }
-      toast.success("Plan saved");
+      toast.success(vi ? "Đã lưu kế hoạch" : "Plan saved");
       window.dispatchEvent(new Event("planner:refresh"));
       onClose();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(e instanceof Error ? e.message : (vi ? "Lưu thất bại" : "Save failed"));
     } finally {
       setBusy(false);
     }

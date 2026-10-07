@@ -10,6 +10,29 @@ import {
   reciprocalRankFusion,
 } from "../lib/rag/hybrid";
 
+export type TranslateText = (text: string) => Promise<string>;
+
+function detectSourceLanguage(text: string): "vi" | "en" | "other" {
+  if (/\p{Script=Latin}/u.test(text) && /[ăâđêôơưĂÂĐÊÔƠƯà-ỹÀ-Ỹ]/u.test(text)) {
+    return "vi";
+  }
+  if (/\p{Script=Latin}/u.test(text)) return "en";
+  return "other";
+}
+
+async function translateForRag(
+  text: string,
+  translate?: TranslateText,
+): Promise<string> {
+  if (!translate) return text;
+  try {
+    const translated = (await translate(text)).trim();
+    return translated || text;
+  } catch {
+    return text;
+  }
+}
+
 export function buildItemChunkText(
   item: Pick<
     Item,
@@ -64,14 +87,21 @@ export async function upsertItemEmbedding(
     tags?: string[];
   },
   chunkOverride?: string,
+  options?: {
+    translate?: TranslateText;
+  },
 ): Promise<void> {
   const chunk = chunkOverride || buildItemChunkText(item);
-  const { embedding, model } = await embedText(chunk);
-  const { error } = await supabase.rpc("upsert_item_embedding", {
+  const chunkEn = await translateForRag(chunk, options?.translate);
+  const { embedding, model } = await embedText(chunkEn);
+  const payload = {
     p_workspace_id: item.workspace_id,
     p_source_type: "item",
     p_source_id: item.id,
     p_chunk_text: chunk,
+    p_chunk_text_en: chunkEn,
+    p_source_language: detectSourceLanguage(chunk),
+    p_translation_version: "v1",
     p_embedding: vectorToPgLiteral(embedding),
     p_metadata: {
       item_type: item.item_type,
@@ -81,9 +111,21 @@ export async function upsertItemEmbedding(
       project_name: projectMeta?.projectName,
       tags: projectMeta?.tags ?? [],
     },
-  });
+  };
+  const { error } = await supabase.rpc("upsert_item_embedding", payload);
   if (error) {
-    console.warn("upsertItemEmbedding failed", error.message);
+    // Keep writes working while deployments roll out the new RPC signature.
+    const fallback = await supabase.rpc("upsert_item_embedding", {
+      p_workspace_id: item.workspace_id,
+      p_source_type: "item",
+      p_source_id: item.id,
+      p_chunk_text: chunk,
+      p_embedding: vectorToPgLiteral(embedding),
+      p_metadata: payload.p_metadata,
+    });
+    if (fallback.error) {
+      console.warn("upsertItemEmbedding failed", fallback.error.message);
+    }
   }
 }
 
@@ -248,13 +290,18 @@ export async function hybridRetrieveItemHits(
     limit?: number;
     includeChat?: boolean;
     recentChat?: string;
+    translate?: TranslateText;
   },
 ): Promise<RetrievedHit[]> {
   const ids = Array.isArray(workspaceIds) ? workspaceIds : [workspaceIds];
   if (!ids.length || !query.trim()) return [];
   const limit = opts?.limit ?? 20;
-  const filters = parseRagMetaFilters(query);
-  const expanded = buildRagSearchQuery(query, opts?.recentChat);
+  const normalizedQuery = await translateForRag(query, opts?.translate);
+  const normalizedRecentChat = opts?.recentChat
+    ? await translateForRag(opts.recentChat, opts.translate)
+    : undefined;
+  const filters = parseRagMetaFilters(normalizedQuery);
+  const expanded = buildRagSearchQuery(normalizedQuery, normalizedRecentChat);
 
   const [sem, kw, chat] = await Promise.all([
     semanticHits(
@@ -268,13 +315,13 @@ export async function hybridRetrieveItemHits(
     keywordHits(
       supabase,
       ids,
-      query,
+      normalizedQuery,
       limit,
       filters.itemType ?? null,
       filters.tag ?? null,
     ),
     opts?.includeChat && ids.length === 1
-      ? keywordMatchChatMessages(supabase, ids[0]!, query, 8)
+      ? keywordMatchChatMessages(supabase, ids[0]!, normalizedQuery, 8)
       : Promise.resolve([] as RetrievedHit[]),
   ]);
 

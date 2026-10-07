@@ -7,6 +7,7 @@ import {
   normalizeHex,
 } from "@/lib/project-appearance";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n";
 
 type Props = {
   name: string;
@@ -23,9 +24,11 @@ export function ProjectAppearancePicker({
   onIconChange,
   onColorChange,
 }: Props) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const accent = normalizeHex(color) ?? "#0f766e";
   const pickerValue = normalizeHex(color) ?? "#0f766e";
-  const displayName = name.trim() || "Untitled project";
+  const displayName = name.trim() || (vi ? "Dự án chưa đặt tên" : "Untitled project");
 
   return (
     <div className="space-y-3">
@@ -45,19 +48,19 @@ export function ProjectAppearancePicker({
             {icon ? `${icon} ` : ""}
             {displayName}
           </p>
-          <p className="text-[11px] text-muted">Live preview</p>
+          <p className="text-[11px] text-muted">{vi ? "Xem trước" : "Live preview"}</p>
         </div>
       </div>
 
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <p className="text-xs font-medium text-muted">Icon</p>
+          <p className="text-xs font-medium text-muted">{vi ? "Biểu tượng" : "Icon"}</p>
           <button
             type="button"
             className="text-[11px] text-muted underline-offset-2 hover:underline"
             onClick={() => onIconChange("")}
           >
-            Clear icon
+            {vi ? "Xóa biểu tượng" : "Clear icon"}
           </button>
         </div>
         <div className="grid grid-cols-8 gap-1.5">
@@ -83,13 +86,13 @@ export function ProjectAppearancePicker({
 
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <p className="text-xs font-medium text-muted">Color</p>
+          <p className="text-xs font-medium text-muted">{vi ? "Màu" : "Color"}</p>
           <button
             type="button"
             className="text-[11px] text-muted underline-offset-2 hover:underline"
             onClick={() => onColorChange("")}
           >
-            Clear color
+            {vi ? "Xóa màu" : "Clear color"}
           </button>
         </div>
         <div className="mb-2 flex flex-wrap gap-2">
@@ -115,14 +118,14 @@ export function ProjectAppearancePicker({
         <Input
           value={icon}
           onChange={(e) => onIconChange(e.target.value)}
-          placeholder="Custom emoji"
-          aria-label="Custom emoji"
+          placeholder={vi ? "Emoji tùy chỉnh" : "Custom emoji"}
+          aria-label={vi ? "Emoji tùy chỉnh" : "Custom emoji"}
           className="min-w-[7rem] flex-1"
         />
         <input
           type="color"
           value={pickerValue}
-          aria-label="Pick color"
+          aria-label={vi ? "Chọn màu" : "Pick color"}
           onChange={(e) => onColorChange(e.target.value)}
           className="h-10 w-10 cursor-pointer rounded-lg border border-border bg-surface p-1"
         />
@@ -130,7 +133,7 @@ export function ProjectAppearancePicker({
           value={color}
           onChange={(e) => onColorChange(e.target.value)}
           placeholder="#0f766e"
-          aria-label="Color hex"
+          aria-label={vi ? "Mã màu" : "Color hex"}
           className="min-w-[7rem] flex-1 font-mono text-sm"
         />
       </div>

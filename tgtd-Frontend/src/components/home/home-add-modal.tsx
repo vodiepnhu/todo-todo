@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { QuickAddModal } from "@/components/items/quick-add-modal";
 import { createProject } from "@/services/workspace-service";
 import { toast } from "sonner";
+import { useLocale } from "@/lib/i18n";
 
 export type HomeProjectOption = { id: string; name: string };
 
@@ -29,6 +30,8 @@ export function HomeAddModal({
   initialText?: string;
   onProjectCreated?: (project: HomeProjectOption) => void;
 }) {
+  const { locale } = useLocale();
+  const vi = locale === "vi";
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -58,7 +61,7 @@ export function HomeAddModal({
   async function handleCreate() {
     const name = newName.trim();
     if (!name) {
-      toast.error("Project name required");
+      toast.error(vi ? "Cần nhập tên dự án" : "Project name required");
       return;
     }
     setCreating(true);
@@ -68,9 +71,9 @@ export function HomeAddModal({
       const opt = { id: ws.id, name: ws.name };
       onProjectCreated?.(opt);
       setWorkspaceId(ws.id);
-      toast.success(`Created ${ws.name}`);
+      toast.success(vi ? `Đã tạo ${ws.name}` : `Created ${ws.name}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not create project");
+      toast.error(e instanceof Error ? e.message : (vi ? "Không thể tạo dự án" : "Could not create project"));
     } finally {
       setCreating(false);
     }
@@ -79,13 +82,12 @@ export function HomeAddModal({
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/35 backdrop-blur-xs p-4 sm:items-center">
       <Card className="w-full max-w-lg space-y-4 p-6 rounded-3xl border border-white/90 bg-white/95 shadow-2xl backdrop-blur-md">
-        <h2 className="text-lg font-semibold">Add to which project?</h2>
+        <h2 className="text-lg font-semibold">{vi ? "Thêm vào dự án nào?" : "Add to which project?"}</h2>
         <p className="text-xs text-muted">
-          Pick an existing project or create a new one, then fill the activity
-          form.
+          {vi ? "Chọn dự án hiện có hoặc tạo dự án mới, sau đó điền form hoạt động." : "Pick an existing project or create a new one, then fill the activity form."}
         </p>
         {projects.length === 0 ? (
-          <p className="text-sm text-muted">No projects yet — create one below.</p>
+          <p className="text-sm text-muted">{vi ? "Chưa có dự án — tạo một dự án bên dưới." : "No projects yet — create one below."}</p>
         ) : (
           <ul className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
             {projects.map((p) => (
@@ -102,9 +104,9 @@ export function HomeAddModal({
           </ul>
         )}
         <div className="space-y-2 border-t border-border pt-3">
-          <p className="text-xs font-medium text-foreground">New project</p>
+          <p className="text-xs font-medium text-foreground">{vi ? "Dự án mới" : "New project"}</p>
           <Input
-            placeholder="Project name"
+            placeholder={vi ? "Tên dự án" : "Project name"}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             disabled={creating}
@@ -120,11 +122,11 @@ export function HomeAddModal({
             disabled={creating || !newName.trim()}
             onClick={() => void handleCreate()}
           >
-            {creating ? "Creating…" : "Create & continue"}
+            {creating ? (vi ? "Đang tạo…" : "Creating…") : (vi ? "Tạo và tiếp tục" : "Create & continue")}
           </Button>
         </div>
         <Button variant="ghost" className="w-full" onClick={onClose}>
-          Cancel
+          {vi ? "Hủy" : "Cancel"}
         </Button>
       </Card>
     </div>
