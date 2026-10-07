@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
 import type { ActionType, Item, PendingAction } from "../types/database";
 import { env } from "../lib/env";
 import {
@@ -63,6 +64,7 @@ export async function findActivePlanPending(
     .eq("initiated_by", userId)
     .eq("action_type", "CREATE")
     .eq("state", "AWAITING_CONFIRM_2")
+    .is("before_json", null)
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(1)
@@ -89,6 +91,7 @@ export async function updatePendingPlan(
     .eq("initiated_by", userId)
     .eq("action_type", "CREATE")
     .eq("state", "AWAITING_CONFIRM_2")
+    .is("before_json", null)
     .gt("expires_at", new Date().toISOString())
     .select("*")
     .maybeSingle();
@@ -128,16 +131,29 @@ export async function advanceConfirmation(
   ) {
     throw new Error(`Invalid pending state: ${pending.state}`);
   }
+  if (pending.before_json?.__confirmation_claim) {
+    throw new Error("Pending action was already confirmed");
+  }
 
   if (new Date(pending.expires_at) < new Date()) {
-    await supabase
+    const expiryQuery = supabase
       .from("pending_actions")
       .update({ state: "EXPIRED" })
       .eq("id", pendingId)
-      .eq("initiated_by", userId);
+      .eq("initiated_by", userId)
+      .eq("state", pending.state)
+      .eq("payload_json", JSON.stringify(pending.payload_json))
+      .lte("expires_at", new Date().toISOString());
+    const { error: expiryError } = await (
+      pending.before_json === null
+        ? expiryQuery.is("before_json", null)
+        : expiryQuery.eq("before_json", JSON.stringify(pending.before_json))
+    );
+    if (expiryError) throw expiryError;
     throw new Error("Confirmation expired");
   }
 
+  const payloadSnapshot = JSON.stringify(pending.payload_json ?? {});
   const guard = validatePendingPayload(
     pending.action_type,
     (pending.payload_json ?? {}) as Record<string, unknown>,
@@ -172,14 +188,63 @@ export async function advanceConfirmation(
     }
   }
 
-  const executed = await executePending(supabase, pending as PendingAction, userId);
-
-  const { data: done, error: doneErr } = await supabase
+  const claim = {
+    __confirmation_claim: randomUUID(),
+    previous: pending.before_json,
+  };
+  const claimQuery = supabase
     .from("pending_actions")
-    .update({ state: "EXECUTED", executed_at: new Date().toISOString() })
+    .update({ before_json: claim })
     .eq("id", pendingId)
     .eq("initiated_by", userId)
     .eq("state", pending.state)
+    .eq("payload_json", payloadSnapshot)
+    .gt("expires_at", new Date().toISOString());
+  const { data: claimed, error: claimError } = await (
+    pending.before_json === null
+      ? claimQuery.is("before_json", null)
+      : claimQuery.eq("before_json", JSON.stringify(pending.before_json))
+  ).select("*").maybeSingle();
+  if (claimError) throw claimError;
+  if (!claimed) throw new Error("Pending action changed or was already confirmed");
+
+  let executed: Item | null;
+  let writeStarted = false;
+  try {
+    executed = await executePending(supabase, claimed as PendingAction, userId, () => {
+      writeStarted = true;
+    });
+  } catch (executionError) {
+    if (writeStarted) {
+      throw new Error("Execution outcome uncertain; pending action requires reconciliation", {
+        cause: executionError,
+      });
+    }
+    const { data: restored, error: restoreError } = await supabase
+      .from("pending_actions")
+      .update({ before_json: pending.before_json })
+      .eq("id", pendingId)
+      .eq("initiated_by", userId)
+      .eq("state", pending.state)
+      .eq("before_json", JSON.stringify(claim))
+      .select("id")
+      .maybeSingle();
+    if (restoreError || !restored) {
+      throw new AggregateError(
+        [executionError, restoreError ?? new Error("Confirmation claim recovery failed")],
+        "Execution failed and confirmation claim could not be released",
+      );
+    }
+    throw executionError;
+  }
+
+  const { data: done, error: doneErr } = await supabase
+    .from("pending_actions")
+    .update({ state: "EXECUTED", executed_at: new Date().toISOString(), before_json: pending.before_json })
+    .eq("id", pendingId)
+    .eq("initiated_by", userId)
+    .eq("state", pending.state)
+    .eq("before_json", JSON.stringify(claim))
     .select("*")
     .maybeSingle();
   if (doneErr) throw doneErr;
@@ -192,6 +257,7 @@ async function executePending(
   supabase: SupabaseClient,
   pending: PendingAction,
   userId: string,
+  onWrite: () => void,
 ): Promise<Item | null> {
   const payload = pending.payload_json;
   let item: Item | null = null;
@@ -200,6 +266,7 @@ async function executePending(
   if (pending.action_type === "CREATE_PROJECT") {
     const name = String(payload.name ?? "").trim();
     if (!name) throw new Error("Project name required");
+    onWrite();
     const ws = await createProject(supabase, userId, name, {
       description: (payload.description as string | undefined) ?? undefined,
       tags: (payload.tags as string[] | undefined) ?? undefined,
@@ -233,6 +300,7 @@ async function executePending(
       if (plan.googleMapsUrl && !safeMapsRedirect(plan.googleMapsUrl)) {
         throw new Error("Untrusted Google Maps URL");
       }
+      onWrite();
       item = await persistPlan(supabase, workspaceId, userId, plan);
       summary = `Added plan ${item.title}`;
       const { data: wsMeta } = await supabase
@@ -268,6 +336,7 @@ async function executePending(
         }),
       );
     } else {
+      onWrite();
       const { data, error } = await supabase
         .from("items")
         .insert({
@@ -333,6 +402,7 @@ async function executePending(
   } else if (pending.action_type === "UPDATE") {
     const id = payload.id as string;
     const { data: existing } = await supabase.from("items").select("*").eq("id", id).single();
+    onWrite();
     const { data, error } = await supabase
       .from("items")
       .update({
@@ -365,6 +435,7 @@ async function executePending(
     });
   } else if (pending.action_type === "DELETE") {
     const id = payload.id as string;
+    onWrite();
     const { data, error } = await supabase
       .from("items")
       .update({
@@ -393,6 +464,7 @@ async function executePending(
         .maybeSingle();
       targetId = found?.id;
       if (!targetId) {
+        onWrite();
         const { data: created } = await supabase
           .from("items")
           .insert({
@@ -413,6 +485,7 @@ async function executePending(
       }
     }
     if (!targetId) throw new Error("No item for event");
+    onWrite();
     await supabase.from("item_events").insert({
       workspace_id: workspaceId,
       item_id: targetId,
