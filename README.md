@@ -186,3 +186,21 @@ The root project coordinates active workspaces:
 
 Do not import backend internals through source paths. Use public package
 exports when backend consumers are added.
+
+## Production Container
+
+See [`DEPLOY.md`](./DEPLOY.md) for the complete Docker flow. The package runs
+the Next.js app in one container and connects to an external Supabase project.
+
+For a fresh demo installation:
+
+```bash
+cp .env.production.example .env.production
+# Fill Supabase and provider values in .env.production.
+npx supabase link --project-ref <project-ref>
+npx supabase db push
+docker compose --env-file .env.production --profile demo run --rm seed
+docker compose --env-file .env.production up -d --build
+```
+
+Demo login: `demo@local.test` / `123456`.

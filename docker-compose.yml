@@ -1,0 +1,33 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: ${NEXT_PUBLIC_GOOGLE_AUTH_ENABLED:-false}
+        NEXT_PUBLIC_ENABLE_LOCAL_DEMO_ACCOUNT: ${NEXT_PUBLIC_ENABLE_LOCAL_DEMO_ACCOUNT:-false}
+        NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY:-}
+    env_file:
+      - path: .env.production
+        required: true
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    init: true
+    restart: unless-stopped
+
+  seed:
+    profiles: ["demo"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: seed
+    env_file:
+      - path: .env.production
+        required: true
+    environment:
+      NODE_ENV: development
+      ENABLE_LOCAL_DEMO_ACCOUNT: "true"
+    restart: "no"
