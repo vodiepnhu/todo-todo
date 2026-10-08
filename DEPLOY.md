@@ -150,31 +150,3 @@ docker compose --env-file .env.production up -d --build
 
 Do not duplicate environment variable names in `.env.production`; the last
 duplicate value can override the correct value.
-
-## Troubleshooting seed connection
-
-`AuthRetryableFetchError: fetch failed` usually means the container cannot reach
-`SUPABASE_INTERNAL_URL`.
-
-For hosted Supabase, both URLs must use the hosted project URL. For the project
-ref `fjtyxsljnjgqvbhfvgot`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://fjtyxsljnjgqvbhfvgot.supabase.co
-SUPABASE_INTERNAL_URL=https://fjtyxsljnjgqvbhfvgot.supabase.co
-```
-
-Do not use `http://127.0.0.1:54321` or `http://localhost:54321` for hosted
-Supabase. Restart the seed command after changing the env file:
-
-```bash
-docker compose --env-file .env.production --profile demo run --rm seed
-```
-
-For local Supabase running on the host machine, keep the browser URL on
-`127.0.0.1` but use Docker's host address for server-side access:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_INTERNAL_URL=http://host.docker.internal:54321
-```
