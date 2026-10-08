@@ -4,6 +4,7 @@ import {
   resolveOpenRouterCost,
   type LlmUsage,
 } from "./llm-usage";
+import { buildThinkingPayload, type ThinkingMode } from "@togo-todo/agent";
 
 export type LlmProvider =
   | "openrouter"
@@ -160,6 +161,7 @@ export type LlmCallConfig = {
   model: string;
   apiKey: string | null;
   baseUrl: string | null;
+  thinkingMode?: ThinkingMode;
 };
 
 export async function chatCompletionJson(
@@ -224,6 +226,7 @@ async function callOpenAiCompatible(
         ? {}
         : { response_format: { type: "json_object" } }),
       ...(config.provider === "openrouter" ? { usage: { include: true } } : {}),
+      ...buildThinkingPayload(config.provider, config.thinkingMode ?? "auto"),
     }),
     signal: AbortSignal.timeout(45_000),
   });
@@ -288,6 +291,7 @@ async function callAnthropic(
       max_tokens: 2048,
       system,
       messages: rest,
+      ...buildThinkingPayload("anthropic", config.thinkingMode ?? "auto"),
     }),
     signal: AbortSignal.timeout(45_000),
   });
@@ -326,7 +330,10 @@ async function callGemini(
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: userParts }] }],
-      generationConfig: { responseMimeType: "application/json" },
+      generationConfig: {
+        responseMimeType: "application/json",
+        ...buildThinkingPayload("gemini", config.thinkingMode ?? "auto"),
+      },
     }),
     signal: AbortSignal.timeout(45_000),
   });
@@ -368,6 +375,7 @@ async function callOllama(
       stream: false,
       format: "json",
       messages,
+      ...buildThinkingPayload("ollama", config.thinkingMode ?? "auto"),
     }),
     signal: AbortSignal.timeout(45_000),
   });

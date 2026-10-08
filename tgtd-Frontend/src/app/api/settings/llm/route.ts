@@ -5,8 +5,10 @@ import {
   getLlmSettingsPublic,
   LLM_MODELS,
   LLM_PROVIDERS,
+  thinkingOptionsForProvider,
   upsertLlmSettings,
   type LlmProvider,
+  type ThinkingMode,
 } from "@togo-todo/agent";
 import { z } from "zod";
 
@@ -29,6 +31,7 @@ export async function GET() {
         defaultBaseUrl: p.defaultBaseUrl ?? null,
         needsKey: p.needsKey,
         hint: p.hint,
+        thinkingOptions: thinkingOptionsForProvider(p.id),
         models: LLM_MODELS[p.id],
       })),
       modelsByProvider: LLM_MODELS,
@@ -54,6 +57,7 @@ const putSchema = z.object({
   ]),
   model: z.string().min(1).max(200),
   baseUrl: z.string().max(500).nullable().optional(),
+  thinkingMode: z.enum(["auto", "off", "on", "low", "medium", "high"]).optional(),
   // empty string / omit = keep existing key
   apiKey: z.string().max(500).nullable().optional(),
   clearApiKey: z.boolean().optional(),
@@ -73,6 +77,7 @@ export async function PUT(request: Request) {
       provider: body.provider as LlmProvider,
       model: body.model,
       baseUrl: body.baseUrl,
+      thinkingMode: body.thinkingMode as ThinkingMode | undefined,
       apiKey: body.apiKey,
       clearApiKey: body.clearApiKey,
     });

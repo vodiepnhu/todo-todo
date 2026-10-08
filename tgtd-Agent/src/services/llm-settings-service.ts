@@ -6,6 +6,7 @@ import {
   maskApiKey,
 } from "../lib/crypto/secrets";
 import type { LlmCallConfig, LlmProvider } from "../lib/ai/providers";
+import { normalizeThinkingMode, type ThinkingMode } from "../lib/ai/thinking";
 import { LLM_PROVIDERS } from "../lib/ai/providers";
 import { getEnv } from "../lib/env";
 
@@ -13,6 +14,7 @@ export type LlmSettingsPublic = {
   provider: LlmProvider;
   model: string;
   baseUrl: string | null;
+  thinkingMode: ThinkingMode;
   hasApiKey: boolean;
   apiKeyDisplay: string | null;
   keysByProvider: Partial<Record<LlmProvider, LlmProviderKeyStatus>>;
@@ -30,6 +32,7 @@ type Row = {
   provider: string;
   model: string;
   base_url: string | null;
+  thinking_mode: string | null;
   api_key_ciphertext: string | null;
   api_key_last4: string | null;
   has_api_key: boolean;
@@ -75,7 +78,7 @@ export async function getLlmSettingsPublic(
     const admin = createAdminClient();
     const { data } = await admin
       .from("user_llm_settings")
-      .select("provider, model, base_url, api_key_last4, has_api_key")
+      .select("provider, model, base_url, thinking_mode, api_key_last4, has_api_key")
       .eq("user_id", userId)
       .maybeSingle();
     const { data: providerKeyRows } = await admin
@@ -91,6 +94,7 @@ export async function getLlmSettingsPublic(
         provider: "openrouter",
         model: getEnv().OPENROUTER_MODEL,
         baseUrl: null,
+        thinkingMode: "auto",
         hasApiKey: false,
         apiKeyDisplay: null,
         keysByProvider,
@@ -112,6 +116,7 @@ export async function getLlmSettingsPublic(
       provider: data.provider as LlmProvider,
       model: data.model,
       baseUrl: data.base_url,
+      thinkingMode: normalizeThinkingMode(data.thinking_mode),
       hasApiKey: activeKey.hasApiKey,
       apiKeyDisplay: activeKey.apiKeyDisplay,
       keysByProvider,
@@ -123,6 +128,7 @@ export async function getLlmSettingsPublic(
       provider: "openrouter",
       model: getEnv().OPENROUTER_MODEL,
       baseUrl: null,
+      thinkingMode: "auto",
       hasApiKey: false,
       apiKeyDisplay: null,
       keysByProvider: {},
@@ -166,6 +172,7 @@ export async function resolveLlmCallConfig(
           model: data.model,
           apiKey,
           baseUrl: data.base_url,
+          thinkingMode: normalizeThinkingMode(data.thinking_mode),
         };
       }
 
@@ -178,6 +185,7 @@ export async function resolveLlmCallConfig(
           model: data.model,
           apiKey: null,
           baseUrl: data.base_url,
+          thinkingMode: normalizeThinkingMode(data.thinking_mode),
         };
       }
 
@@ -191,6 +199,7 @@ export async function resolveLlmCallConfig(
           model: data.model,
           apiKey: env.OPENROUTER_API_KEY,
           baseUrl: data.base_url || "https://openrouter.ai/api/v1",
+          thinkingMode: normalizeThinkingMode(data.thinking_mode),
         };
       }
     }
@@ -204,6 +213,7 @@ export async function resolveLlmCallConfig(
       model: env.OPENROUTER_MODEL,
       apiKey: env.OPENROUTER_API_KEY,
       baseUrl: "https://openrouter.ai/api/v1",
+      thinkingMode: "auto",
     };
   }
 
@@ -216,6 +226,7 @@ export async function upsertLlmSettings(
     provider: LlmProvider;
     model: string;
     baseUrl?: string | null;
+    thinkingMode?: ThinkingMode;
     apiKey?: string | null;
     clearApiKey?: boolean;
   },
@@ -286,6 +297,7 @@ export async function upsertLlmSettings(
     provider: input.provider,
     model: input.model.trim(),
     base_url: input.baseUrl?.trim() || meta.defaultBaseUrl || null,
+    thinking_mode: input.thinkingMode ?? normalizeThinkingMode(existing?.thinking_mode),
     api_key_ciphertext: ciphertext,
     api_key_last4: last4,
     has_api_key: hasKey,
@@ -325,6 +337,7 @@ export async function clearLlmApiKey(
       provider: current.provider,
       model: current.model,
       baseUrl: current.baseUrl,
+      thinkingMode: current.thinkingMode,
       clearApiKey: true,
     });
   }

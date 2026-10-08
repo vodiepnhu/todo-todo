@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import type { LlmProvider } from "@/lib/ai/providers";
+import type { ThinkingMode, ThinkingOption } from "@togo-todo/agent";
 import { useLocale } from "@/lib/i18n";
 
 type ProviderMeta = {
@@ -14,12 +15,14 @@ type ProviderMeta = {
   defaultBaseUrl: string | null;
   needsKey: boolean;
   hint: string;
+  thinkingOptions?: ThinkingOption[];
 };
 
 type Settings = {
   provider: LlmProvider;
   model: string;
   baseUrl: string | null;
+  thinkingMode: ThinkingMode;
   hasApiKey: boolean;
   apiKeyDisplay: string | null;
   keysByProvider?: Partial<
@@ -36,6 +39,7 @@ export function LlmSettingsCard() {
   const [provider, setProvider] = useState<LlmProvider>("openrouter");
   const [model, setModel] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
+  const [thinkingMode, setThinkingMode] = useState<ThinkingMode>("auto");
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [showKeyField, setShowKeyField] = useState(false);
@@ -52,6 +56,7 @@ export function LlmSettingsCard() {
         setProvider(json.settings.provider);
         setModel(json.settings.model);
         setBaseUrl(json.settings.baseUrl ?? "");
+        setThinkingMode(json.settings.thinkingMode ?? "auto");
         setError(null);
       } catch (e) {
         const message =
@@ -79,6 +84,7 @@ export function LlmSettingsCard() {
       setModel("");
       setBaseUrl(p.defaultBaseUrl ?? "");
     }
+    setThinkingMode("auto");
     setApiKeyInput("");
     setShowKeyField(false);
   }
@@ -93,6 +99,7 @@ export function LlmSettingsCard() {
           provider,
           model: model.trim(),
           baseUrl: baseUrl || null,
+          thinkingMode,
           apiKey: apiKeyInput.trim() ? apiKeyInput.trim() : null,
         }),
       });
@@ -136,6 +143,15 @@ export function LlmSettingsCard() {
 
   const selectClass =
     "h-10 w-full rounded-xl border border-border bg-surface px-3 text-sm";
+  const thinkingOptions = meta?.thinkingOptions ?? [{ value: "auto" as const, label: "Auto" }];
+  const thinkingLabels: Record<ThinkingMode, string> = {
+    auto: vi ? "Tự động" : "Auto",
+    off: vi ? "Tắt" : "Off",
+    on: vi ? "Bật" : "On",
+    low: vi ? "Thấp" : "Low",
+    medium: vi ? "Vừa" : "Medium",
+    high: vi ? "Cao" : "High",
+  };
 
   return (
     <Card className="space-y-3">
@@ -224,6 +240,28 @@ export function LlmSettingsCard() {
           )}
         </>
       )}
+
+      <div className="space-y-1.5">
+        <label className="block text-xs font-medium text-muted">
+          {vi ? "Thinking" : "Thinking"}
+        </label>
+        <select
+          className={selectClass}
+          value={thinkingMode}
+          onChange={(e) => setThinkingMode(e.target.value as ThinkingMode)}
+        >
+          {thinkingOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {thinkingLabels[option.value]}
+            </option>
+          ))}
+        </select>
+        <p className="text-[11px] text-muted">
+          {vi
+            ? "Tùy chọn được đổi theo provider; Auto không ép tham số lạ vào API."
+            : "Options follow provider capabilities; Auto sends no provider-specific override."}
+        </p>
+      </div>
 
       {meta?.needsKey !== false && provider !== "ollama" && (
         <div className="space-y-2 rounded-xl border border-border bg-primary-soft/50 p-3">

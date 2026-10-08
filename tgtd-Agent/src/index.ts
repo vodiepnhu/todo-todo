@@ -2,6 +2,7 @@ export * from "./agents/index";
 export * from "./lib/ai/enrich-item";
 export * from "./lib/ai/extract-plan";
 export * from "./lib/ai/providers";
+export * from "./lib/ai/thinking";
 export * from "./lib/ai/llm-usage";
 export * from "./lib/ai/llm-usage-als";
 export * from "./lib/agentops/agentops";
