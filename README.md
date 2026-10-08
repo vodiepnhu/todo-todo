@@ -197,7 +197,8 @@ For a fresh demo installation:
 ```bash
 cp .env.production.example .env.production
 # Fill Supabase and provider values in .env.production.
-npx supabase link --project-ref <project-ref>
+npx supabase init
+npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase db push
 docker compose --env-file .env.production --profile demo run --rm seed
 docker compose --env-file .env.production up -d --build

@@ -1,12 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
 import type { LlmProvider } from "@/lib/ai/providers";
 import { useLocale } from "@/lib/i18n";
-
-type ModelOption = { id: string; label: string; tier?: string };
 
 type Settings = {
   provider: LlmProvider;
@@ -19,7 +16,6 @@ type Settings = {
 type ProviderMeta = {
   id: LlmProvider;
   label: string;
-  models: ModelOption[];
 };
 
 /**
@@ -32,7 +28,6 @@ export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) 
   const vi = locale === "vi";
   const [settings, setSettings] = useState<Settings | null>(null);
   const [providers, setProviders] = useState<ProviderMeta[]>([]);
-  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/settings/llm");
@@ -45,39 +40,6 @@ export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) 
   useEffect(() => {
     void load();
   }, [load]);
-
-  const models = useMemo(() => {
-    if (!settings) return [];
-    return (
-      providers.find((p) => p.id === settings.provider)?.models ?? []
-    );
-  }, [providers, settings]);
-
-  const modelInList = models.some((m) => m.id === settings?.model);
-
-  async function onModelChange(modelId: string) {
-    if (!settings?.configured || saving) return;
-    setSaving(true);
-    try {
-      const res = await fetch("/api/settings/llm", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: settings.provider,
-          model: modelId,
-          baseUrl: settings.baseUrl,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || (vi ? "Không thể cập nhật model" : "Could not update model"));
-      setSettings(json.settings);
-      toast.success(`${vi ? "Model" : "Model"}: ${modelId}`);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : (vi ? "Không thể cập nhật model" : "Could not update model"));
-    } finally {
-      setSaving(false);
-    }
-  }
 
   const moreLink = settingsHref ? (
     <Link
@@ -124,30 +86,12 @@ export function ChatModelBar({ settingsHref }: { settingsHref: string | null }) 
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <label className="sr-only" htmlFor="chat-model-select">
-        {vi ? "Model" : "Model"}
-      </label>
-      <select
-        id="chat-model-select"
-        className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-surface px-2 text-xs"
-        value={modelInList ? settings.model : "__custom__"}
-        disabled={saving}
-        onChange={(e) => {
-          const v = e.target.value;
-          if (v === "__custom__") return;
-          void onModelChange(v);
-        }}
+      <span
+        className="min-w-0 flex-1 truncate rounded-lg border border-border bg-surface px-2 py-1.5 text-xs"
+        title={settings.model}
       >
-        {!modelInList && (
-          <option value="__custom__">{vi ? "Tùy chỉnh" : "Custom"}: {settings.model}</option>
-        )}
-        {models.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.label}
-            {m.tier ? ` · ${m.tier}` : ""}
-          </option>
-        ))}
-      </select>
+        {settings.model}
+      </span>
       <span className="hidden text-[10px] text-muted sm:inline">
         {providerLabel}
         {!settings.hasApiKey ? " · mock" : ""}

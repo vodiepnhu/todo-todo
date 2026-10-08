@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -8,16 +8,12 @@ import { toast } from "sonner";
 import type { LlmProvider } from "@/lib/ai/providers";
 import { useLocale } from "@/lib/i18n";
 
-type ModelOption = { id: string; label: string; tier?: string };
-
 type ProviderMeta = {
   id: LlmProvider;
   label: string;
-  defaultModel: string;
   defaultBaseUrl: string | null;
   needsKey: boolean;
   hint: string;
-  models: ModelOption[];
 };
 
 type Settings = {
@@ -32,8 +28,6 @@ type Settings = {
   encryptionReady: boolean;
 };
 
-const CUSTOM_MODEL_VALUE = "__custom__";
-
 export function LlmSettingsCard() {
   const { locale } = useLocale();
   const vi = locale === "vi";
@@ -41,7 +35,6 @@ export function LlmSettingsCard() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [provider, setProvider] = useState<LlmProvider>("openrouter");
   const [model, setModel] = useState("");
-  const [modelSelect, setModelSelect] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -59,12 +52,6 @@ export function LlmSettingsCard() {
         setProvider(json.settings.provider);
         setModel(json.settings.model);
         setBaseUrl(json.settings.baseUrl ?? "");
-        const list: ModelOption[] =
-          json.providers.find(
-            (p: ProviderMeta) => p.id === json.settings.provider,
-          )?.models ?? [];
-        const known = list.some((m) => m.id === json.settings.model);
-        setModelSelect(known ? json.settings.model : CUSTOM_MODEL_VALUE);
         setError(null);
       } catch (e) {
         const message =
@@ -76,7 +63,6 @@ export function LlmSettingsCard() {
   }, [vi]);
 
   const meta = providers.find((p) => p.id === provider);
-  const models = useMemo(() => meta?.models ?? [], [meta]);
   const selectedKey =
     settings?.keysByProvider?.[provider] ??
     (settings?.provider === provider
@@ -90,19 +76,11 @@ export function LlmSettingsCard() {
     setProvider(id);
     const p = providers.find((x) => x.id === id);
     if (p) {
-      setModel(p.defaultModel);
-      setModelSelect(p.defaultModel || CUSTOM_MODEL_VALUE);
+      setModel("");
       setBaseUrl(p.defaultBaseUrl ?? "");
     }
     setApiKeyInput("");
     setShowKeyField(false);
-  }
-
-  function onModelSelectChange(value: string) {
-    setModelSelect(value);
-    if (value !== CUSTOM_MODEL_VALUE) {
-      setModel(value);
-    }
   }
 
   async function save() {
@@ -195,38 +173,15 @@ export function LlmSettingsCard() {
       </select>
       {meta && <p className="text-xs text-muted">{meta.hint}</p>}
 
-      <label className="block text-xs font-medium text-muted">Model</label>
-      <select
-        className={selectClass}
-        value={modelSelect}
-        onChange={(e) => onModelSelectChange(e.target.value)}
-      >
-        {models.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.label}
-            {m.tier === "free" ? " · free" : m.tier === "local" ? " · local" : ""}
-          </option>
-        ))}
-        <option value={CUSTOM_MODEL_VALUE}>{vi ? "Model khác / tùy chỉnh…" : "Other / custom model id…"}</option>
-      </select>
-
-      {(modelSelect === CUSTOM_MODEL_VALUE ||
-        models.length === 0 ||
-        provider === "custom" ||
-        provider === "ollama") && (
-        <Input
-          value={model}
-          onChange={(e) => {
-            setModel(e.target.value);
-            setModelSelect(CUSTOM_MODEL_VALUE);
-          }}
-          placeholder={
-            provider === "ollama"
-              ? "e.g. llama3.2:latest"
-              : (vi ? "Dán đúng model ID" : "Paste exact model id")
-          }
-        />
-      )}
+      <label className="block text-xs font-medium text-muted">
+        {vi ? "Model ID chính xác" : "Exact model ID"}
+      </label>
+      <Input
+        value={model}
+        onChange={(e) => setModel(e.target.value)}
+        placeholder={vi ? "Nhập đúng model ID" : "Enter exact model ID"}
+        autoComplete="off"
+      />
 
       <p className="font-mono text-[11px] text-muted">Active: {model || "—"}</p>
 
@@ -262,15 +217,6 @@ export function LlmSettingsCard() {
                 rel="noreferrer"
               >
                 OpenAI format
-              </a>
-              {" · "}
-              <a
-                className="text-primary underline"
-                href="https://shopaikey.com/en/models"
-                target="_blank"
-                rel="noreferrer"
-              >
-                model catalog
               </a>
               . Direct (long jobs):{" "}
               <code className="text-[10px]">https://direct.shopaikey.com/v1</code>
